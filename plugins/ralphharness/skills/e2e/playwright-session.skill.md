@@ -303,18 +303,12 @@ For single-page applications and platforms with client-side routing (e.g., Home 
 - **TimeoutErrors**: the page loads but never reaches the expected state
 
 **✅ CORRECT — navigate via UI elements:**
-```typescript
-// Navigate using sidebar/menu clicks
-await page.locator('[data-panel-id="config"]').click();
-await page.waitForSelector('ha-config-dashboard', { state: 'visible', timeout: 15000 });
-```
+
+Use MCP browser navigation tools to click sidebar/menu elements. After clicking the config panel, verify navigation by taking a snapshot and checking for the expected elements (e.g., `ha-config-dashboard`).
 
 **❌ WRONG — direct URL navigation to internal routes:**
-```typescript
-// This bypasses client-side routing and auth state
-await page.goto('/config/integrations');
-await page.goto(baseUrl + '/config/integrations');
-```
+
+Do NOT use `page.goto()` for internal SPA routes. This bypasses client-side routing and auth state management, causing auth failures, 404/blank pages, and timeout errors. Use the base URL (`page.goto(baseUrl)`) only for initial navigation.
 
 **Exception**: `page.goto()` to the **base URL** (app root) is correct for initial navigation and auth flows. Only internal sub-routes are problematic.
 
@@ -323,15 +317,12 @@ await page.goto(baseUrl + '/config/integrations');
 If the test infrastructure (e.g., `hass-taste-test`, auth setup scripts) returns a URL with `auth_callback`, `code=`, or `state=` parameters, these tokens are **already consumed** by the setup process. Navigating the browser to these URLs produces auth failures.
 
 **✅ CORRECT — use the base URL (origin only):**
-```typescript
-const baseUrl = new URL(serverInfo.link).origin; // "http://127.0.0.1:8542"
-await page.goto(baseUrl);
-```
+
+Use the base URL (`origin`) for navigation. Extract the origin from `serverInfo.link` using URL parsing and navigate to it.
 
 **❌ WRONG — use the full callback URL:**
-```typescript
-await page.goto(serverInfo.link); // "http://127.0.0.1:8542/?auth_callback=1&code=...&state=..."
-```
+
+Do NOT navigate to URLs with `auth_callback`, `code=`, or `state=` parameters — these tokens are already consumed by the setup process and cause auth failures.
 
 ### NEVER duplicate waitForURL calls
 Each `waitForURL` should appear exactly once per expected navigation. Duplicating them is dead code and a sign of uncertainty — investigate the actual expected state instead.

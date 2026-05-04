@@ -42,7 +42,7 @@ created: {{TIMESTAMP}}
 
 | Spec | Relevance | Relationship | May Need Update |
 |------|-----------|--------------|-----------------|
-| {{spec-name}} | High/Medium/Low | {{why related}} | Yes/No |
+| {{SPEC_NAME}} | High/Medium/Low | {{why related}} | Yes/No |
 
 ### Coordination Notes
 {{How this spec relates to existing specs, conflicts, coordination needed}}

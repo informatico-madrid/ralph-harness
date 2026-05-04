@@ -61,19 +61,19 @@ a value:
 
 ### Authentication
 
-| Setting | Env var | Notes |
-|---|---|---|
-| Auth mode | `RALPH_AUTH_MODE` | `none`, `form`, `token`, `cookie`, `oauth`, `basic`, `storage-state` |
-| Login URL | `RALPH_LOGIN_URL` | Optional. Defaults to `appUrl` if not set |
-| Username / email | `RALPH_LOGIN_USER` | Used by `form` and `basic` modes |
-| Password | `RALPH_LOGIN_PASS` | Used by `form` and `basic` modes |
-| Auth token | `RALPH_AUTH_TOKEN` | Used by `token` mode |
-| Session cookie name | `RALPH_SESSION_COOKIE_NAME` | Used by `cookie` mode |
-| Session cookie value | `RALPH_SESSION_COOKIE_VALUE` | Used by `cookie` mode |
-| Storage state path | `RALPH_STORAGE_STATE_PATH` | Used by `storage-state` mode. Must be a readable local file |
-| Test user role | `RALPH_USER_ROLE` | Optional. `admin`, `editor`, `viewer`, etc. Documents intent |
-| Token bootstrap rule | `tokenBootstrapRule` | Required for `token` mode. `localStorage` or `authorization-header`. Set in `playwright-env.local.md`. |
-| Token localStorage key | `tokenLocalStorageKey` | Required when `tokenBootstrapRule=localStorage`. The exact key the app uses to store the token in `localStorage` (check app source). Set in `playwright-env.local.md`. |
+| Setting | Notes |
+|---|---|
+| Auth mode | `none`, `form`, `token`, `cookie`, `oauth`, `basic`, `storage-state` |
+| Login URL | Optional. Defaults to `appUrl` if not set |
+| Username / email | Used by `form` and `basic` modes |
+| Password | Used by `form` and `basic` modes |
+| Auth token | Used by `token` mode |
+| Session cookie name | Used by `cookie` mode |
+| Session cookie value | Used by `cookie` mode |
+| Storage state path | Used by `storage-state` mode. Must be a readable local file |
+| Test user role | Optional. `admin`, `editor`, `viewer`, etc. Documents intent |
+| Token bootstrap rule | Required for `token` mode. `localStorage` or `authorization-header`. Set in `playwright-env.local.md`. |
+| Token localStorage key | Required when `tokenBootstrapRule=localStorage`. The exact key the app uses to store the token in `localStorage` (check app source). Set in `playwright-env.local.md`. |
 
 ### App state / seed
 

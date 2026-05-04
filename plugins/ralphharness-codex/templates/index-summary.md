@@ -8,9 +8,9 @@ indexed: {{TIMESTAMP}}
 
 ## Overview
 
+<!-- markdownlint-disable MD055 MD056 -->
 | Category | Count | Last Updated |
 |----------|-------|--------------|
-<!-- markdownlint-disable MD055 MD056 -->
 {{#each CATEGORIES}}
 | {{name}} | {{count}} | {{lastUpdated}} |
 {{/each}}

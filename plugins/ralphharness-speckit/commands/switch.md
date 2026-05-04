@@ -47,7 +47,13 @@ Run: /speckit:switch <feature-name>
      # Try matching by name suffix (e.g., "user-auth" matches "001-user-auth")
      FEATURE=$(ls -1 .specify/specs/ 2>/dev/null | grep -E "^[0-9]{3}-$name$" | head -1)
    fi
-   ```
+
+   if [ -z "$FEATURE" ]; then
+     echo "ERROR: No matching feature found for '$name'" >&2
+     echo "Available features:" >&2
+     ls -1 .specify/specs/ >&2
+     exit 1
+   fi
 
 2. Update `.specify/.current-feature`:
    ```bash

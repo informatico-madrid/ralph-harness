@@ -334,7 +334,7 @@ Expected first signal:
                implementation which is forbidden.
     resolution:
       1. Verify ralphharness plugin is loaded (check Claude Code plugin config)
-      2. Verify subagent_type is "spec-executor" (not "ralph-harness:spec-executor")
+      2. Verify subagent_type is "spec-executor" (not "ralphharness:spec-executor")
       3. Retry: /ralphharness:implement --recovery-mode
   ```
 

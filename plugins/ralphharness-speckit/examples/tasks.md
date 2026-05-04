@@ -73,7 +73,7 @@
   - **Do**: POST /api/auth/register with email/password validation
   - **Files**: src/routes/auth.ts, src/controllers/authController.ts
   - **Done when**: Endpoint accepts requests and creates users
-  - **Verify**: `curl -X POST localhost:3000/api/auth/register -d '{"email":"test@example.com","password":"Test123!"}' -H 'Content-Type: application/json'`
+  - **Verify**: `curl -X POST http://localhost:3000/api/auth/register -d '{"email":"test@example.com","password":"Test123!"}' -H 'Content-Type: application/json'`
   - **Commit**: "feat: implement user registration"
 
 - [ ] T008A [VERIFY] Registration checkpoint

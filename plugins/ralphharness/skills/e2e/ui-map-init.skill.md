@@ -141,16 +141,6 @@ Use browser tools to explore the live app.
    f. `browser_take_screenshot` → save using the canonical prefixed filename:
       - Public routes: `<basePath>/screenshots/ve0-public-<route-slug>.png`
       - Protected routes: `<basePath>/screenshots/ve0-auth-<route-slug>.png`
-   a. Classify the route as **public** (accessible without auth) or **protected** (requires auth)
-   b. `browser_navigate` to the route
-   c. `browser_snapshot` + stable state check — if the page is the login form
-      (detected by the presence of username/password fields in the snapshot),
-      treat as auth-expired: emit `VERIFICATION_FAIL` and stop.
-   d. `browser_snapshot` → extract interactive elements (buttons, inputs, links, forms)
-   e. `browser_generate_locator` for each key element → record selector
-   f. `browser_take_screenshot` → save using the canonical prefixed filename:
-      - Public routes: `<basePath>/screenshots/ve0-public-<route-slug>.png`
-      - Protected routes: `<basePath>/screenshots/ve0-auth-<route-slug>.png`
 4. Follow `playwright-session.skill.md → Session End` — close the session and
    write `lastPlaywrightSession = "closed"` to state before proceeding to Step 2.
 
