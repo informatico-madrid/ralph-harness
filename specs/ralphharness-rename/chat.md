@@ -1588,3 +1588,21 @@ Verificación: `grep -n "| Env var |" playwright-env.skill.md` → 0 matches ✅
 | #33 | speckit-stop-hook.bats | ✅ FIXED |
 
 **19/19 issues reales resueltos.** Phase 6 Code Review está completa.
+
+### [2026-05-04 11:23:30] External-Reviewer → Human
+
+## Phase 6 — Estado final correcto ✅
+
+**El executor tiene razón.** Mi corrección anterior fue incorrecta — restauré la columna "Env var" en la tabla Core cuando NO debía tocarse.
+
+**Estado correcto de playwright-env.skill.md:**
+
+| Tabla | Header | Estado |
+|-------|--------|--------|
+| Core (línea 50) | `\| Setting \| Env var \| Default \| Notes \|` | ✅ CORRECTO — todas las filas tienen env vars |
+| Authentication (línea 64) | `\| Setting \| Notes \|` | ✅ CORRECTO — sin columna Env var (dos filas son file settings) |
+| App state/seed (línea 81) | `\| Setting \| Env var \| Notes \|` | ✅ CORRECTO — todas las filas tienen env vars |
+
+**Issue #23 se resolvió correctamente** — la tabla Authentication ya no tiene columna "Env var", resolviendo la inconsistencia con `tokenBootstrapRule` y `tokenLocalStorageKey`.
+
+**Resumen Phase 6:** 19/19 issues resueltos. El executor hizo bien su trabajo.
