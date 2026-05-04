@@ -261,7 +261,7 @@ When progressFile is provided (parallel mode):
 
 File locking (parallel mode only, not needed for sequential):
 - tasks.md writes: (flock -x 200; sed -i 's/- \[ \] X.Y/- [x] X.Y/' "${basePath}/tasks.md") 200>"${basePath}/tasks.md.lock"
-- git commits: (flock -x 200; git add <files>; git commit -m "msg") 200>"${basePath}/.git-commit.lock"
+- git commits: (flock -x 201; git add <files>; git commit -m "msg") 201>"${basePath}/.git-commit.lock"
 - Lock files: tasks.md.lock (tasks.md), .git-commit.lock (git ops). Coordinator cleans up after batch.
 </parallel>
 

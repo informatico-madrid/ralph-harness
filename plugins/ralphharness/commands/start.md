@@ -152,13 +152,13 @@ Continuing...
 8. Create `.progress.md` with goal
 9. **Skill Discovery Pass 1** -- Scan all skill files and match against the goal text:
    0. **Mandatory pre-scan: Context Audit** -- Before any semantic matching, ALWAYS invoke the context-auditor skill unconditionally:
-      - Invoke: `Skill({ skill: "ralph-harness:context-auditor" })`
+      - Invoke: `Skill({ skill: "ralphharness:context-auditor" })`
       - This is mandatory for every spec regardless of goal — do not skip, do not apply relevance matching
       - On success: add `{ name: "context-auditor", source: "${CLAUDE_PLUGIN_ROOT}/skills/context-auditor/SKILL.md", matchedAt: "start", invoked: true }` to `discoveredSkills`
       - On failure: add `{ name: "context-auditor", ..., invoked: false }`, log warning, continue
       - Log in `## Skill Discovery` section: `- **context-auditor** (plugin): always-invoked (reason: mandatory system prompt validation)`
    1. Scan SKILL.md files from all skill paths (collect all skills before matching):
-      - **Plugin skills**: `${CLAUDE_PLUGIN_ROOT}/skills/*/SKILL.md` → invoked as `Skill({ skill: "ralph-harness:<name>" })`
+      - **Plugin skills**: `${CLAUDE_PLUGIN_ROOT}/skills/*/SKILL.md` → invoked as `Skill({ skill: "ralphharness:<name>" })`
       - **Project skills**: `.agents/skills/*/SKILL.md` → invoked as `Skill({ skill: "<name>" })`
       - **Claude skills**: `.claude/skills/*/SKILL.md` → invoked as `Skill({ skill: "<name>" })`
 
@@ -197,7 +197,7 @@ Continuing...
     Scan all skill files and match against goal + research context:
 
     1. Scan SKILL.md files from all skill paths (collect all skills before matching):
-       - **Plugin skills**: `${CLAUDE_PLUGIN_ROOT}/skills/*/SKILL.md` → invoked as `Skill({ skill: "ralph-harness:<name>" })`
+       - **Plugin skills**: `${CLAUDE_PLUGIN_ROOT}/skills/*/SKILL.md` → invoked as `Skill({ skill: "ralphharness:<name>" })`
        - **Project skills**: `.agents/skills/*/SKILL.md` → invoked as `Skill({ skill: "<name>" })`
        - **Claude skills**: `.claude/skills/*/SKILL.md` → invoked as `Skill({ skill: "<name>" })`
 

@@ -158,27 +158,17 @@ After POC is validated, clean up code.
     4. Watch CI and fix failures
   - **Done when**: PR exists and CI is green
 
-- [ ] 4.3 Merge after approval if explicitly requested
-  - **Do**: Merge only when the user explicitly asks
-  - **Done when**: Requested merge is complete
-
-## Phase 5: PR Lifecycle
-
-- [ ] 5.1 Create pull request
-  - **Do**: Push the branch and open a PR
-  - **Done when**: PR URL exists
-
-- [ ] 5.2 Monitor CI and fix failures
-  - **Do**: Repeat fix, commit, push, and recheck until CI is green
-  - **Done when**: All checks pass
-
-- [ ] 5.3 Address code review comments
+- [ ] 4.3 Address code review comments
   - **Do**: Resolve outstanding review comments and push fixes
   - **Done when**: No unresolved review feedback remains
 
-- [ ] 5.4 Final validation
+- [ ] 4.4 Final validation
   - **Do**: Re-run the full validation set and confirm all completion criteria
   - **Done when**: The feature is ready
+
+- [ ] 4.5 Merge after approval if explicitly requested
+  - **Do**: Merge only when the user explicitly asks
+  - **Done when**: Requested merge is complete
 
 ## Notes
 

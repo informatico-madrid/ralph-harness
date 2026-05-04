@@ -291,7 +291,7 @@ load 'helpers/setup.bash'
     [ "$status" -eq 0 ]
     assert_json_block
     assert_json_reason_contains "Continue spec"
-    assert_json_system_message_contains "Ralph-specum"
+    assert_json_system_message_contains "RalphHarness"
 }
 
 @test "max iterations error exits cleanly with stderr message" {

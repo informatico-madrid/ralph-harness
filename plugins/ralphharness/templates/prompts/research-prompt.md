@@ -5,7 +5,7 @@
 
 ## Task Tool Parameters
 
-- **subagent_type:** `ralph-harness:research-analyst`
+- **subagent_type:** `ralphharness:research-analyst`
 - **description:** `Research {TOPIC} for {SPEC_NAME}`
 
 ## Prompt

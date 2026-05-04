@@ -71,10 +71,10 @@ AUGGIE_FILE="$REPO_ROOT/.augment/rules/specify-rules.md"
 ROO_FILE="$REPO_ROOT/.roo/rules/specify-rules.md"
 CODEBUDDY_FILE="$REPO_ROOT/CODEBUDDY.md"
 QODER_FILE="$REPO_ROOT/QODER.md"
-AMP_FILE="$REPO_ROOT/AGENTS.md"
+AMP_FILE="$REPO_ROOT/AMP.md"
 SHAI_FILE="$REPO_ROOT/SHAI.md"
-Q_FILE="$REPO_ROOT/AGENTS.md"
-BOB_FILE="$REPO_ROOT/AGENTS.md"
+Q_FILE="$REPO_ROOT/Q.md"
+BOB_FILE="$REPO_ROOT/BOB.md"
 
 # Template file
 TEMPLATE_FILE="$REPO_ROOT/.specify/templates/agent-file-template.md"
@@ -302,9 +302,9 @@ create_new_agent_file() {
     
     # Perform substitutions with error checking using safer approach
     # Escape special characters for sed by using a different delimiter or escaping
-    local escaped_lang=$(printf '%s\n' "$NEW_LANG" | sed 's/[\[\.*^$()+{}|]/\\&/g')
-    local escaped_framework=$(printf '%s\n' "$NEW_FRAMEWORK" | sed 's/[\[\.*^$()+{}|]/\\&/g')
-    local escaped_branch=$(printf '%s\n' "$CURRENT_BRANCH" | sed 's/[\[\.*^$()+{}|]/\\&/g')
+    local escaped_lang=$(printf '%s\n' "$NEW_LANG" | sed 's/[[\].*\^$(){}|&]/\\&/g')
+    local escaped_framework=$(printf '%s\n' "$NEW_FRAMEWORK" | sed 's/[[\].*\^$(){}|&]/\\&/g')
+    local escaped_branch=$(printf '%s\n' "$CURRENT_BRANCH" | sed 's/[[\].*\^$(){}|&]/\\&/g')
     
     # Build technology stack and recent change strings conditionally
     local tech_stack
@@ -379,11 +379,11 @@ update_existing_agent_file() {
     local new_change_entry=""
     
     # Prepare new technology entries
-    if [[ -n "$tech_stack" ]] && ! grep -q "$tech_stack" "$target_file"; then
+    if [[ -n "$tech_stack" ]] && ! grep -qF -- "$tech_stack" "$target_file"; then
         new_tech_entries+=("- $tech_stack ($CURRENT_BRANCH)")
     fi
     
-    if [[ -n "$NEW_DB" ]] && [[ "$NEW_DB" != "N/A" ]] && [[ "$NEW_DB" != "NEEDS CLARIFICATION" ]] && ! grep -q "$NEW_DB" "$target_file"; then
+    if [[ -n "$NEW_DB" ]] && [[ "$NEW_DB" != "N/A" ]] && [[ "$NEW_DB" != "NEEDS CLARIFICATION" ]] && ! grep -qF -- "$NEW_DB" "$target_file"; then
         new_tech_entries+=("- $NEW_DB ($CURRENT_BRANCH)")
     fi
     

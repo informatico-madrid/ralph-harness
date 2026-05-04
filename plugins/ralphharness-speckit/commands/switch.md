@@ -54,6 +54,7 @@ Run: /speckit:switch <feature-name>
      ls -1 .specify/specs/ >&2
      exit 1
    fi
+   ```
 
 2. Update `.specify/.current-feature`:
    ```bash

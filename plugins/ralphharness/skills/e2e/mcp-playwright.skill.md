@@ -93,7 +93,7 @@ MCP_LOCK_STALE_REMOVING       → proceed (stale lock removed)
 MCP_LOCK_CLEAN                → proceed normally
 ```
 
-Write result to `.ralph-state.json` — acquire a flock on `tasks.md.lock` before the
+Write result to `.ralph-state.json` — acquire a flock on `.ralph-state.json` before the
 read-modify-write to prevent corruption if two VE tasks ever run in parallel:
 
 ```bash
@@ -102,14 +102,14 @@ read-modify-write to prevent corruption if two VE tasks ever run in parallel:
   flock -x 200
   jq '.mcpPlaywright = "available"' <basePath>/.ralph-state.json > /tmp/state.json \
     && mv /tmp/state.json <basePath>/.ralph-state.json
-) 200><basePath>/.tasks.lock
+) 200><basePath>/.ralph-state.json.lock
 
 # If MISSING:
 (
   flock -x 200
   jq '.mcpPlaywright = "missing"' <basePath>/.ralph-state.json > /tmp/state.json \
     && mv /tmp/state.json <basePath>/.ralph-state.json
-) 200><basePath>/.tasks.lock
+) 200><basePath>/.ralph-state.json.lock
 ```
 
 ### Decision tree after check

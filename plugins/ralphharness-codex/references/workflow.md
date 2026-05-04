@@ -155,35 +155,6 @@ When hooks are disabled or unavailable, re-invoke the implement skill after each
 
 Use this path whenever `codex_hooks` is not set, when running on Windows, or when verifying hook behavior during development.
 
-## Hook-Driven Execution Path
-
-When `[features] codex_hooks = true` is set in `config.toml`, the execution loop is automated via the Stop hook.
-
-### How it works
-
-1. User invokes `$ralphharness-implement`
-2. Skill reads `.ralph-state.json`, delegates current task to a subagent
-3. Subagent completes task, outputs `TASK_COMPLETE`
-4. Codex attempts to stop the turn
-5. Stop hook (`hooks/stop-watcher.sh`) fires, reads state file
-6. If `taskIndex < totalTasks`: outputs `{"decision": "block", "reason": "Continue to task N/M"}`
-7. Codex resumes with the reason as the new prompt
-8. Skill reads updated state, delegates next task
-9. Loop repeats until `taskIndex >= totalTasks`
-10. Stop hook outputs nothing (exit 0), Codex stops naturally
-
-### Stop hook output format
-
-```json
-{"decision": "block", "reason": "Continue to task 5/20. Next: 1.6 Write ralphharness-research skill"}
-```
-
-### Guard conditions
-
-- `awaitingApproval: true` in state -> exit 0 (do not continue)
-- No `.ralph-state.json` found -> exit 0
-- `taskIndex >= totalTasks` -> exit 0 (all done)
-
 ## Manual Fallback Path
 
 When hooks are disabled (no `codex_hooks = true`, or on Windows), run phases manually:
