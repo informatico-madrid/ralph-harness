@@ -7,8 +7,7 @@ POC-first workflow with 5 phases:
 1. Phase 1: Make It Work (POC) - Validate idea end-to-end
 2. Phase 2: Refactoring - Clean up code structure
 3. Phase 3: Testing - Add unit/integration/e2e tests
-4. Phase 4: Quality Gates - Local quality checks and PR creation
-5. Phase 5: PR Lifecycle - Autonomous CI monitoring, review resolution, final validation
+4. Phase 4: Quality Gates & PR Lifecycle - Local quality checks, PR creation, CI monitoring, review resolution
 
 ## Completion Criteria (Autonomous Execution Standard)
 
@@ -22,7 +21,7 @@ This spec is not complete until ALL criteria are met:
 ✅ **PR Ready**: Pull request created, reviewed, approved
 ✅ **Review Comments Resolved**: All code review feedback addressed
 
-**Note**: The executor will continue working until all criteria are met. Do not stop at Phase 4 if CI fails or review comments exist.
+**Note**: The executor will continue working until all criteria are met. Proceed through PR creation and CI monitoring even if CI is initially red or review comments exist.
 
 > **Quality Checkpoints**: Intermediate quality gate checks are inserted every 2-3 tasks to catch issues early. For small tasks, insert after 3 tasks. For medium or large tasks, insert after 2 tasks.
 
@@ -178,5 +177,5 @@ After POC is validated, clean up code.
 ## Dependencies
 
 ```text
-Phase 1 (POC) -> Phase 2 (Refactor) -> Phase 3 (Testing) -> Phase 4 (Quality) -> Phase 5 (PR Lifecycle)
+Phase 1 (POC) -> Phase 2 (Refactor) -> Phase 3 (Testing) -> Phase 4 (Quality & PR Lifecycle)
 ```

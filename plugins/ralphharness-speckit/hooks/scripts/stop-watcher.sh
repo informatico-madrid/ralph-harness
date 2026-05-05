@@ -95,7 +95,7 @@ EOF
 
     jq -n \
       --arg reason "$REASON" \
-      --arg msg "Ralph-speckit: corrupt state file" \
+      --arg msg "ralphharness-speckit: corrupt state file" \
       '{
         "decision": "block",
         "reason": $reason,
@@ -170,7 +170,7 @@ Path: $SPEC_PATH | Index: $TASK_INDEX | Iteration: $TASK_ITERATION/$MAX_TASK_ITE
 EOF
 )
 
-    SYSTEM_MSG="Ralph-speckit iteration $GLOBAL_ITERATION | Task $((TASK_INDEX + 1))/$TOTAL_TASKS"
+    SYSTEM_MSG="ralphharness-speckit iteration $GLOBAL_ITERATION | Task $((TASK_INDEX + 1))/$TOTAL_TASKS"
 
     jq -n \
       --arg reason "$REASON" \

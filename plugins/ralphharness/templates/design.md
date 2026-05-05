@@ -31,6 +31,12 @@ graph TB
 - {{Responsibility 1}}
 - {{Responsibility 2}}
 
+#### Component C
+**Purpose**: {{What this component does}}
+**Responsibilities**:
+- {{Responsibility 1}}
+- {{Responsibility 2}}
+
 ### Data Flow
 
 ```mermaid

@@ -118,6 +118,8 @@ def resolve_config(cwd: Path) -> dict[str, object]:
     raw_dirs = settings.get("specs_dirs")
     if isinstance(raw_dirs, list):
         specs_dirs = [str(item) for item in raw_dirs if str(item).strip()]
+    elif isinstance(raw_dirs, str) and raw_dirs.strip():
+        specs_dirs = [raw_dirs.strip()]
     else:
         specs_dirs = [DEFAULT_SPECS_DIR]
     if not specs_dirs:

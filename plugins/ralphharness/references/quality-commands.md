@@ -50,7 +50,7 @@ Also check for monorepo patterns where scripts live in workspace root vs package
 
 ### 3. Makefile Target Discovery
 
-If no package.json or scripts are missing:
+If no package.json or relevant scripts are found:
 
 ```bash
 # List available make targets

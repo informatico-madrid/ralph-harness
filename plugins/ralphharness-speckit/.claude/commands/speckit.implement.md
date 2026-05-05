@@ -69,7 +69,7 @@ You **MUST** consider the user input before proceeding (if not empty).
    - Check if .prettierrc* exists → create/verify .prettierignore
    - Check if .npmrc or package.json exists → create/verify .npmignore (if publishing)
    - Check if terraform files (*.tf) exist → create/verify .terraformignore
-   - Check if .helmignore needed (helm charts present) → create/verify .helmignore
+   - Check for Helm charts with `excludes` in Chart.yaml or .gitignore (Helm does not use .helmignore)
 
    **If ignore file already exists**: Verify it contains essential patterns, append missing critical patterns only
    **If ignore file missing**: Create with full pattern set for detected technology
@@ -115,7 +115,7 @@ You **MUST** consider the user input before proceeding (if not empty).
    - **Tests before code**: If you need to write tests for contracts, entities, and integration scenarios
    - **Core development**: Implement models, services, CLI commands, endpoints
    - **Integration work**: Database connections, middleware, logging, external services
-   - **Polish and validation**: Unit tests, performance optimization, documentation
+   - **Polish and validation**: Performance optimization, documentation (unit tests already executed in Phase 3 per TDD)
 
 8. Progress tracking and error handling:
    - Report progress after each completed task

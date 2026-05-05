@@ -50,8 +50,8 @@ checkpoint-create() {
   fs_check_dir="$(cd "$git_root" && pwd)"
   local is_read_only=false
   if [ -f /proc/mounts ]; then
-    if awk -v dir="$fs_check_dir" '$2 == dir || index($2, dir "/") == 1 { for(i=4;i<=NF;i++) if($i ~ /ro/) { exit 0 } }' /proc/mounts 2>/dev/null || \
-       awk -v dir="$fs_check_dir" 'index($2, dir) == 1 { for(i=4;i<=NF;i++) if($i ~ /ro/) { exit 0 } }' /proc/mounts 2>/dev/null; then
+    if awk -v dir="$fs_check_dir" 'BEGIN{f=0} $2==dir || index($2,dir"/")==1 { for(i=4;i<=NF;i++) if($i~/ro/){f=1} } END{exit !f}' /proc/mounts 2>/dev/null || \
+       awk -v dir="$fs_check_dir" 'BEGIN{f=0} index($2,dir)==1 { for(i=4;i<=NF;i++) if($i~/ro/){f=1} } END{exit !f}' /proc/mounts 2>/dev/null; then
       is_read_only=true
     fi
   fi

@@ -111,7 +111,7 @@ fi
 BASELINE_DIR="${SPEC_PATH}/references"
 BASELINE_FILE="${BASELINE_DIR}/.ralph-field-baseline.json"
 if [ ! -f "$BASELINE_FILE" ] && [ -f "$STATE_FILE" ]; then
-    mkdir -p "$BASELINE_DIR" || { echo "[ralphharness] Failed to create baseline dir: $BASELINE_DIR" >&2; return 1; }
+    mkdir -p "$BASELINE_DIR" || { echo "[ralphharness] Failed to create baseline dir: $BASELINE_DIR" >&2; exit 1; }
     cat << 'EOF' > "$BASELINE_FILE"
 {
   "chat.executor.lastReadLine": "spec-executor",

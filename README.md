@@ -1,4 +1,4 @@
-# Ralph Specum
+# RalphHarness
 
 Spec-driven development with smart compaction. A Claude Code plugin that combines the Ralph Wiggum agentic loop with structured specification workflow.
 

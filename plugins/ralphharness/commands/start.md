@@ -127,7 +127,7 @@ Continuing...
    ```
 4. Create spec directory: `mkdir -p "$basePath"`
 5. Update .current-spec (bare name for default dir, full path for non-default)
-6. Ensure gitignore entries for specs/.current-spec, specs/.current-epic, and **/.progress.md
+6. Ensure gitignore entries for specs/.current-spec, specs/.current-epic, and `.progress.md`
 7. Initialize `.ralph-state.json`:
    ```json
    {
@@ -145,7 +145,7 @@ Continuing...
    ```
    in the initial state, and pre-populate the goal and acceptance criteria from `epic.md`.
 
-   **`--tasks-size` handling**: If `--tasks-size` flag is present in `$ARGUMENTS`:
+   **--tasks-size handling:** If `--tasks-size` flag is present in `$ARGUMENTS`:
    - If value is `fine` or `coarse`: add `"granularity": "<value>"` to the JSON above
    - If value is invalid (not `fine` or `coarse`): warn the user (`⚠️ Invalid --tasks-size value "<value>", defaulting to fine`) and add `"granularity": "fine"`
    - If `--tasks-size` flag is absent: omit the `granularity` field entirely (do not add it)

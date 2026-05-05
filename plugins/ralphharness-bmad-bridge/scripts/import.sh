@@ -735,7 +735,7 @@ function generate_requirements() {
             if [[ -f "$NFR_TMP" ]]; then
                 cat "$NFR_TMP"
                 local nfr_lines
-                nfr_lines=$(grep -c '| ' "$NFR_TMP" 2>/dev/null || true)
+                nfr_lines=$(grep -c '^| NFR-' "$NFR_TMP" 2>/dev/null || true)
                 NFR_COUNT="${nfr_lines:-0}"
                 rm -f "$NFR_TMP"
             else
