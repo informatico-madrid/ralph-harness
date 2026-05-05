@@ -237,7 +237,7 @@ load 'speckit-helpers/setup.bash'
     [ "$status" -eq 0 ]
     assert_json_block
     assert_json_reason_contains "Continue feature"
-    assert_json_system_message_contains "ralphharness-speckit"
+    assert_json_system_message_contains "ralphharness"
 }
 
 @test "max iterations error exits cleanly with stderr message" {

@@ -200,7 +200,7 @@ generate_branch_name() {
         if ! echo "$word" | grep -qiE "$stop_words"; then
             if [ ${#word} -ge 3 ]; then
                 meaningful_words+=("$word")
-            elif echo "$description" | grep -qwF "${word^^}"; then
+            elif echo "$description" | grep -q "${word^^}" 2>/dev/null; then
                 # Keep short words if they appear as uppercase in original (likely acronyms)
                 meaningful_words+=("$word")
             fi

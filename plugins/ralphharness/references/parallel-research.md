@@ -8,7 +8,7 @@ The research command is a **coordinator, not a researcher**. It MUST delegate AL
 - `Explore` subagent for fast codebase analysis (read-only, uses Haiku model)
 - `research-analyst` subagent for web research (needs WebSearch/WebFetch)
 
-The coordinator never performs web searches, codebase analysis, or writes research.md content itself (except for merging subagent outputs into the final file).
+The coordinator delegates web searches, codebase analysis, and writing research.md content to subagents. It only performs merging of subagent outputs and state management — it never runs research, web searches, or codebase analysis directly.
 
 ## Topic Identification
 

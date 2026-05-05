@@ -189,18 +189,6 @@ Tests marked `.skip` / `xit` / `xdescribe` / `test.skip` are FORBIDDEN unless:
 - Mock cleanup: {{afterEach with mockClear/mockReset / vi.restoreAllMocks}}
 - Fixture/factory location: {{e.g. `src/test/factories/` / co-located `*.factory.ts`}}
 
-### Test types:
-
-#### Unit Tests
-- {{Component/function to test}}
-- Mock requirements: {{what to mock}}
-
-### Integration Tests
-- {{Integration point to test}}
-
-#### E2E Tests (if UI)
-- {{User flow to test}}
-
 ## Existing Patterns to Follow
 
 Based on codebase analysis:

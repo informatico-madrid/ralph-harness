@@ -40,6 +40,12 @@ Run: /speckit:switch <feature-name>
 
 1. Find matching feature directory (exact match or partial match on name portion):
    ```bash
+   # Check for empty name
+   if [ -z "$name" ]; then
+     echo "ERROR: No feature name provided" >&2
+     exit 1
+   fi
+
    # Check for exact match first
    if [ -d ".specify/specs/$name" ]; then
      FEATURE="$name"

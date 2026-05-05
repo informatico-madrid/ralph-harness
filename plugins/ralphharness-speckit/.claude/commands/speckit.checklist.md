@@ -92,7 +92,7 @@ You **MUST** consider the user input before proceeding (if not empty).
      - Use short, descriptive name based on domain (e.g., `ux.md`, `api.md`, `security.md`)
      - Format: `[domain].md`
    - Number items sequentially starting from CHK001
-   - Each `/speckit.checklist` run creates a NEW file with a unique domain-based name.
+   - Each `/speckit.checklist` run appends items to the existing checklist file for the same domain, OR creates a NEW file if no existing checklist for that domain exists.
 
    **CORE PRINCIPLE - Test the Requirements, Not the Implementation**:
    Every checklist item MUST evaluate the REQUIREMENTS THEMSELVES for:

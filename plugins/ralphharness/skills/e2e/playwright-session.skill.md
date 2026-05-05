@@ -308,7 +308,7 @@ Use MCP browser navigation tools to click sidebar/menu elements. After clicking 
 
 **❌ WRONG — direct URL navigation to internal routes:**
 
-Do NOT use `page.goto()` for internal SPA routes. This bypasses client-side routing and auth state management, causing auth failures, 404/blank pages, and timeout errors. Use the base URL (`page.goto(baseUrl)`) only for initial navigation.
+Do NOT use `page.goto()` for internal SPA routes. This bypasses client-side routing and auth state management, causing auth failures, 404/blank pages, and timeout errors. Use the base URL only for initial navigation.
 
 **Exception**: `page.goto()` to the **base URL** (app root) is correct for initial navigation and auth flows. Only internal sub-routes are problematic.
 
@@ -318,11 +318,7 @@ If the test infrastructure (e.g., `hass-taste-test`, auth setup scripts) returns
 
 **✅ CORRECT — use the base URL (origin only):**
 
-Use the base URL (`origin`) for navigation. Extract the origin from `serverInfo.link` using URL parsing and navigate to it.
-
-**❌ WRONG — use the full callback URL:**
-
-Do NOT navigate to URLs with `auth_callback`, `code=`, or `state=` parameters — these tokens are already consumed by the setup process and cause auth failures.
+Extract the origin from `serverInfo.link` using URL parsing and navigate to it.
 
 ### NEVER duplicate waitForURL calls
 Each `waitForURL` should appear exactly once per expected navigation. Duplicating them is dead code and a sign of uncertainty — investigate the actual expected state instead.

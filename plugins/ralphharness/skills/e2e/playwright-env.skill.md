@@ -59,7 +59,7 @@ a value:
 | Timezone | `RALPH_TIMEZONE` | `UTC` | Affects time-sensitive assertions |
 | Isolated mode | `RALPH_PLAYWRIGHT_ISOLATED` | `true` | Launches MCP with `--isolated` flag (ephemeral profile, no disk cache). Set `false` only when auth persistence between steps is required and you explicitly manage the user-data-dir. |
 
-### Authentication
+### Authentication (Notes column only)
 
 | Setting | Notes |
 |---|---|
