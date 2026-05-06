@@ -203,7 +203,7 @@ After POC validated, clean up code.
 
 - [ ] T012 [VERIFY] AC checklist
   - **Do**: Verify all acceptance criteria from spec.md
-  - **Verify**: Grep codebase for AC implementation
+  - **Verify**: `grep -r 'AC' src/ || echo "Failed to verify ACs"`
   - **Done when**: All ACs confirmed met
   - **Commit**: None
 

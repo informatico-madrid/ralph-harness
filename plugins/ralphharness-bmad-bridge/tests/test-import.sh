@@ -366,7 +366,7 @@ EPICEOF
 bash -c "
 source \"${import_sh}\"
 parse_epics \"${1}\" \"${2}\" 2>/dev/null
-" _ "$td/epics.md" "$td/tasks.md"
+" _ "$td/epics.md" "$td/tasks.md" || rc=$?
 rc=${rc:-0}
 grep -q 'Story 1.1' "$td/tasks.md" || rc=1
 grep -q 'Story 1.2' "$td/tasks.md" || rc=1
@@ -481,7 +481,7 @@ EPICEOF
 bash -c "
 source \"${import_sh}\"
 parse_epics \"${1}\" \"${2}\" 2>/dev/null
-" _ "$td/epics.md" "$td/tasks.md"
+" _ "$td/epics.md" "$td/tasks.md" || rc=$?
 rc=${rc:-0}
 # Both stories should appear in output
 grep -q 'Story 1.1' "$td/tasks.md" || rc=1

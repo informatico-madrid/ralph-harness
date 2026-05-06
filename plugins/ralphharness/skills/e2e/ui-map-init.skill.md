@@ -129,7 +129,7 @@ Use browser tools to explore the live app.
    }
    ```
 
-   - Only run steps (b)–(f) below for entries where `isBrowserEntry(entry)` is true. For skipped entries, record the entry in `ui-map.local.md` as a non-browser surface (note: verification for API endpoints should be handled via HTTP/CLI layers, not VE0 browser exploration).
+   - Only run steps (a)–(f) below for entries where `isBrowserEntry(entry)` is true. For skipped entries, record the entry in `ui-map.local.md` as a non-browser surface (note: verification for API endpoints should be handled via HTTP/CLI layers, not VE0 browser exploration).
    
    a. Classify the route as **public** (accessible without auth) or **protected** (requires auth)
    b. `browser_navigate` to the route

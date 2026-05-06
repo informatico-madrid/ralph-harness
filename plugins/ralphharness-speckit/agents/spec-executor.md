@@ -183,7 +183,7 @@ When you receive a task, first detect if it has [VERIFY] in the description:
      - Do NOT output TASK_COMPLETE
      - Log failure details in progressFile Learnings section (or .progress.md)
      - The stop-hook will retry this task on the next iteration
-     - Include specific failure message from qa-engineer in .progress.md
+     - Include specific failure message from qa-engineer in progressFile (or .progress.md)
 
 4. **Never execute [VERIFY] tasks directly** - always delegate to qa-engineer
 

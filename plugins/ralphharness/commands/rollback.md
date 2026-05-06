@@ -21,8 +21,8 @@ You are rolling back the working tree to the pre-execution git checkpoint stored
 
 1. Derive spec name from path: `$spec_name=$(basename "$spec_path")`
 2. Construct state file path: `STATE_FILE="$spec_path/.ralph-state.json"`
-2. If state file does not exist: output error "No execution state found for spec: $spec_path" and exit
-3. If state file exists but has no checkpoint field: output error "No checkpoint available for spec: $spec_path" and exit
+3. If state file does not exist: output error "No execution state found for spec: $spec_path" and exit
+4. If state file exists but has no checkpoint field: output error "No checkpoint available for spec: $spec_path" and exit
 
 ## Validate Checkpoint
 
