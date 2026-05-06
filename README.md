@@ -139,6 +139,7 @@ flowchart TB
         E1[Task 1]
         E2[Task 2]
         EN[Task N]
+        PR[Parallel Reviewer<br/>external-agent<br/>task_review.md + chat.md]
     end
 
     subgraph Output
@@ -151,7 +152,16 @@ flowchart TB
     T -->|compact| E1
     E1 -->|compact| E2
     E2 -->|compact| EN
+
+    subgraph Review["Parallel Review (real-time)"]
+        PR -.->|writes to| chat.md[task_review.md]
+        PR -.->|reviews each task| E1
+        PR -.->|reviews each task| E2
+        PR -.->|reviews each task| EN
+    end
+
     EN --> C
+    PR -.->|blocks on FAIL| E1
 
     R -.->|interactive| A1{Approve?}
     D -.->|interactive| A2{Approve?}
@@ -288,9 +298,14 @@ RalphHarness/
 └── README.md
 ```
 
+## Acknowledgments
+
+This project is a fork of [smart-ralph](https://github.com/tzachbon/smart-ralph) by [@tzachbon](https://github.com/tzachbon). We are deeply grateful to Tzach for creating the original smart-ralph, which served as the foundation for RalphHarness. His work on spec-driven development with Ralph's agentic loop provided the essential architecture that made this plugin possible.
+
 ## Credits
 
 - [Ralph agentic loop pattern](https://ghuntley.com/ralph/) by Geoffrey Huntley
+- [smart-ralph](https://github.com/tzachbon/smart-ralph) by [@tzachbon](https://github.com/tzachbon) — original foundation
 - Built for [Claude Code](https://claude.ai/code)
 - Inspired by every developer who wished their AI could just figure out the whole feature
 
