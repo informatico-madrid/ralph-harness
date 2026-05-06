@@ -1,0 +1,6 @@
+interface:
+  display_name: "RalphHarness Cancel"
+  short_description: "Stop execution and optionally remove a spec"
+  default_prompt: "Use $ralphharness-cancel to stop Ralph execution for the active spec and tell me whether anything was removed, and exactly what if so."
+policy:
+  allow_implicit_invocation: false

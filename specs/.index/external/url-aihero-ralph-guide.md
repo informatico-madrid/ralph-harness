@@ -43,4 +43,4 @@ Task sources can shift from local files to GitHub Issues or Linear. Loop types c
 
 ## AI Context
 **Keywords**: ralph setup PRD progress.txt human-in-the-loop autonomous iteration-caps single-task-commits docker-sandbox
-**Related components**: plugins/ralph-specum/commands/implement.md, plugins/ralph-specum/agents/spec-executor.md
+**Related components**: plugins/ralphharness/commands/implement.md, plugins/ralphharness/agents/spec-executor.md

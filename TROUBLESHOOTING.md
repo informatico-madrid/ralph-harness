@@ -13,13 +13,13 @@ Codex installation targets the packaged skill folders in this repo, not the repo
 **Use:**
 ```bash
 python "$CODEX_HOME/skills/.system/skill-installer/scripts/install-skill-from-github.py" \
-  --repo tzachbon/smart-ralph \
-  --path platforms/codex/skills/ralph-specum
+  --repo informatico-madrid/RalphHarness \
+  --path platforms/codex/skills/ralphharness
 ```
 
-Optional helper skills also install from `platforms/codex/skills/ralph-specum-*`.
+Optional helper skills also install from `platforms/codex/skills/ralphharness-*`.
 
-If you want the full Codex helper set, include `platforms/codex/skills/ralph-specum-triage` too.
+If you want the full Codex helper set, include `platforms/codex/skills/ralphharness-triage` too.
 
 More detail: [`platforms/codex/README.md`](platforms/codex/README.md)
 
@@ -31,8 +31,8 @@ Project-local bootstrap files are optional in Codex. They are shipped inside the
 
 **Installed locations:**
 ```text
-$CODEX_HOME/skills/ralph-specum/assets/bootstrap/AGENTS.md
-$CODEX_HOME/skills/ralph-specum/assets/bootstrap/ralph-specum.local.md
+$CODEX_HOME/skills/ralphharness/assets/bootstrap/AGENTS.md
+$CODEX_HOME/skills/ralphharness/assets/bootstrap/ralphharness.local.md
 ```
 
 Copy them into a consumer repo only if you want repo-local guidance.
@@ -75,14 +75,14 @@ This error occurs when you have an old plugin installation (v1.x) that reference
 
 1. **Reinstall the plugin** (recommended):
    ```bash
-   /plugin uninstall ralph-specum
-   /plugin install ralph-specum@smart-ralph
+   /plugin uninstall ralphharness
+   /plugin install ralphharness@RalphHarness
    ```
 
 2. **Remove stale installation** if you have a local dev copy:
    ```bash
    # Remove old plugin directory
-   rm -rf /path/to/old/ralph-specum-plugin
+   rm -rf /path/to/old/ralphharness-plugin
    ```
 
 3. **Manual fix** - update `hooks/hooks.json` in your old installation:
@@ -121,8 +121,8 @@ This error occurs when the ralph-loop skill's setup script receives the coordina
 Upgrade to Smart Ralph v2.0.1+ which writes the prompt to the state file directly instead of passing it through CLI arguments.
 
 ```bash
-/plugin uninstall ralph-specum
-/plugin install ralph-specum@smart-ralph
+/plugin uninstall ralphharness
+/plugin install ralphharness@RalphHarness
 ```
 
 ---
@@ -135,7 +135,7 @@ After max iterations (default: 5), the Ralph Loop stops to prevent infinite loop
 
 1. Check `.progress.md` in your spec folder for error details
 2. Fix the issue manually
-3. Resume with `/ralph-specum:implement`
+3. Resume with `/ralphharness:implement`
 
 **Common causes:**
 - Missing dependencies
@@ -154,7 +154,7 @@ Another Ralph loop may already be running in this session.
 /cancel-ralph
 
 # Then retry
-/ralph-specum:implement
+/ralphharness:implement
 ```
 
 ---
@@ -167,7 +167,7 @@ The spec-executor may have output `TASK_COMPLETE` prematurely.
 
 1. Check the task checkbox in `tasks.md` - uncheck it if needed
 2. Review `.progress.md` for what was actually completed
-3. Run `/ralph-specum:implement` to retry
+3. Run `/ralphharness:implement` to retry
 
 ---
 
@@ -177,29 +177,29 @@ The spec-executor may have output `TASK_COMPLETE` prematurely.
 
 ```bash
 # Cancel and cleanup
-/ralph-specum:cancel
+/ralphharness:cancel
 
 # Delete the spec folder if you want a fresh start
 rm -rf ./specs/your-spec-name
 
 # Start fresh
-/ralph-specum:new your-spec-name Your goal here
+/ralphharness:new your-spec-name Your goal here
 ```
 
 ---
 
 ### Resume existing spec
 
-Just run `/ralph-specum:start` - it auto-detects existing specs and continues where you left off.
+Just run `/ralphharness:start` - it auto-detects existing specs and continues where you left off.
 
-In Codex, use `$ralph-specum` or `$ralph-specum-start`, then approve the current artifact, request changes, or explicitly continue to the matching next step.
+In Codex, use `$ralphharness` or `$ralphharness-start`, then approve the current artifact, request changes, or explicitly continue to the matching next step.
 
 If the work was triaged into an epic, check `./specs/.current-epic` and resume the next unblocked spec rather than creating a new one.
 
 If you want to force a specific spec:
 ```bash
-/ralph-specum:switch spec-name
-/ralph-specum:implement
+/ralphharness:switch spec-name
+/ralphharness:implement
 ```
 
 ---
@@ -214,7 +214,7 @@ cat ./specs/your-spec-name/.ralph-state.json
 
 # Delete and restart execution
 rm ./specs/your-spec-name/.ralph-state.json
-/ralph-specum:implement
+/ralphharness:implement
 ```
 
 ---
@@ -235,7 +235,7 @@ The research-analyst agent searches the web and analyzes your codebase. For larg
 
 Re-run the design phase:
 ```bash
-/ralph-specum:design
+/ralphharness:design
 ```
 
 The architect-reviewer will regenerate the design based on current requirements.
@@ -252,7 +252,7 @@ The task-planner should generate tasks in 4 phases:
 
 If tasks are out of order, re-run:
 ```bash
-/ralph-specum:tasks
+/ralphharness:tasks
 ```
 
 Current task plans may also include:
@@ -261,7 +261,7 @@ Current task plans may also include:
 - VE tasks for end-to-end verification
 - fine or coarse granularity depending on `--tasks-size`
 
-In Codex, the same concepts are exposed through `$ralph-specum-tasks` and `$ralph-specum-implement`.
+In Codex, the same concepts are exposed through `$ralphharness-tasks` and `$ralphharness-implement`.
 
 ---
 
@@ -274,7 +274,7 @@ Claude Code caches plugin files. After making changes:
 1. Restart Claude Code completely
 2. Or use `--plugin-dir` flag to load fresh:
    ```bash
-   claude --plugin-dir ./plugins/ralph-specum
+   claude --plugin-dir ./plugins/ralphharness
    ```
 
 ---
@@ -284,7 +284,7 @@ Claude Code caches plugin files. After making changes:
 Check that `hooks/hooks.json` is valid JSON and properly formatted:
 
 ```bash
-cat plugins/ralph-specum/hooks/hooks.json | jq .
+cat plugins/ralphharness/hooks/hooks.json | jq .
 ```
 
 ---
@@ -292,7 +292,7 @@ cat plugins/ralph-specum/hooks/hooks.json | jq .
 ## Still stuck?
 
 1. Check [MIGRATION.md](MIGRATION.md) if upgrading from v1.x
-2. Open an issue: https://github.com/tzachbon/smart-ralph/issues
+2. Open an issue: https://github.com/informatico-madrid/RalphHarness/issues
 3. Include:
    - Error message
    - Contents of `.ralph-state.json`

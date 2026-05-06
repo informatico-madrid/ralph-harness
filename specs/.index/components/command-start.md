@@ -1,7 +1,7 @@
 ---
 type: component-spec
 generated: true
-source: plugins/ralph-specum/commands/start.md
+source: plugins/ralphharness/commands/start.md
 hash: 62dae51a
 category: commands
 indexed: 2026-03-03T00:00:00Z
@@ -10,15 +10,15 @@ indexed: 2026-03-03T00:00:00Z
 # start command
 
 ## Purpose
-Smart entry point for ralph-specum. Detects whether to create a new spec or resume an existing one. Handles branch management, input parsing, skill discovery, spec scanning, epic detection, goal interviews, parallel research, and quick mode.
+Smart entry point for ralphharness. Detects whether to create a new spec or resume an existing one. Handles branch management, input parsing, skill discovery, spec scanning, epic detection, goal interviews, parallel research, and quick mode.
 
 ## Location
-`plugins/ralph-specum/commands/start.md`
+`plugins/ralphharness/commands/start.md`
 
 ## Public Interface
 
 ### Exports
-- `/ralph-specum:start` slash command
+- `/ralphharness:start` slash command
 
 ### Methods
 
@@ -51,4 +51,4 @@ Smart entry point for ralph-specum. Detects whether to create a new spec or resu
 
 ## AI Context
 **Keywords**: start new-spec resume branch worktree quick-mode goal-interview spec-scanner intent-classification skill-discovery epic-detection parallel-research commit-spec specs-dir
-**Related files**: plugins/ralph-specum/agents/research-analyst.md, plugins/ralph-specum/agents/product-manager.md, plugins/ralph-specum/agents/architect-reviewer.md, plugins/ralph-specum/agents/task-planner.md, plugins/ralph-specum/references/parallel-research.md, plugins/ralph-specum/references/quick-mode.md
+**Related files**: plugins/ralphharness/agents/research-analyst.md, plugins/ralphharness/agents/product-manager.md, plugins/ralphharness/agents/architect-reviewer.md, plugins/ralphharness/agents/task-planner.md, plugins/ralphharness/references/parallel-research.md, plugins/ralphharness/references/quick-mode.md

@@ -1,9 +1,9 @@
-# Ralph Specum — Complete Architecture Map
+# RalphHarness — Complete Architecture Map
 
 ## 1. File Structure
 
 ```
-plugins/ralph-specum/
+plugins/ralphharness/
 ├── .claude-plugin/plugin.json # Plugin manifest v4.9.3
 ├── agents/ # 9 subagent definitions (markdown)
 │   ├── spec-executor.md # Task executor (autonomous implementation)
@@ -82,7 +82,7 @@ plugins/ralph-bmad-bridge/           # BMAD structural mapper plugin
 
 ## 2. Complete Execution Order
 
-### 2.1 Entry: `/ralph-specum:start`
+### 2.1 Entry: `/ralphharness:start`
 
 `commands/start.md` — Smart orchestrator that auto-detects current phase and runs the right command.
 
@@ -114,7 +114,7 @@ User or start.md
 ### 2.3 Phase 2: Requirements (`commands/requirements.md`)
 
 ```
-User runs /ralph-specum:requirements
+User runs /ralphharness:requirements
     → Task tool: product-manager subagent
         • Generate user stories (ASRB format: As a/So that/Requirements)
         • Populate Verification Contract per story
@@ -127,7 +127,7 @@ User runs /ralph-specum:requirements
 ### 2.4 Phase 3: Design (`commands/design.md`)
 
 ```
-User runs /ralph-specum:design
+User runs /ralphharness:design
     → Task tool: architect-reviewer subagent
         • Generate design.md with Test Strategy (MANDATORY section)
         • Design components, data models, API contracts
@@ -139,7 +139,7 @@ User runs /ralph-specum:design
 ### 2.5 Phase 4: Tasks (`commands/tasks.md`)
 
 ```
-User runs /ralph-specum:tasks
+User runs /ralphharness:tasks
     → Task tool: task-planner subagent
         • POC-first task breakdown (Phase 1: Make It Work)
         • Phase 2: Refactoring
@@ -154,7 +154,7 @@ User runs /ralph-specum:tasks
 ### 2.6 Phase 5: Implementation Loop (`commands/implement.md`)
 
 ```
-User runs /ralph-specum:implement
+User runs /ralphharness:implement
     → STOP HOOK activates (hooks.json: Stop)
     → stop-watcher.sh reads .ralph-state.json
     → LOOP begins:
@@ -406,12 +406,12 @@ Circuit breaker, pre-loop git checkpoint, per-task metrics, and read-only detect
 
 ## 5.5 BMAD Bridge Plugin (`plugins/ralph-bmad-bridge/`)
 
-Structural mapper that converts BMAD planning artifacts into smart-ralph spec files using deterministic bash+jq parsing (no LLM).
+Structural mapper that converts BMAD planning artifacts into ralphharness spec files using deterministic bash+jq parsing (no LLM).
 
 **Command**: `/ralph-bmad:import <bmad-project-path> <spec-name>`
 
 **Mapping**:
-| BMAD Artifact | smart-ralph Output | Parser |
+| BMAD Artifact | ralphharness Output | Parser |
 |---------------|-------------------|--------|
 | `prd.md` (FRs) | `requirements.md` (FR table + User Stories) | `parse_prd_frs()` |
 | `prd.md` (NFRs) | `requirements.md` (NFR table with ### subsections) | `parse_prd_nfrs()` |
@@ -496,21 +496,21 @@ Updated by `update-spec-index.sh` after new spec creation or cancellation.
 
 | Command | Phase | Stops? | Subagent |
 |---------|-------|--------|----------|
-| `/ralph-specum:new` | — | Yes | research-analyst (optional) |
-| `/ralph-specum:start` | Auto | Auto | Auto-detects |
-| `/ralph-specum:research` | 1 | Yes | research-analyst |
-| `/ralph-specum:requirements` | 2 | Yes | product-manager |
-| `/ralph-specum:design` | 3 | Yes | architect-reviewer |
-| `/ralph-specum:tasks` | 4 | Yes | task-planner |
-| `/ralph-specum:implement` | 5 | Loop | spec-executor |
-| `/ralph-specum:verify` | VE | No | qa-engineer |
-| `/ralph-specum:cancel` | — | — | — |
-| `/ralph-specum:triage` | Epic | Yes | triage-analyst |
-| `/ralph-specum:quick` | All | No | All phases |
-| `/ralph-specum:refactor` | Any | Yes | refactor-specialist |
-| `/ralph-specum:review` | Any | Yes | spec-reviewer |
-| `/ralph-specum:switch` | — | No | path-resolver |
-| `/ralph-specum:epic` | Epic | Yes | triage-analyst |
+| `/ralphharness:new` | — | Yes | research-analyst (optional) |
+| `/ralphharness:start` | Auto | Auto | Auto-detects |
+| `/ralphharness:research` | 1 | Yes | research-analyst |
+| `/ralphharness:requirements` | 2 | Yes | product-manager |
+| `/ralphharness:design` | 3 | Yes | architect-reviewer |
+| `/ralphharness:tasks` | 4 | Yes | task-planner |
+| `/ralphharness:implement` | 5 | Loop | spec-executor |
+| `/ralphharness:verify` | VE | No | qa-engineer |
+| `/ralphharness:cancel` | — | — | — |
+| `/ralphharness:triage` | Epic | Yes | triage-analyst |
+| `/ralphharness:quick` | All | No | All phases |
+| `/ralphharness:refactor` | Any | Yes | refactor-specialist |
+| `/ralphharness:review` | Any | Yes | spec-reviewer |
+| `/ralphharness:switch` | — | No | path-resolver |
+| `/ralphharness:epic` | Epic | Yes | triage-analyst |
 
 ## 8. Recovery Loop Flow
 

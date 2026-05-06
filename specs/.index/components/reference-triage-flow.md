@@ -1,7 +1,7 @@
 ---
 type: component-spec
 generated: true
-source: plugins/ralph-specum/references/triage-flow.md
+source: plugins/ralphharness/references/triage-flow.md
 hash: f13f21ac
 category: references
 indexed: 2026-03-03T00:00:00Z
@@ -13,7 +13,7 @@ indexed: 2026-03-03T00:00:00Z
 Reference document defining the explore-brainstorm-validate-finalize sequence for epic triage. Orchestrates two research passes sandwiching a decomposition phase, plus output handlers for spec files and GitHub issues.
 
 ## Location
-`plugins/ralph-specum/references/triage-flow.md`
+`plugins/ralphharness/references/triage-flow.md`
 
 ## Public Interface
 
@@ -44,4 +44,4 @@ Reference document defining the explore-brainstorm-validate-finalize sequence fo
 
 ## AI Context
 **Keywords**: triage-flow explore brainstorm validate finalize epic-state dependency-graph spec-files github-issues output-handlers epic-status parallel-research
-**Related files**: plugins/ralph-specum/commands/triage.md, plugins/ralph-specum/agents/triage-analyst.md, plugins/ralph-specum/references/parallel-research.md
+**Related files**: plugins/ralphharness/commands/triage.md, plugins/ralphharness/agents/triage-analyst.md, plugins/ralphharness/references/parallel-research.md

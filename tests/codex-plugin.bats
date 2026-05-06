@@ -1,44 +1,44 @@
 #!/usr/bin/env bats
 
 repo_root() { echo "$BATS_TEST_DIRNAME/.."; }
-plugin_root() { echo "$(repo_root)/plugins/ralph-specum-codex"; }
+plugin_root() { echo "$(repo_root)/plugins/ralphharness-codex"; }
 
 all_skills() {
     cat <<'EOF'
-ralph-specum
-ralph-specum-start
-ralph-specum-triage
-ralph-specum-research
-ralph-specum-requirements
-ralph-specum-design
-ralph-specum-tasks
-ralph-specum-implement
-ralph-specum-status
-ralph-specum-switch
-ralph-specum-cancel
-ralph-specum-index
-ralph-specum-refactor
-ralph-specum-feedback
-ralph-specum-help
+ralphharness
+ralphharness-start
+ralphharness-triage
+ralphharness-research
+ralphharness-requirements
+ralphharness-design
+ralphharness-tasks
+ralphharness-implement
+ralphharness-status
+ralphharness-switch
+ralphharness-cancel
+ralphharness-index
+ralphharness-refactor
+ralphharness-feedback
+ralphharness-help
 EOF
 }
 
 helper_skills() {
     cat <<'EOF'
-ralph-specum-start
-ralph-specum-triage
-ralph-specum-research
-ralph-specum-requirements
-ralph-specum-design
-ralph-specum-tasks
-ralph-specum-implement
-ralph-specum-status
-ralph-specum-switch
-ralph-specum-cancel
-ralph-specum-index
-ralph-specum-refactor
-ralph-specum-feedback
-ralph-specum-help
+ralphharness-start
+ralphharness-triage
+ralphharness-research
+ralphharness-requirements
+ralphharness-design
+ralphharness-tasks
+ralphharness-implement
+ralphharness-status
+ralphharness-switch
+ralphharness-cancel
+ralphharness-index
+ralphharness-refactor
+ralphharness-feedback
+ralphharness-help
 EOF
 }
 

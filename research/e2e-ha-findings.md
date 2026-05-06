@@ -144,7 +144,7 @@ await page.waitForSelector('ha-config-integrations', { state: 'visible', timeout
 
 ### Diagnóstico final
 
-El qa-engineer tiene acceso a los archivos del proyecto (`ha-ev-trip-planner`) pero NO a la pizarra (`smart-ralph/research/`). El prompt de delegación del coordinador decía algo como:
+El qa-engineer tiene acceso a los archivos del proyecto (`ha-ev-trip-planner`) pero NO a la pizarra (`ralphharness/research/`). El prompt de delegación del coordinador decía algo como:
 
 > *"Fix the broken selectors or configuration issues in auth.setup.ts"*
 
@@ -229,13 +229,13 @@ El coordinador debe incluir en el prompt de delegación:
 | Fix E | Proporcionar `hass-taste-test` como docker-compose funcional | ✅ YA EXISTE |
 | Fix F | Actualizar `copilot-instructions.md` para eliminar referencias a infra inexistente | 🔍 |
 | Fix G | Añadir `test-ha/docker-compose.yml` real al repo | 🔍 |
-| Fix H | Configurar timeout de subagentes en ralph-specum | 🔍 |
+| Fix H | Configurar timeout de subagentes en ralphharness | 🔍 |
 | Fix I | Aislar el vault/engram por proyecto | 🔍 |
 | Fix J | Reparar web search en el entorno de test | 🔍 |
 | Fix K | Añadir script de verificación de infra pre-test | 🔍 |
 | Fix L | Corregir path hardcodeado en `global.teardown.ts` | 🔍 |
 | Fix M | Documentar skills en phase-rules.md para que tasks las referencien | 🔍 |
-| Fix N | Verificar nombre real de skill de ejecución en ralph-specum | ✅ URGENTE |
+| Fix N | Verificar nombre real de skill de ejecución en ralphharness | ✅ URGENTE |
 | Fix O | Documentar comportamiento fallback coordinador cuando spec-executor falla | 🔍 |
 | Fix P | Añadir nota ESM en copilot-instructions: `import.meta.url` no `__dirname` | 🔍 URGENTE |
 | Fix Q | ~~`goto('/config/integrations')`~~ ❌ MAL DOCUMENTADO — el fix correcto es Fix B (sidebar nav) | ❌ DESCARTADO |
@@ -245,11 +245,11 @@ El coordinador debe incluir en el prompt de delegación:
 ---
 
 
- MEGA PLAN FORENSE — smart-ralph × ev-trip-planner
+ MEGA PLAN FORENSE — ralphharness × ev-trip-planner
 ## Instrucciones para Copilot Autónomo
 
 > **Branch de trabajo**: `research/e2e-ha-findings`  
-> **Ejecutar en**: fork `informatico-madrid/smart-ralph`  
+> **Ejecutar en**: fork `informatico-madrid/ralphharness`  
 > **Objetivo**: Corregir todos los problemas encontrados en la investigación forense E2E, aplicando TDD de razonamiento IA (prueba que falla → arreglo → prueba que pasa → revisión sistémica).  
 > **Estilo de trabajo**: AUTÓNOMO — no pedir confirmación. Si encuentras ambigüedad, documenta en `.progress.md` y elige la opción más conservadora.
 
@@ -257,16 +257,16 @@ El coordinador debe incluir en el prompt de delegación:
 
 ## 🗺️ MAPA DE ARCHIVOS × PROBLEMAS
 
-### Repositorio `smart-ralph` (el "cerebro" — prompts, skills, agentes)
+### Repositorio `ralphharness` (el "cerebro" — prompts, skills, agentes)
 
 ```
-smart-ralph/
+ralphharness/
 ├── .github/
 │   └── copilot-instructions.md          ← P10 ❌ Describe infra inexistente (test-ha/docker-compose.yml)
 │                                            P10 ❌ localhost:8123 referenciado como instancia de test
 │                                            Fix F + Fix P + Fix G
 │
-├── plugins/ralph-specum/
+├── plugins/ralphharness/
 │   ├── commands/
 │   │   ├── start.md                     ← P21 ⚠️  Referencia "spec-executor" que no existe como agente real
 │   │   │                                   Fix N + Fix O
@@ -316,7 +316,7 @@ smart-ralph/
 │       │                                   requiere Fix S (URL base limpia)
 │       │                                   Fix: añadir nota sobre hassInstance.link
 │       │
-│       └── smart-ralph/
+│       └── ralphharness/
 │           └── SKILL.md                 ← P27 ❌ No especifica qué incluir en prompt de delegación
 │                                           Fix R — añadir sección "delegation contract"
 │
@@ -353,9 +353,9 @@ ha-ev-trip-planner/
 │                                           Fix D — baseURL debe ser string directo, no IIFE
 │
 └── .github/
-    └── copilot-instructions.md          ← P10 ❌ MISMO PROBLEMA — copia del smart-ralph
+    └── copilot-instructions.md          ← P10 ❌ MISMO PROBLEMA — copia del ralphharness
                                             o auto-generado con referencias a infra inexistente
-                                            Fix F — sincronizar con correcciones de smart-ralph
+                                            Fix F — sincronizar con correcciones de ralphharness
 ```
 
 ---
@@ -678,7 +678,7 @@ grep -n "ESM\|fileURLToPath\|import\.meta\.url" .github/copilot-instructions.md 
 
 ### SPRINT 6 — Fix R: Prompts de delegación sin contexto de decisiones
 **Severidad**: 🟠 ALTA — el qa-engineer perdió el Fix B porque no estaba en el prompt (P27)  
-**Archivos a modificar**: `plugins/ralph-specum/commands/implement.md`, `skills/smart-ralph/SKILL.md`
+**Archivos a modificar**: `plugins/ralphharness/commands/implement.md`, `skills/ralphharness/SKILL.md`
 
 #### STRESS TEST S6
 ```
@@ -695,13 +695,13 @@ Respuesta: NO — el archivo no lo documenta, la restricción no está en el pro
 Resultado: el agente usa goto() porque es lo más rápido → TimeoutError.
 
 Verificar que implement.md/start.md NO tiene sección de "delegation contract":
-  grep -n "delegation\|anti-pattern\|restriction\|prohibido" plugins/ralph-specum/commands/implement.md
+  grep -n "delegation\|anti-pattern\|restriction\|prohibido" plugins/ralphharness/commands/implement.md
   # Si vacío → FALLO
 ```
 
 #### FIX R
 ```markdown
-## Añadir a plugins/ralph-specum/commands/implement.md
+## Añadir a plugins/ralphharness/commands/implement.md
 
 ### Delegation Contract — Lo que DEBE incluir cada prompt de delegación
 
@@ -717,7 +717,7 @@ Cuando delegues una tarea a un subagente, el prompt DEBE incluir:
    Ejemplo: "Implementa Fix B: navegar por data-panel-id como documentado en homeassistant-selector-map.skill.md"
 
 4. **Archivos de referencia relevantes** — rutas exactas a skills/docs que aplican
-   Ejemplo: "Ver plugins/ralph-specum/skills/e2e/examples/homeassistant-selector-map.skill.md"
+   Ejemplo: "Ver plugins/ralphharness/skills/e2e/examples/homeassistant-selector-map.skill.md"
 
 5. **Criterio de éxito verificable** — cómo saber que el fix es correcto
    Ejemplo: "El test debe pasar sin TimeoutError y sin goto() a rutas internas"
@@ -745,9 +745,9 @@ Cuando delegues una tarea a un subagente, el prompt DEBE incluir:
 
 #### SWEEP S6
 ```
-Revisar TODOS los comandos en plugins/ralph-specum/commands/:
+Revisar TODOS los comandos en plugins/ralphharness/commands/:
 - ¿Cuáles generan prompts de delegación a subagentes?
-  grep -rn "delegate\|subagent\|assign\|handoff" plugins/ralph-specum/commands/
+  grep -rn "delegate\|subagent\|assign\|handoff" plugins/ralphharness/commands/
 - Cada uno debe tener el delegation contract o una referencia a él
 ```
 
@@ -755,7 +755,7 @@ Revisar TODOS los comandos en plugins/ralph-specum/commands/:
 
 ### SPRINT 7 — Fix M: Skills E2E no referenciadas en tasks generadas
 **Severidad**: 🟡 MEDIA — el agente no cargaba las skills correctas en fases E2E (P18)  
-**Archivos a modificar**: `plugins/ralph-specum/commands/tasks.md`, `skills/spec-workflow/SKILL.md`
+**Archivos a modificar**: `plugins/ralphharness/commands/tasks.md`, `skills/spec-workflow/SKILL.md`
 
 #### STRESS TEST S7
 ```
@@ -767,15 +767,15 @@ Prueba que FALLA:
   grep -n "playwright-env\|mcp-playwright\|selector-map\|homeassistant" specs/*/tasks.md 2>/dev/null
   # Si vacío → FALLO
 
-- Leer plugins/ralph-specum/commands/tasks.md
+- Leer plugins/ralphharness/commands/tasks.md
 - Verificar si hay lógica para incluir skills en tareas E2E:
-  grep -n "e2e\|playwright\|skill" plugins/ralph-specum/commands/tasks.md
+  grep -n "e2e\|playwright\|skill" plugins/ralphharness/commands/tasks.md
   # Si vacío → FALLO
 ```
 
 #### FIX M
 ```markdown
-## Añadir a plugins/ralph-specum/commands/tasks.md — sección E2E Tasks
+## Añadir a plugins/ralphharness/commands/tasks.md — sección E2E Tasks
 
 ### E2E Task Template (para proyectos fullstack/frontend)
 
@@ -784,9 +784,9 @@ Cuando generes tareas de tipo E2E, SIEMPRE incluir en el contexto de la tarea:
 ```markdown
 - [ ] VE1 — Start test infrastructure
   - **Skills requeridas**: 
-    - `plugins/ralph-specum/skills/e2e/playwright-env.skill.md`
-    - `plugins/ralph-specum/skills/e2e/playwright-session.skill.md`
-    - `plugins/ralph-specum/skills/e2e/examples/homeassistant-selector-map.skill.md` (si es HA)
+    - `plugins/ralphharness/skills/e2e/playwright-env.skill.md`
+    - `plugins/ralphharness/skills/e2e/playwright-session.skill.md`
+    - `plugins/ralphharness/skills/e2e/examples/homeassistant-selector-map.skill.md` (si es HA)
   - **Anti-patrones prohibidos**:
     - NO usar goto() para navegar a secciones internas de HA
     - NO usar waitForTimeout() — usar waitForSelector o waitForURL
@@ -808,7 +808,7 @@ Cuando generes tareas de tipo E2E, SIEMPRE incluir en el contexto de la tarea:
 #### SWEEP S7
 ```
 Verificar spec-workflow references:
-- grep -rn "playwright-env\|mcp-playwright" plugins/ralph-specum/skills/spec-workflow/
+- grep -rn "playwright-env\|mcp-playwright" plugins/ralphharness/skills/spec-workflow/
 - Si no están referenciadas → añadir cross-reference
 ```
 
@@ -816,7 +816,7 @@ Verificar spec-workflow references:
 
 ### SPRINT 8 — Fix N + Fix O: `spec-executor` referenciado pero no existe
 **Severidad**: 🟠 ALTA — flujo de fix tasks roto (P21)  
-**Archivos a modificar**: `plugins/ralph-specum/commands/start.md`, `skills/smart-ralph/SKILL.md`
+**Archivos a modificar**: `plugins/ralphharness/commands/start.md`, `skills/ralphharness/SKILL.md`
 
 #### STRESS TEST S8
 ```
@@ -824,12 +824,12 @@ Archivo: research/stress-tests/S8-spec-executor-phantom.md
 
 Prueba que FALLA:
 - Buscar referencias a "spec-executor" en todos los archivos:
-  grep -rn "spec-executor" plugins/ralph-specum/
+  grep -rn "spec-executor" plugins/ralphharness/
   # Si existen referencias → verificar que el agente/comando referenciado existe
   
 - Verificar si existe un comando o skill llamado spec-executor:
-  ls plugins/ralph-specum/commands/ | grep executor   # ¿existe?
-  ls plugins/ralph-specum/skills/ | grep executor     # ¿existe?
+  ls plugins/ralphharness/commands/ | grep executor   # ¿existe?
+  ls plugins/ralphharness/skills/ | grep executor     # ¿existe?
   
 - Si las referencias existen pero el archivo no → FALLO confirmado (P21)
 ```
@@ -838,7 +838,7 @@ Prueba que FALLA:
 ```markdown
 ## Opción A: Crear spec-executor como alias del coordinador
 
-Crear plugins/ralph-specum/commands/spec-executor.md que redirija al comando correcto:
+Crear plugins/ralphharness/commands/spec-executor.md que redirija al comando correcto:
 
 ```markdown
 # spec-executor
@@ -866,7 +866,7 @@ grep -rn "spec-executor" plugins/ → reemplazar cada ocurrencia por descripció
 #### SWEEP S8
 ```
 Buscar otros agentes/comandos referenciados que pueden no existir:
-- grep -rn "agent\|agente\|@[a-z-]*" plugins/ralph-specum/commands/ | grep -v "^Binary"
+- grep -rn "agent\|agente\|@[a-z-]*" plugins/ralphharness/commands/ | grep -v "^Binary"
 - Para cada referencia verificar que el archivo existe
 ```
 
@@ -883,12 +883,12 @@ Archivo: research/stress-tests/S9-skill-cross-reference.md
 Prueba que FALLA:
 - Leer playwright-env.skill.md
 - Verificar si referencia homeassistant-selector-map:
-  grep -n "homeassistant-selector-map\|examples/" plugins/ralph-specum/skills/e2e/playwright-env.skill.md
+  grep -n "homeassistant-selector-map\|examples/" plugins/ralphharness/skills/e2e/playwright-env.skill.md
   # Si vacío → FALLO
 
 - Leer playwright-session.skill.md
 - Misma verificación:
-  grep -n "homeassistant-selector-map\|examples/" plugins/ralph-specum/skills/e2e/playwright-session.skill.md
+  grep -n "homeassistant-selector-map\|examples/" plugins/ralphharness/skills/e2e/playwright-session.skill.md
   # Si vacío → FALLO
   
 IMPACTO: El agente tiene el conocimiento correcto sobre HA (data-panel-id, anti-patrones),
@@ -929,7 +929,7 @@ Ver guía completa: `skills/e2e/examples/homeassistant-selector-map.skill.md`
 #### SWEEP S9
 ```
 Verificar otros skills e2e que pudieran necesitar cross-reference:
-- grep -rn "homeassistant\|home-assistant\|ha-" plugins/ralph-specum/skills/e2e/
+- grep -rn "homeassistant\|home-assistant\|ha-" plugins/ralphharness/skills/e2e/
 - Verificar que mcp-playwright.skill.md también tiene la referencia
 ```
 
@@ -946,7 +946,7 @@ Archivo: research/stress-tests/S10-timeout-preflight.md
 Prueba que FALLA (P13):
 - Leer phase-transitions.md
 - Verificar si documenta timeout de subagentes:
-  grep -n "timeout\|fallback\|retry\|hung\|stuck" plugins/ralph-specum/skills/spec-workflow/references/phase-transitions.md
+  grep -n "timeout\|fallback\|retry\|hung\|stuck" plugins/ralphharness/skills/spec-workflow/references/phase-transitions.md
   # Si vacío → FALLO — no hay documentado qué hacer cuando un agente no responde
 
 Prueba que FALLA (Fix K — verificación pre-test):
@@ -1035,10 +1035,10 @@ grep -rn "test-ha/docker-compose\|localhost:8123" . --include="*.md"
 
 # ¿Algún .md todavía menciona spec-executor sin que exista?
 grep -rn "spec-executor" . --include="*.md"
-ls plugins/ralph-specum/commands/ | grep executor  # debe existir si está referenciado
+ls plugins/ralphharness/commands/ | grep executor  # debe existir si está referenciado
 
 # ¿Todos los skills e2e tienen cross-reference a homeassistant-selector-map?
-grep -rn "homeassistant-selector-map" plugins/ralph-specum/skills/e2e/
+grep -rn "homeassistant-selector-map" plugins/ralphharness/skills/e2e/
 ```
 
 ### Revisión B — Coherencia de código TypeScript
@@ -1059,11 +1059,11 @@ cd ha-ev-trip-planner && npx tsc --noEmit
 ### Revisión C — Coherencia del flujo de agentes
 ```bash
 # ¿Todos los comandos con delegación tienen delegation contract?
-grep -rln "delegate\|subagent\|assign" plugins/ralph-specum/commands/
+grep -rln "delegate\|subagent\|assign" plugins/ralphharness/commands/
 # Para cada archivo encontrado: verificar sección delegation contract
 
 # ¿Tasks.md template incluye skills para E2E?
-grep -n "playwright-env\|homeassistant-selector" plugins/ralph-specum/commands/tasks.md
+grep -n "playwright-env\|homeassistant-selector" plugins/ralphharness/commands/tasks.md
 ```
 
 ### Revisión D — Stress tests pasan

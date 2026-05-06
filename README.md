@@ -1,4 +1,4 @@
-# Ralph Specum
+# RalphHarness
 
 Spec-driven development with smart compaction. A Claude Code plugin that combines the Ralph Wiggum agentic loop with structured specification workflow.
 
@@ -8,7 +8,7 @@ Spec-driven development with smart compaction. A Claude Code plugin that combine
 - **Smart Compaction**: Strategic context management between phases and tasks
 - **Persistent Progress**: Learnings and state survive compaction via progress file
 - **Two Modes**: Interactive (pause per phase) or fully autonomous
-- **BMAD Bridge**: Import BMAD planning artifacts (PRD, epics, architecture) into ralph-specum specs via `/ralph-bmad:import`
+- **BMAD Bridge**: Import BMAD planning artifacts (PRD, epics, architecture) into ralphharness specs via `/ralph-bmad:import`
 - **Loop Safety**: Pre-loop git checkpoint, circuit breaker, per-task metrics, and read-only detection
 - **Role Boundaries**: Mechanical enforcement of file access rules per agent role
 
@@ -18,10 +18,10 @@ Spec-driven development with smart compaction. A Claude Code plugin that combine
 
 ```bash
 # Add the marketplace
-/plugin marketplace add tzachbon/ralph-specum
+/plugin marketplace add informatico-madrid/ralphharness
 
 # Install the plugin
-/plugin install ralph-specum@ralph-specum
+/plugin install ralphharness@ralphharness
 
 # Restart Claude Code to load
 ```
@@ -30,59 +30,59 @@ Spec-driven development with smart compaction. A Claude Code plugin that combine
 
 ```bash
 # Clone the repo
-git clone https://github.com/tzachbon/ralph-specum.git
+git clone https://github.com/informatico-madrid/ralphharness.git
 
 # Install from local path
-/plugin install /path/to/ralph-specum
+/plugin install /path/to/ralphharness
 
 # Or install directly from GitHub
-/plugin install https://github.com/tzachbon/ralph-specum
+/plugin install https://github.com/informatico-madrid/ralphharness
 ```
 
 ### Local Development
 
 ```bash
 # Clone and link for development
-git clone https://github.com/tzachbon/ralph-specum.git
-cd ralph-specum
+git clone https://github.com/informatico-madrid/ralphharness.git
+cd ralphharness
 /plugin install .
 ```
 
 ## Packaged Distribution
 
-When installed via the Codex-packaged distribution (`ralph-specum-codex`), commands are exposed with the `ralph-specum-` prefix:
+When installed via the Codex-packaged distribution (`ralphharness-codex`), commands are exposed with the `ralphharness-` prefix:
 
 ```
-$ralph-specum-triage "Build a multi-tenant SaaS platform"
-$ralph-specum-research
-$ralph-specum-requirements
-$ralph-specum-design
-$ralph-specum-tasks
-$ralph-specum-implement
-$ralph-specum-start my-feature "Build user authentication"
-$ralph-specum-cancel
-$ralph-specum-status
-$ralph-specum-feedback
-$ralph-specum-help
-$ralph-specum-index
-$ralph-specum-refactor
-$ralph-specum-rollback
-$ralph-specum-switch
+$ralphharness-triage "Build a multi-tenant SaaS platform"
+$ralphharness-research
+$ralphharness-requirements
+$ralphharness-design
+$ralphharness-tasks
+$ralphharness-implement
+$ralphharness-start my-feature "Build user authentication"
+$ralphharness-cancel
+$ralphharness-status
+$ralphharness-feedback
+$ralphharness-help
+$ralphharness-index
+$ralphharness-refactor
+$ralphharness-rollback
+$ralphharness-switch
 ```
 
-See the [Codex plugin README](plugins/ralph-specum-codex/README.md) for full Codex-specific documentation.
+See the [Codex plugin README](plugins/ralphharness-codex/README.md) for full Codex-specific documentation.
 
 ## Quick Start
 
 ### Interactive Mode (Recommended)
 
 ```
-/ralph-specum "Add user authentication with JWT tokens" --mode interactive --dir ./auth-spec
+/ralphharness "Add user authentication with JWT tokens" --mode interactive --dir ./auth-spec
 ```
 
 This will:
 1. Generate `requirements.md` and pause for approval
-2. After `/ralph-specum:approve`, generate `design.md` and pause
+2. After `/ralphharness:approve`, generate `design.md` and pause
 3. After approval, generate `tasks.md` and pause
 4. After approval, execute all tasks (compacting after each)
 
@@ -90,17 +90,17 @@ This will:
 
 ```bash
 # The smart way (auto-detects resume or new)
-/ralph-specum:start user-auth Add JWT authentication
+/ralphharness:start user-auth Add JWT authentication
 
 # Quick mode (skip spec phases, auto-generate everything)
-/ralph-specum:start "Add user auth" --quick
+/ralphharness:start "Add user auth" --quick
 
 # The step-by-step way
-/ralph-specum:new user-auth Add JWT authentication
-/ralph-specum:requirements
-/ralph-specum:design
-/ralph-specum:tasks
-/ralph-specum:implement
+/ralphharness:new user-auth Add JWT authentication
+/ralphharness:requirements
+/ralphharness:design
+/ralphharness:tasks
+/ralphharness:implement
 ```
 
 ---
@@ -109,15 +109,15 @@ This will:
 
 | Command | Description |
 |---------|-------------|
-| `/ralph-specum "goal" [options]` | Start the spec-driven loop |
-| `/ralph-specum:approve` | Approve current phase (interactive mode) |
-| `/ralph-specum:cancel` | Cancel active loop and cleanup |
-| `/ralph-specum:feedback` | Collect and process user feedback |
-| `/ralph-specum:help` | Show help |
-| `/ralph-specum:index` | Index/rebuild spec directory |
-| `/ralph-specum:refactor` | Refactor existing spec |
-| `/ralph-specum:rollback` | Rollback to git checkpoint |
-| `/ralph-specum:switch` | Switch to another spec |
+| `/ralphharness "goal" [options]` | Start the spec-driven loop |
+| `/ralphharness:approve` | Approve current phase (interactive mode) |
+| `/ralphharness:cancel` | Cancel active loop and cleanup |
+| `/ralphharness:feedback` | Collect and process user feedback |
+| `/ralphharness:help` | Show help |
+| `/ralphharness:index` | Index/rebuild spec directory |
+| `/ralphharness:refactor` | Refactor existing spec |
+| `/ralphharness:rollback` | Rollback to git checkpoint |
+| `/ralphharness:switch` | Switch to another spec |
 
 ---
 
@@ -243,7 +243,7 @@ Templates in `templates/` can be customized for your project's needs.
 
 ### Loop not continuing?
 
-1. Check if in interactive mode waiting for `/ralph-specum:approve`
+1. Check if in interactive mode waiting for `/ralphharness:approve`
 2. Verify `.ralph-state.json` exists in spec directory
 3. Check iteration count hasn't exceeded max
 
@@ -256,8 +256,8 @@ Templates in `templates/` can be customized for your project's needs.
 ### Cancel and restart?
 
 ```
-/ralph-specum:cancel --dir ./your-spec
-/ralph-specum "your goal" --dir ./your-spec
+/ralphharness:cancel --dir ./your-spec
+/ralphharness "your goal" --dir ./your-spec
 ```
 
 ## Development
@@ -265,7 +265,7 @@ Templates in `templates/` can be customized for your project's needs.
 ### Plugin Structure
 
 ```text
-smart-ralph/
+RalphHarness/
 ├── .claude-plugin/
 │   └── marketplace.json
 ├── commands/

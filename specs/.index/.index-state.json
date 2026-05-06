@@ -32,18 +32,18 @@
     "Project root"
   ],
   "hashes": {
-    "plugins/ralph-specum/agents/spec-executor.md": "1fdc67dd",
-    "plugins/ralph-specum/agents/research-analyst.md": "94281fc2",
-    "plugins/ralph-specum/agents/architect-reviewer.md": "8b2c4e3a",
-    "plugins/ralph-specum/agents/product-manager.md": "7d3b5c2f",
-    "plugins/ralph-specum/agents/task-planner.md": "4e8f2a1b",
-    "plugins/ralph-specum/agents/qa-engineer.md": "3c9d7e5a",
-    "plugins/ralph-specum/commands/implement.md": "19181307",
-    "plugins/ralph-specum/commands/start.md": "62dae51a",
-    "plugins/ralph-specum/commands/triage.md": "bf372016",
-    "plugins/ralph-specum/hooks/scripts/stop-watcher.sh": "03374bb5",
-    "plugins/ralph-specum/agents/triage-analyst.md": "12b69c70",
-    "plugins/ralph-specum/references/triage-flow.md": "f13f21ac"
+    "plugins/ralphharness/agents/spec-executor.md": "1fdc67dd",
+    "plugins/ralphharness/agents/research-analyst.md": "94281fc2",
+    "plugins/ralphharness/agents/architect-reviewer.md": "8b2c4e3a",
+    "plugins/ralphharness/agents/product-manager.md": "7d3b5c2f",
+    "plugins/ralphharness/agents/task-planner.md": "4e8f2a1b",
+    "plugins/ralphharness/agents/qa-engineer.md": "3c9d7e5a",
+    "plugins/ralphharness/commands/implement.md": "19181307",
+    "plugins/ralphharness/commands/start.md": "62dae51a",
+    "plugins/ralphharness/commands/triage.md": "bf372016",
+    "plugins/ralphharness/hooks/scripts/stop-watcher.sh": "03374bb5",
+    "plugins/ralphharness/agents/triage-analyst.md": "12b69c70",
+    "plugins/ralphharness/references/triage-flow.md": "f13f21ac"
   },
   "interviewResponses": {
     "externalUrls": "Claude Code docs, Plugin development, https://awesomeclaude.ai/ralph-wiggum, https://ghuntley.com/loop/, https://github.com/anthropics/claude-code/blob/main/plugins/ralph-wiggum/.claude-plugin/plugin.json, https://www.aihero.dev/getting-started-with-ralph",

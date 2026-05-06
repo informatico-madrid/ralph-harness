@@ -1,0 +1,126 @@
+#!/bin/bash
+# SessionStart Hook for RalphHarness
+# Loads context for active spec on session start:
+# 1. Detects active spec from .current-spec
+# 2. Loads progress and state for context
+# 3. Outputs summary for agent awareness
+
+# Read hook input from stdin
+INPUT=$(cat)
+
+# Bail out cleanly if jq is unavailable
+command -v jq >/dev/null 2>&1 || exit 0
+
+# Get working directory (guard against parse failures)
+CWD=$(echo "$INPUT" | jq -r '.cwd // empty' 2>/dev/null || true)
+if [ -z "$CWD" ]; then
+    exit 0
+fi
+
+# Source path resolver for multi-directory support
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [ -f "$SCRIPT_DIR/path-resolver.sh" ]; then
+    export RALPH_CWD="$CWD"
+    # shellcheck source=path-resolver.sh
+    source "$SCRIPT_DIR/path-resolver.sh"
+else
+    # Fallback if path-resolver.sh not found
+    exit 0
+fi
+
+# Check for settings file to see if plugin is enabled
+SETTINGS_FILE="$CWD/.claude/ralphharness.local.md"
+if [ -f "$SETTINGS_FILE" ]; then
+    # Extract enabled setting from YAML frontmatter (normalize case and strip quotes)
+    ENABLED=$(sed -n '/^---$/,/^---$/p' "$SETTINGS_FILE" 2>/dev/null \
+        | awk -F: '/^enabled:/{val=$2; gsub(/[[:space:]"'"'"']/, "", val); print tolower(val); exit}')
+    if [ "$ENABLED" = "false" ]; then
+        exit 0
+    fi
+fi
+
+# Resolve current spec using path resolver
+SPEC_RELATIVE_PATH=$(ralph_resolve_current 2>/dev/null)
+if [ -z "$SPEC_RELATIVE_PATH" ]; then
+    exit 0
+fi
+
+SPEC_PATH="$CWD/$SPEC_RELATIVE_PATH"
+if [ ! -d "$SPEC_PATH" ]; then
+    exit 0
+fi
+
+# Extract spec name from path (last component)
+SPEC_NAME=$(basename "$SPEC_RELATIVE_PATH")
+
+# Read state file if exists
+STATE_FILE="$SPEC_PATH/.ralph-state.json"
+PROGRESS_FILE="$SPEC_PATH/.progress.md"
+
+echo "[ralphharness] Active spec detected: $SPEC_NAME" >&2
+
+# Output state summary if state file exists
+if [ -f "$STATE_FILE" ] && jq empty "$STATE_FILE" 2>/dev/null; then
+    PHASE=$(jq -r '.phase // "unknown"' "$STATE_FILE" 2>/dev/null)
+    TASK_INDEX=$(jq -r '.taskIndex // 0' "$STATE_FILE" 2>/dev/null)
+    TOTAL_TASKS=$(jq -r '.totalTasks // 0' "$STATE_FILE" 2>/dev/null)
+    AWAITING=$(jq -r '.awaitingApproval // false' "$STATE_FILE" 2>/dev/null)
+
+    echo "[ralphharness] Phase: $PHASE | Task: $((TASK_INDEX + 1))/$TOTAL_TASKS | Awaiting approval: $AWAITING" >&2
+
+    if [ "$PHASE" = "execution" ] && [ "$AWAITING" = "false" ]; then
+        echo "[ralphharness] Execution in progress. Run /ralphharness:implement to continue." >&2
+    elif [ "$AWAITING" = "true" ]; then
+        case "$PHASE" in
+            research)
+                echo "[ralphharness] Research complete. Run /ralphharness:requirements to continue." >&2
+                ;;
+            requirements)
+                echo "[ralphharness] Requirements complete. Run /ralphharness:design to continue." >&2
+                ;;
+            design)
+                echo "[ralphharness] Design complete. Run /ralphharness:tasks to continue." >&2
+                ;;
+            tasks)
+                echo "[ralphharness] Tasks complete. Run /ralphharness:implement to start execution." >&2
+                ;;
+        esac
+    fi
+else
+    # No state file - check what spec files exist
+    if [ -f "$SPEC_PATH/tasks.md" ]; then
+        echo "[ralphharness] Tasks defined but no execution state. Run /ralphharness:implement to start." >&2
+    elif [ -f "$SPEC_PATH/design.md" ]; then
+        echo "[ralphharness] Design exists. Run /ralphharness:tasks to generate tasks." >&2
+    elif [ -f "$SPEC_PATH/requirements.md" ]; then
+        echo "[ralphharness] Requirements exist. Run /ralphharness:design to continue." >&2
+    elif [ -f "$SPEC_PATH/research.md" ]; then
+        echo "[ralphharness] Research exists. Run /ralphharness:requirements to continue." >&2
+    fi
+fi
+
+# Output original goal from progress file if exists
+if [ -f "$PROGRESS_FILE" ]; then
+    GOAL=$(grep -A1 "^## Original Goal" "$PROGRESS_FILE" 2>/dev/null | tail -1)
+    if [ -n "$GOAL" ]; then
+        echo "[ralphharness] Goal: $GOAL" >&2
+    fi
+fi
+
+# Capture field ownership baseline on first run
+BASELINE_DIR="${SPEC_PATH}/references"
+BASELINE_FILE="${BASELINE_DIR}/.ralph-field-baseline.json"
+if [ ! -f "$BASELINE_FILE" ] && [ -f "$STATE_FILE" ]; then
+    mkdir -p "$BASELINE_DIR" || { echo "[ralphharness] Failed to create baseline dir: $BASELINE_DIR" >&2; exit 1; }
+    cat << 'EOF' > "$BASELINE_FILE"
+{
+  "chat.executor.lastReadLine": "spec-executor",
+  "chat.reviewer.lastReadLine": "external-reviewer",
+  "external_unmarks": "external-reviewer",
+  "awaitingApproval": ["coordinator", "architect-reviewer", "product-manager", "research-analyst", "task-planner"]
+}
+EOF
+    echo "[ralphharness] Baseline captured: $BASELINE_FILE" >&2
+fi
+
+exit 0

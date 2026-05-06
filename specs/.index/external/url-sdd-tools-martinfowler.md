@@ -52,4 +52,4 @@ Warning against repeating historical mistakes from Model-Driven Development, whi
 
 ## AI Context
 **Keywords**: sdd spec-driven-development spec-first spec-anchored spec-as-source kiro spec-kit tessl constitution
-**Related components**: plugins/ralph-specum agents, plugins/ralph-speckit
+**Related components**: plugins/ralphharness agents, plugins/ralph-speckit

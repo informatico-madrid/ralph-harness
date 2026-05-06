@@ -1,6 +1,6 @@
-# Ralph Specum for Codex
+# RalphHarness for Codex
 
-Installable Codex skills for Ralph Specum live in this package. This is the Codex distribution surface for this repo. It is not meant to be copied into a project root as-is.
+Installable Codex skills for RalphHarness live in this package. This is the Codex distribution surface for this repo. It is not meant to be copied into a project root as-is.
 
 Package manifest: `platforms/codex/manifest.json`
 
@@ -8,22 +8,22 @@ Current package version: `4.8.4`
 
 ## What Ships
 
-- Primary skill: `$ralph-specum`
+- Primary skill: `$ralphharness`
 - Helper skills:
-  - `$ralph-specum-start`
-  - `$ralph-specum-triage`
-  - `$ralph-specum-research`
-  - `$ralph-specum-requirements`
-  - `$ralph-specum-design`
-  - `$ralph-specum-tasks`
-  - `$ralph-specum-implement`
-  - `$ralph-specum-status`
-  - `$ralph-specum-switch`
-  - `$ralph-specum-cancel`
-  - `$ralph-specum-index`
-  - `$ralph-specum-refactor`
-  - `$ralph-specum-feedback`
-  - `$ralph-specum-help`
+  - `$ralphharness-start`
+  - `$ralphharness-triage`
+  - `$ralphharness-research`
+  - `$ralphharness-requirements`
+  - `$ralphharness-design`
+  - `$ralphharness-tasks`
+  - `$ralphharness-implement`
+  - `$ralphharness-status`
+  - `$ralphharness-switch`
+  - `$ralphharness-cancel`
+  - `$ralphharness-index`
+  - `$ralphharness-refactor`
+  - `$ralphharness-feedback`
+  - `$ralphharness-help`
 
 ## Recommended Install Sets
 
@@ -34,9 +34,9 @@ Install the primary skill only. This is the easiest path.
 Prompt to send to Codex:
 
 ```text
-Use $skill-installer to install the Smart Ralph Codex skill from repo `tzachbon/smart-ralph` at path `platforms/codex/skills/ralph-specum`.
+Use $skill-installer to install the RalphHarness Codex skill from repo `informatico-madrid/ralphharness` at path `platforms/codex/skills/ralphharness`.
 First ask whether to install globally under `$CODEX_HOME/skills` or project-local inside this repo.
-Before installing, check whether an existing install already has a `manifest.json` version for Smart Ralph Codex.
+Before installing, check whether an existing install already has a `manifest.json` version for RalphHarness Codex.
 Compare that installed version to `platforms/codex/manifest.json` in this repo.
 If no install exists or the versions differ, run the installer for the selected target.
 If the versions match, say it is already up to date and skip reinstalling.
@@ -44,15 +44,15 @@ If the versions match, say it is already up to date and skip reinstalling.
 
 In Codex, ask `$skill-installer` to install:
 
-- repo: `tzachbon/smart-ralph`
-- path: `platforms/codex/skills/ralph-specum`
+- repo: `informatico-madrid/ralphharness`
+- path: `platforms/codex/skills/ralphharness`
 
 Direct script form:
 
 ```bash
 python3 "$CODEX_HOME/skills/.system/skill-installer/scripts/install-skill-from-github.py" \
-  --repo tzachbon/smart-ralph \
-  --path platforms/codex/skills/ralph-specum
+  --repo informatico-madrid/ralphharness \
+  --path platforms/codex/skills/ralphharness
 ```
 
 ### Full Helper Bundle
@@ -62,24 +62,24 @@ Install the primary skill plus the explicit helper skills.
 Prompt to send to Codex:
 
 ```text
-Use $skill-installer to install the Smart Ralph Codex skills from repo `tzachbon/smart-ralph` at these paths:
-- `platforms/codex/skills/ralph-specum`
-- `platforms/codex/skills/ralph-specum-start`
-- `platforms/codex/skills/ralph-specum-triage`
-- `platforms/codex/skills/ralph-specum-research`
-- `platforms/codex/skills/ralph-specum-requirements`
-- `platforms/codex/skills/ralph-specum-design`
-- `platforms/codex/skills/ralph-specum-tasks`
-- `platforms/codex/skills/ralph-specum-implement`
-- `platforms/codex/skills/ralph-specum-status`
-- `platforms/codex/skills/ralph-specum-switch`
-- `platforms/codex/skills/ralph-specum-cancel`
-- `platforms/codex/skills/ralph-specum-index`
-- `platforms/codex/skills/ralph-specum-refactor`
-- `platforms/codex/skills/ralph-specum-feedback`
-- `platforms/codex/skills/ralph-specum-help`
+Use $skill-installer to install the RalphHarness Codex skills from repo `informatico-madrid/ralphharness` at these paths:
+- `platforms/codex/skills/ralphharness`
+- `platforms/codex/skills/ralphharness-start`
+- `platforms/codex/skills/ralphharness-triage`
+- `platforms/codex/skills/ralphharness-research`
+- `platforms/codex/skills/ralphharness-requirements`
+- `platforms/codex/skills/ralphharness-design`
+- `platforms/codex/skills/ralphharness-tasks`
+- `platforms/codex/skills/ralphharness-implement`
+- `platforms/codex/skills/ralphharness-status`
+- `platforms/codex/skills/ralphharness-switch`
+- `platforms/codex/skills/ralphharness-cancel`
+- `platforms/codex/skills/ralphharness-index`
+- `platforms/codex/skills/ralphharness-refactor`
+- `platforms/codex/skills/ralphharness-feedback`
+- `platforms/codex/skills/ralphharness-help`
 First ask whether to install globally under `$CODEX_HOME/skills` or project-local inside this repo.
-Before installing, check whether an existing Smart Ralph Codex install already has a `manifest.json` version.
+Before installing, check whether an existing RalphHarness Codex install already has a `manifest.json` version.
 Compare that installed version to `platforms/codex/manifest.json` in this repo.
 If no install exists or the versions differ, run the installer for the selected target.
 If the versions match, say it is already up to date and skip reinstalling.
@@ -87,23 +87,23 @@ If the versions match, say it is already up to date and skip reinstalling.
 
 ```bash
 python3 "$CODEX_HOME/skills/.system/skill-installer/scripts/install-skill-from-github.py" \
-  --repo tzachbon/smart-ralph \
+  --repo informatico-madrid/ralphharness \
   --path \
-    platforms/codex/skills/ralph-specum \
-    platforms/codex/skills/ralph-specum-start \
-    platforms/codex/skills/ralph-specum-triage \
-    platforms/codex/skills/ralph-specum-research \
-    platforms/codex/skills/ralph-specum-requirements \
-    platforms/codex/skills/ralph-specum-design \
-    platforms/codex/skills/ralph-specum-tasks \
-    platforms/codex/skills/ralph-specum-implement \
-    platforms/codex/skills/ralph-specum-status \
-    platforms/codex/skills/ralph-specum-switch \
-    platforms/codex/skills/ralph-specum-cancel \
-    platforms/codex/skills/ralph-specum-index \
-    platforms/codex/skills/ralph-specum-refactor \
-    platforms/codex/skills/ralph-specum-feedback \
-    platforms/codex/skills/ralph-specum-help
+    platforms/codex/skills/ralphharness \
+    platforms/codex/skills/ralphharness-start \
+    platforms/codex/skills/ralphharness-triage \
+    platforms/codex/skills/ralphharness-research \
+    platforms/codex/skills/ralphharness-requirements \
+    platforms/codex/skills/ralphharness-design \
+    platforms/codex/skills/ralphharness-tasks \
+    platforms/codex/skills/ralphharness-implement \
+    platforms/codex/skills/ralphharness-status \
+    platforms/codex/skills/ralphharness-switch \
+    platforms/codex/skills/ralphharness-cancel \
+    platforms/codex/skills/ralphharness-index \
+    platforms/codex/skills/ralphharness-refactor \
+    platforms/codex/skills/ralphharness-feedback \
+    platforms/codex/skills/ralphharness-help
 ```
 
 Restart Codex after installation.
@@ -113,25 +113,25 @@ Restart Codex after installation.
 Prompt to send to Codex:
 
 ```text
-Use $skill-installer to update the Smart Ralph Codex install from repo `tzachbon/smart-ralph`.
+Use $skill-installer to update the RalphHarness Codex install from repo `informatico-madrid/ralphharness`.
 First ask whether the current install lives globally under `$CODEX_HOME/skills` or project-local inside this repo.
-Check the installed Smart Ralph Codex `manifest.json` version and compare it to `platforms/codex/manifest.json` in this repo.
+Check the installed RalphHarness Codex `manifest.json` version and compare it to `platforms/codex/manifest.json` in this repo.
 Only if the versions differ, reinstall these paths into the selected target:
-- `platforms/codex/skills/ralph-specum`
-- `platforms/codex/skills/ralph-specum-start`
-- `platforms/codex/skills/ralph-specum-triage`
-- `platforms/codex/skills/ralph-specum-research`
-- `platforms/codex/skills/ralph-specum-requirements`
-- `platforms/codex/skills/ralph-specum-design`
-- `platforms/codex/skills/ralph-specum-tasks`
-- `platforms/codex/skills/ralph-specum-implement`
-- `platforms/codex/skills/ralph-specum-status`
-- `platforms/codex/skills/ralph-specum-switch`
-- `platforms/codex/skills/ralph-specum-cancel`
-- `platforms/codex/skills/ralph-specum-index`
-- `platforms/codex/skills/ralph-specum-refactor`
-- `platforms/codex/skills/ralph-specum-feedback`
-- `platforms/codex/skills/ralph-specum-help`
+- `platforms/codex/skills/ralphharness`
+- `platforms/codex/skills/ralphharness-start`
+- `platforms/codex/skills/ralphharness-triage`
+- `platforms/codex/skills/ralphharness-research`
+- `platforms/codex/skills/ralphharness-requirements`
+- `platforms/codex/skills/ralphharness-design`
+- `platforms/codex/skills/ralphharness-tasks`
+- `platforms/codex/skills/ralphharness-implement`
+- `platforms/codex/skills/ralphharness-status`
+- `platforms/codex/skills/ralphharness-switch`
+- `platforms/codex/skills/ralphharness-cancel`
+- `platforms/codex/skills/ralphharness-index`
+- `platforms/codex/skills/ralphharness-refactor`
+- `platforms/codex/skills/ralphharness-feedback`
+- `platforms/codex/skills/ralphharness-help`
 If the versions match, say it is already up to date and do not reinstall.
 Then restart Codex.
 ```
@@ -140,13 +140,13 @@ Then restart Codex.
 
 The package does not require project-local files. If a team wants repo-local guidance, copy these optional templates from the installed primary skill:
 
-- `$CODEX_HOME/skills/ralph-specum/assets/bootstrap/AGENTS.md`
-- `$CODEX_HOME/skills/ralph-specum/assets/bootstrap/ralph-specum.local.md`
+- `$CODEX_HOME/skills/ralphharness/assets/bootstrap/AGENTS.md`
+- `$CODEX_HOME/skills/ralphharness/assets/bootstrap/ralphharness.local.md`
 
 Recommended destinations in the consumer repo:
 
 - `AGENTS.md`
-- `.claude/ralph-specum.local.md`
+- `.claude/ralphharness.local.md`
 
 ## Parity Notes
 

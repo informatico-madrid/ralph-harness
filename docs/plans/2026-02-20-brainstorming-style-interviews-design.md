@@ -1,7 +1,7 @@
 # Design: Brainstorming-Style Phase Interviews
 
 **Date**: 2026-02-20
-**Scope**: Replace fixed question pool interviews with adaptive brainstorming-style dialogue across all 4 Ralph Specum phases.
+**Scope**: Replace fixed question pool interviews with adaptive brainstorming-style dialogue across all 4 RalphHarness phases.
 
 ## Problem
 

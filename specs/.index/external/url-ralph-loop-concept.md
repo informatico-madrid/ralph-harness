@@ -39,4 +39,4 @@ Geoffrey Huntley demonstrates applying Ralph under nested loops for automated sy
 
 ## AI Context
 **Keywords**: ralph-loop monolithic autonomous iteration context-engineering evolutionary-development observational-learning
-**Related components**: plugins/ralph-specum/commands/implement.md
+**Related components**: plugins/ralphharness/commands/implement.md

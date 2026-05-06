@@ -68,4 +68,4 @@ specs/[feature-branch]/
 
 ## AI Context
 **Keywords**: speckit specification constitution library-first cli-mandate test-first parallelizable clarity-markers contracts
-**Related components**: plugins/ralph-speckit, plugins/ralph-specum
+**Related components**: plugins/ralph-speckit, plugins/ralphharness

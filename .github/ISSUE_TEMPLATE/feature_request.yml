@@ -23,7 +23,7 @@ body:
       label: Proposed solution
       description: How do you envision this working?
       placeholder: |
-        A new command `/ralph-specum:export` that...
+        A new command `/ralphharness:export` that...
     validations:
       required: true
 

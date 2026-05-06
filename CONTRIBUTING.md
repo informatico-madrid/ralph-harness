@@ -44,11 +44,11 @@ Look for issues labeled `good first issue` or `help wanted`. These are specifica
 
 ```bash
 # Clone the repo
-git clone https://github.com/tzachbon/smart-ralph.git
-cd smart-ralph
+git clone https://github.com/informatico-madrid/RalphHarness.git
+cd RalphHarness
 
 # Test the plugin locally
-claude --plugin-dir ./plugins/ralph-specum
+claude --plugin-dir ./plugins/ralphharness
 
 # Make changes, restart Claude Code to reload
 ```
@@ -56,9 +56,9 @@ claude --plugin-dir ./plugins/ralph-specum
 ### Project Structure
 
 ```
-smart-ralph/
+RalphHarness/
 ├── plugins/
-│   └── ralph-specum/
+│   └── ralphharness/
 │       ├── .claude-plugin/
 │       │   └── plugin.json      # Plugin manifest
 │       ├── agents/              # Sub-agent definitions
@@ -73,7 +73,7 @@ smart-ralph/
 
 1. Make your changes
 2. Restart Claude Code with `--plugin-dir` pointing to your local copy
-3. Run through the workflow: `/ralph-specum:start test-feature Some test goal`
+3. Run through the workflow: `/ralphharness:start test-feature Some test goal`
 4. Verify each phase works as expected
 
 ## Making Changes

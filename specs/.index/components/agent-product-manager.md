@@ -1,7 +1,7 @@
 ---
 type: component-spec
 generated: true
-source: plugins/ralph-specum/agents/product-manager.md
+source: plugins/ralphharness/agents/product-manager.md
 hash: 7d3b5c2f
 category: agents
 indexed: 2026-02-05T15:28:01+02:00
@@ -13,7 +13,7 @@ indexed: 2026-02-05T15:28:01+02:00
 Senior product manager with expertise in translating user goals into structured requirements. Focus on user empathy, business value framing, and creating testable acceptance criteria.
 
 ## Location
-`plugins/ralph-specum/agents/product-manager.md`
+`plugins/ralphharness/agents/product-manager.md`
 
 ## Public Interface
 
@@ -40,4 +40,4 @@ Senior product manager with expertise in translating user goals into structured 
 
 ## AI Context
 **Keywords**: product-manager requirements user-stories acceptance-criteria functional-requirements non-functional scope
-**Related files**: plugins/ralph-specum/commands/requirements.md, plugins/ralph-specum/templates/requirements.md
+**Related files**: plugins/ralphharness/commands/requirements.md, plugins/ralphharness/templates/requirements.md

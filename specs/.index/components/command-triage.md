@@ -1,7 +1,7 @@
 ---
 type: component-spec
 generated: true
-source: plugins/ralph-specum/commands/triage.md
+source: plugins/ralphharness/commands/triage.md
 hash: bf372016
 category: commands
 indexed: 2026-03-03T00:00:00Z
@@ -13,12 +13,12 @@ indexed: 2026-03-03T00:00:00Z
 Decompose a large feature into multiple dependency-aware specs (epic triage). Coordinator that delegates exploration research, brainstorming/decomposition, and validation to subagents.
 
 ## Location
-`plugins/ralph-specum/commands/triage.md`
+`plugins/ralphharness/commands/triage.md`
 
 ## Public Interface
 
 ### Exports
-- `/ralph-specum:triage` slash command
+- `/ralphharness:triage` slash command
 
 ### Methods
 
@@ -43,4 +43,4 @@ Decompose a large feature into multiple dependency-aware specs (epic triage). Co
 
 ## AI Context
 **Keywords**: triage epic decomposition coordinator dependency-graph interface-contracts parallel-research validation spec-files github-issues
-**Related files**: plugins/ralph-specum/agents/triage-analyst.md, plugins/ralph-specum/references/triage-flow.md, plugins/ralph-specum/references/branch-management.md
+**Related files**: plugins/ralphharness/agents/triage-analyst.md, plugins/ralphharness/references/triage-flow.md, plugins/ralphharness/references/branch-management.md

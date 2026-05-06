@@ -291,7 +291,7 @@ load 'helpers/setup.bash'
     [ "$status" -eq 0 ]
     assert_json_block
     assert_json_reason_contains "Continue spec"
-    assert_json_system_message_contains "Ralph-specum"
+    assert_json_system_message_contains "RalphHarness"
 }
 
 @test "max iterations error exits cleanly with stderr message" {
@@ -332,7 +332,7 @@ load 'helpers/setup.bash'
     local stderr_output
     stderr_output=$(run_stop_watcher 2>&1 >/dev/null || true)
 
-    [[ "$stderr_output" == *"[ralph-specum]"* ]]
+    [[ "$stderr_output" == *"[ralphharness]"* ]]
     [[ "$stderr_output" == *"Task: 3/5"* ]]
     [[ "$stderr_output" == *"Attempt: 3"* ]]
 }

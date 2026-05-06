@@ -47,10 +47,10 @@ Smart Ralph is a Claude Code plugin for spec-driven development. It transforms f
 
 ```bash
 # Test plugin locally
-claude --plugin-dir ./plugins/ralph-specum
+claude --plugin-dir ./plugins/ralphharness
 
 # Test the workflow
-/ralph-specum:start test-feature Some test goal
+/ralphharness:start test-feature Some test goal
 ```
 
 ### Task Granularity
@@ -58,9 +58,9 @@ claude --plugin-dir ./plugins/ralph-specum
 Control task count with `--tasks-size`:
 
 ```bash
-/ralph-specum:tasks --tasks-size coarse    # 10-20 larger tasks, no intermediate [VERIFY]
-/ralph-specum:tasks --tasks-size fine       # 40-60+ small tasks with [VERIFY] checkpoints (default)
-/ralph-specum:start my-spec Goal --tasks-size coarse  # Set early, carries through
+/ralphharness:tasks --tasks-size coarse    # 10-20 larger tasks, no intermediate [VERIFY]
+/ralphharness:tasks --tasks-size fine       # 40-60+ small tasks with [VERIFY] checkpoints (default)
+/ralphharness:start my-spec Goal --tasks-size coarse  # Set early, carries through
 ```
 
 Fine is the default. Coarse reduces token consumption ~3-5x for sequential execution.
@@ -97,7 +97,7 @@ When creating or modifying plugin components, **ALWAYS** use the `plugin-dev` sk
 ### Plugin Structure
 
 ```
-plugins/ralph-specum/
+plugins/ralphharness/
 ├── .claude-plugin/plugin.json   # Plugin manifest
 ├── agents/                      # Sub-agent definitions (markdown)
 ├── commands/                    # Slash command definitions (markdown)
@@ -108,8 +108,8 @@ plugins/ralph-specum/
 
 ### Execution Flow
 
-1. **Spec Phases**: Each command (`/ralph-specum:research`, `:requirements`, `:design`, `:tasks`) invokes a specialized agent to generate corresponding markdown in `./specs/<spec-name>/`
-2. **Execution Loop**: During execution (`/ralph-specum:implement`), the stop-hook reads `.ralph-state.json`, delegates tasks to spec-executor via Task tool, and outputs `ALL_TASKS_COMPLETE` when done. The loop is self-contained (no external plugin required).
+1. **Spec Phases**: Each command (`/ralphharness:research`, `:requirements`, `:design`, `:tasks`) invokes a specialized agent to generate corresponding markdown in `./specs/<spec-name>/`
+2. **Execution Loop**: During execution (`/ralphharness:implement`), the stop-hook reads `.ralph-state.json`, delegates tasks to spec-executor via Task tool, and outputs `ALL_TASKS_COMPLETE` when done. The loop is self-contained (no external plugin required).
 3. **Fresh Context**: Each task runs in isolation via Task tool. Progress persists in `.progress.md` and task checkmarks in `tasks.md`
 
 ### State Files
@@ -137,8 +137,8 @@ specs/
 ```
 
 **Entry points:**
-- `/ralph-specum:triage <goal>` -- create or resume an epic
-- `/ralph-specum:start` -- detects active epics, suggests next unblocked spec
+- `/ralphharness:triage <goal>` -- create or resume an epic
+- `/ralphharness:start` -- detects active epics, suggests next unblocked spec
 
 **Flow:** Explore (research) -> Brainstorm (triage-analyst) -> Validate (research) -> Finalize (output selection)
 
@@ -169,7 +169,7 @@ Spec-executor must output `TASK_COMPLETE` for coordinator to advance. Coordinato
 
 ### Dependencies
 
-Ralph Specum v3.0.0+ is self-contained with no external plugin dependencies. The execution loop is handled by the stop-hook.
+RalphHarness v3.0.0+ is self-contained with no external plugin dependencies. The execution loop is handled by the stop-hook.
 
 ## Key Files
 

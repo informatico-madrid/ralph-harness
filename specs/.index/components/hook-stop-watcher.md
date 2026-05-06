@@ -1,7 +1,7 @@
 ---
 type: component-spec
 generated: true
-source: plugins/ralph-specum/hooks/scripts/stop-watcher.sh
+source: plugins/ralphharness/hooks/scripts/stop-watcher.sh
 hash: 03374bb5
 category: hooks
 indexed: 2026-03-03T00:00:00Z
@@ -13,7 +13,7 @@ indexed: 2026-03-03T00:00:00Z
 Loop controller for Ralph Specum task execution continuation. Reads execution state, detects ALL_TASKS_COMPLETE in transcript, handles quick mode guard, validates task completion against tasks.md, outputs block JSON to continue execution when tasks remain, and cleans up orphaned temp files.
 
 ## Location
-`plugins/ralph-specum/hooks/scripts/stop-watcher.sh`
+`plugins/ralphharness/hooks/scripts/stop-watcher.sh`
 
 ## Public Interface
 
@@ -25,7 +25,7 @@ Loop controller for Ralph Specum task execution continuation. Reads execution st
 | Method | Parameters | Description |
 |--------|------------|-------------|
 <!-- markdownlint-disable MD055 MD056 -->
-| Check settings | ralph-specum.local.md | Skip if plugin disabled |
+| Check settings | ralphharness.local.md | Skip if plugin disabled |
 | Resolve current spec | path-resolver.sh, .current-spec | Find active spec directory with multi-directory support |
 | Race condition guard | stat, mtime | Wait if state file modified in last 2 seconds |
 | Transcript completion check | transcript_path, ALL_TASKS_COMPLETE | Detect completion signal in transcript (500-line + 20-line fallback) |
@@ -53,4 +53,4 @@ Loop controller for Ralph Specum task execution continuation. Reads execution st
 
 ## AI Context
 **Keywords**: stop-watcher hook loop-controller execution continuation block-json quick-mode-guard transcript-detection parallel-group epic-state completion-verification race-condition cleanup
-**Related files**: plugins/ralph-specum/commands/implement.md, plugins/ralph-specum/commands/cancel.md, plugins/ralph-specum/hooks/scripts/path-resolver.sh
+**Related files**: plugins/ralphharness/commands/implement.md, plugins/ralphharness/commands/cancel.md, plugins/ralphharness/hooks/scripts/path-resolver.sh

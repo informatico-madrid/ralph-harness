@@ -1,7 +1,7 @@
 ---
 type: component-spec
 generated: true
-source: plugins/ralph-specum/agents/spec-executor.md
+source: plugins/ralphharness/agents/spec-executor.md
 hash: 1fdc67dd
 category: agents
 indexed: 2026-02-05T15:28:01+02:00
@@ -13,7 +13,7 @@ indexed: 2026-02-05T15:28:01+02:00
 Autonomous execution agent that implements ONE task from a spec. Executes tasks exactly as specified, verifies completion, commits changes, updates progress, and signals TASK_COMPLETE.
 
 ## Location
-`plugins/ralph-specum/agents/spec-executor.md`
+`plugins/ralphharness/agents/spec-executor.md`
 
 ## Public Interface
 
@@ -40,4 +40,4 @@ Autonomous execution agent that implements ONE task from a spec. Executes tasks 
 
 ## AI Context
 **Keywords**: spec-executor agent task autonomous implementation verification commit TASK_COMPLETE parallel execution flock
-**Related files**: plugins/ralph-specum/agents/qa-engineer.md, plugins/ralph-specum/commands/implement.md
+**Related files**: plugins/ralphharness/agents/qa-engineer.md, plugins/ralphharness/commands/implement.md

@@ -45,4 +45,4 @@ Generated 6 repositories overnight; completed a $50k contract project for $297 i
 
 ## AI Context
 **Keywords**: ralph-wiggum ralph-loop iteration autonomous bash-loop completion-promise self-correction parallel-development
-**Related components**: plugins/ralph-specum/commands/implement.md
+**Related components**: plugins/ralphharness/commands/implement.md

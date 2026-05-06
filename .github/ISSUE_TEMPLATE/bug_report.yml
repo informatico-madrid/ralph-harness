@@ -13,7 +13,7 @@ body:
     attributes:
       label: What happened?
       description: Clear description of the bug
-      placeholder: When I run /ralph-specum:start, it...
+      placeholder: When I run /ralphharness:start, it...
     validations:
       required: true
 
@@ -32,8 +32,8 @@ body:
       label: Steps to reproduce
       description: Minimal steps to reproduce the issue
       placeholder: |
-        1. Run `/ralph-specum:new test-feature`
-        2. Run `/ralph-specum:requirements`
+        1. Run `/ralphharness:new test-feature`
+        2. Run `/ralphharness:requirements`
         3. See error...
     validations:
       required: true

@@ -2,7 +2,7 @@
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
-**Goal:** Replace fixed question pool interviews with adaptive brainstorming-style dialogue across all 4 Ralph Specum phases.
+**Goal:** Replace fixed question pool interviews with adaptive brainstorming-style dialogue across all 4 RalphHarness phases.
 
 **Architecture:** Rewrite the `interview-framework` skill from a fixed-pool loop to a 3-phase brainstorming algorithm (Understand → Propose Approaches → Confirm & Store). Update each phase command's Interview section to provide "exploration territories" instead of question pool tables.
 

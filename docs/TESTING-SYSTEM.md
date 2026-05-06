@@ -1,4 +1,4 @@
-# Ralph Specum — Análisis Exhaustivo del Sistema de Testing
+# RalphHarness — Análisis Exhaustivo del Sistema de Testing
 
 ## Índice
 
@@ -8,7 +8,7 @@
 4. [Cómo se Corrige un Test que Falla](#4-cómo-se-corrige-un-test-que-falla)
 5. [El Entorno de Tests: Quién lo Prepara y Cómo](#5-el-entorno-de-tests-quién-lo-prepara-y-cómo)
 6. [Cómo se Decide el Tipo de Proyecto](#6-cómo-se-decide-el-tipo-de-proyecto)
-7. [El Chain E2E:一步步步](#7-el-chain-e2e-paso-a-paso)
+7. [El Chain E2E: Paso a Paso](#7-el-chain-e2e-paso-a-paso)
 8. [Gaps y Limitaciones del Sistema](#8-gaps-y-limitaciones-del-sistema)
 9. [Veredicto: ¿Está Preparado para Testing Autónimo?](#9-veredicto-está-preparado-para-testing-autónomo)
 
@@ -617,4 +617,4 @@ El gap más significativo no es de autonomía sino de **calidad de la Test Strat
 
 ---
 
-*Generado 2026-04-04 — análisis profundo del sistema de testing de Ralph Specum*
+*Generado 2026-04-04 — análisis profundo del sistema de testing de RalphHarness*

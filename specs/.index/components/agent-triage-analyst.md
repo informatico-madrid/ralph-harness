@@ -1,7 +1,7 @@
 ---
 type: component-spec
 generated: true
-source: plugins/ralph-specum/agents/triage-analyst.md
+source: plugins/ralphharness/agents/triage-analyst.md
 hash: 12b69c70
 category: agents
 indexed: 2026-03-03T00:00:00Z
@@ -13,7 +13,7 @@ indexed: 2026-03-03T00:00:00Z
 Senior engineering manager and product strategist that decomposes large features into independently deliverable specs with clear dependency graphs and interface contracts. Thinks in vertical slices (user-value driven), not horizontal layers.
 
 ## Location
-`plugins/ralph-specum/agents/triage-analyst.md`
+`plugins/ralphharness/agents/triage-analyst.md`
 
 ## Public Interface
 
@@ -40,4 +40,4 @@ Senior engineering manager and product strategist that decomposes large features
 
 ## AI Context
 **Keywords**: triage-analyst epic decomposition vertical-slice dependency-graph interface-contracts user-journey spec-boundary
-**Related files**: plugins/ralph-specum/commands/triage.md, plugins/ralph-specum/references/triage-flow.md
+**Related files**: plugins/ralphharness/commands/triage.md, plugins/ralphharness/references/triage-flow.md

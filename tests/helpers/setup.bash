@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
-# Bats-core test helpers for ralph-specum
+# Bats-core test helpers for ralphharness
 # Common setup/teardown functions and fixture helpers
 
 # Path to the stop-watcher script under test
 # BATS_TEST_DIRNAME is the directory containing the .bats file (tests/)
-STOP_WATCHER_SCRIPT="${BATS_TEST_DIRNAME}/../plugins/ralph-specum/hooks/scripts/stop-watcher.sh"
-export PATH_RESOLVER_SCRIPT="${BATS_TEST_DIRNAME}/../plugins/ralph-specum/hooks/scripts/path-resolver.sh"
+STOP_WATCHER_SCRIPT="${BATS_TEST_DIRNAME}/../plugins/ralphharness/hooks/scripts/stop-watcher.sh"
+export PATH_RESOLVER_SCRIPT="${BATS_TEST_DIRNAME}/../plugins/ralphharness/hooks/scripts/path-resolver.sh"
 
 # Path to update-spec-index.sh (for mocking in tests)
-INDEX_SCRIPT="${BATS_TEST_DIRNAME}/../plugins/ralph-specum/hooks/scripts/update-spec-index.sh"
+INDEX_SCRIPT="${BATS_TEST_DIRNAME}/../plugins/ralphharness/hooks/scripts/update-spec-index.sh"
 INDEX_SCRIPT_BACKUP=""
 
 # Test workspace directory (created fresh for each test)
@@ -120,7 +120,7 @@ EOF
 create_settings_file() {
     local enabled="${1:-true}"
 
-    cat > "$TEST_WORKSPACE/.claude/ralph-specum.local.md" <<EOF
+    cat > "$TEST_WORKSPACE/.claude/ralphharness.local.md" <<EOF
 ---
 enabled: $enabled
 ---
@@ -164,7 +164,7 @@ assert_stderr_contains() {
 
 # Extract JSON portion from output (filters out stderr lines mixed in by bats run)
 _extract_json_from_output() {
-    echo "$output" | grep -v '^\[ralph-specum\]' | jq -s 'last'
+    echo "$output" | grep -v '^\[ralphharness\]' | jq -s 'last'
 }
 
 # Assert output is valid JSON with decision="block"

@@ -5,11 +5,11 @@ repo_root() {
 }
 
 merge_state_script() {
-    echo "$(repo_root)/plugins/ralph-specum-codex/scripts/merge_state.py"
+    echo "$(repo_root)/plugins/ralphharness-codex/scripts/merge_state.py"
 }
 
 resolve_spec_paths_script() {
-    echo "$(repo_root)/plugins/ralph-specum-codex/scripts/resolve_spec_paths.py"
+    echo "$(repo_root)/plugins/ralphharness-codex/scripts/resolve_spec_paths.py"
 }
 
 json_query() {
@@ -95,7 +95,7 @@ teardown() {
     script="$(resolve_spec_paths_script)"
 
     mkdir -p "$TEST_REPO/packages/specs"
-    write_crlf_file "$TEST_REPO/.claude/ralph-specum.local.md" <<'EOF'
+    write_crlf_file "$TEST_REPO/.claude/ralphharness.local.md" <<'EOF'
 ---
 specs_dirs:
   - "./missing-specs"
@@ -124,7 +124,7 @@ EOF
     script="$(resolve_spec_paths_script)"
 
     mkdir -p "$TEST_REPO/specs"
-    cat > "$TEST_REPO/.claude/ralph-specum.local.md" <<'EOF'
+    cat > "$TEST_REPO/.claude/ralphharness.local.md" <<'EOF'
 ---
 specs_dirs:
   - "./specs"
@@ -150,7 +150,7 @@ EOF
     script="$(resolve_spec_paths_script)"
 
     mkdir -p "$TEST_REPO/specs"
-    cat > "$TEST_REPO/.claude/ralph-specum.local.md" <<'EOF'
+    cat > "$TEST_REPO/.claude/ralphharness.local.md" <<'EOF'
 ---
 specs_dirs:
   - "./specs"
@@ -174,7 +174,7 @@ EOF
 
     mkdir -p "$TEST_REPO/good-specs/demo"
     : > "$TEST_REPO/not-a-dir"
-    cat > "$TEST_REPO/.claude/ralph-specum.local.md" <<'EOF'
+    cat > "$TEST_REPO/.claude/ralphharness.local.md" <<'EOF'
 ---
 specs_dirs:
   - "./missing-specs"
@@ -198,7 +198,7 @@ EOF
     script="$(resolve_spec_paths_script)"
 
     mkdir -p "$TEST_REPO/packages/specs/demo"
-    cat > "$TEST_REPO/.claude/ralph-specum.local.md" <<'EOF'
+    cat > "$TEST_REPO/.claude/ralphharness.local.md" <<'EOF'
 ---
 specs_dirs:
   - "./missing-specs"
@@ -222,7 +222,7 @@ EOF
     script="$(resolve_spec_paths_script)"
 
     : > "$TEST_REPO/not-a-dir"
-    cat > "$TEST_REPO/.claude/ralph-specum.local.md" <<'EOF'
+    cat > "$TEST_REPO/.claude/ralphharness.local.md" <<'EOF'
 ---
 specs_dirs:
   - "./missing-specs"

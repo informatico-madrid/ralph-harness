@@ -1,14 +1,14 @@
 {
-  "name": "smart-ralph",
+  "name": "ralphharness",
   "interface": {
-    "displayName": "Smart Ralph Plugins"
+    "displayName": "RalphHarness Plugins"
   },
   "plugins": [
     {
-      "name": "ralph-specum",
+      "name": "ralphharness",
       "source": {
         "source": "local",
-        "path": "./plugins/ralph-specum-codex"
+        "path": "./plugins/ralphharness-codex"
       },
       "policy": {
         "installation": "AVAILABLE"

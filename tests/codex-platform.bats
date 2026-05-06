@@ -5,45 +5,45 @@ repo_root() {
 }
 
 plugin_root() {
-    echo "$(repo_root)/plugins/ralph-specum-codex"
+    echo "$(repo_root)/plugins/ralphharness-codex"
 }
 
 all_codex_skills() {
     cat <<'EOF'
-ralph-specum
-ralph-specum-start
-ralph-specum-triage
-ralph-specum-research
-ralph-specum-requirements
-ralph-specum-design
-ralph-specum-tasks
-ralph-specum-implement
-ralph-specum-status
-ralph-specum-switch
-ralph-specum-cancel
-ralph-specum-index
-ralph-specum-refactor
-ralph-specum-feedback
-ralph-specum-help
+ralphharness
+ralphharness-start
+ralphharness-triage
+ralphharness-research
+ralphharness-requirements
+ralphharness-design
+ralphharness-tasks
+ralphharness-implement
+ralphharness-status
+ralphharness-switch
+ralphharness-cancel
+ralphharness-index
+ralphharness-refactor
+ralphharness-feedback
+ralphharness-help
 EOF
 }
 
 helper_codex_skills() {
     cat <<'EOF'
-ralph-specum-start
-ralph-specum-triage
-ralph-specum-research
-ralph-specum-requirements
-ralph-specum-design
-ralph-specum-tasks
-ralph-specum-implement
-ralph-specum-status
-ralph-specum-switch
-ralph-specum-cancel
-ralph-specum-index
-ralph-specum-refactor
-ralph-specum-feedback
-ralph-specum-help
+ralphharness-start
+ralphharness-triage
+ralphharness-research
+ralphharness-requirements
+ralphharness-design
+ralphharness-tasks
+ralphharness-implement
+ralphharness-status
+ralphharness-switch
+ralphharness-cancel
+ralphharness-index
+ralphharness-refactor
+ralphharness-feedback
+ralphharness-help
 EOF
 }
 
@@ -76,7 +76,7 @@ PY
     fi
 
     if [ -d "$root/.agents/skills" ]; then
-        run find "$root/.agents/skills" -maxdepth 1 -mindepth 1 -type d \( -name 'ralph-specum' -o -name 'ralph-specum-*' \)
+        run find "$root/.agents/skills" -maxdepth 1 -mindepth 1 -type d \( -name 'ralphharness' -o -name 'ralphharness-*' \)
         [ "$status" -eq 0 ]
         [ -z "$output" ]
     fi
@@ -97,7 +97,7 @@ PY
     root="$(repo_root)"
 
     assert_python '
-for skill in (ROOT / "plugins/ralph-specum-codex/skills").glob("ralph-specum*"):
+for skill in (ROOT / "plugins/ralphharness-codex/skills").glob("ralphharness*"):
     if not skill.is_dir():
         continue
     text = (skill / "agents/openai.yaml").read_text()
@@ -119,7 +119,7 @@ for skill in (ROOT / "plugins/ralph-specum-codex/skills").glob("ralph-specum*"):
     [ -f "$proot/scripts/count_tasks.py" ]
     [ -f "$proot/scripts/resolve_spec_paths.py" ]
     [ -f "$proot/assets/bootstrap/AGENTS.md" ]
-    [ -f "$proot/assets/bootstrap/ralph-specum.local.md" ]
+    [ -f "$proot/assets/bootstrap/ralphharness.local.md" ]
 }
 
 @test "codex platform: helper skills stay self-contained" {
@@ -132,10 +132,10 @@ for skill in (ROOT / "plugins/ralph-specum-codex/skills").glob("ralph-specum*"):
 
         [[ "$skill_text" != *"../"* ]]
         [[ "$skill_text" != *"/home/"* ]]
-        [[ "$skill_text" != *"plugins/ralph-specum-codex/skills/ralph-specum/"* ]]
+        [[ "$skill_text" != *"plugins/ralphharness-codex/skills/ralphharness/"* ]]
         [[ "$metadata_text" != *"../"* ]]
         [[ "$metadata_text" != *"/home/"* ]]
-        [[ "$metadata_text" != *"plugins/ralph-specum-codex/skills/ralph-specum/"* ]]
+        [[ "$metadata_text" != *"plugins/ralphharness-codex/skills/ralphharness/"* ]]
     done < <(helper_codex_skills)
 }
 
@@ -146,7 +146,7 @@ for skill in (ROOT / "plugins/ralph-specum-codex/skills").glob("ralph-specum*"):
     readme_text="$(<"$root/README.md")"
     package_text="$(<"$(plugin_root)/README.md")"
 
-    [[ "$readme_text" == *"ralph-specum-triage"* ]]
+    [[ "$readme_text" == *"ralphharness-triage"* ]]
     [[ "$package_text" != *"repo-root AGENTS.md"* ]]
     [[ "$package_text" == *"Installation"* ]]
 }
@@ -166,7 +166,7 @@ for skill in (ROOT / "plugins/ralph-specum-codex/skills").glob("ralph-specum*"):
     done < <(all_codex_skills)
 
     [ -f "$proot/assets/bootstrap/AGENTS.md" ]
-    [ -f "$proot/assets/bootstrap/ralph-specum.local.md" ]
+    [ -f "$proot/assets/bootstrap/ralphharness.local.md" ]
 }
 
 @test "codex platform: skill frontmatter passes quick validation when available" {
@@ -188,11 +188,11 @@ for skill in (ROOT / "plugins/ralph-specum-codex/skills").glob("ralph-specum*"):
 
     assert_python '
 plugin_commands = sorted(
-    p.stem for p in (ROOT / "plugins/ralph-specum/commands").glob("*.md")
+    p.stem for p in (ROOT / "plugins/ralphharness/commands").glob("*.md")
 )
 codex_helpers = sorted(
-    p.name[len("ralph-specum-"):]
-    for p in (ROOT / "plugins/ralph-specum-codex/skills").glob("ralph-specum-*")
+    p.name[len("ralphharness-"):]
+    for p in (ROOT / "plugins/ralphharness-codex/skills").glob("ralphharness-*")
     if p.is_dir()
 )
 
@@ -210,11 +210,11 @@ assert codex_helpers == expected, {
 
     assert_python '
 skills = sorted(
-    p.name for p in (ROOT / "plugins/ralph-specum-codex/skills").glob("ralph-specum*")
+    p.name for p in (ROOT / "plugins/ralphharness-codex/skills").glob("ralphharness*")
     if p.is_dir()
 )
 readme = (ROOT / "README.md").read_text()
-package = (ROOT / "plugins/ralph-specum-codex/README.md").read_text()
+package = (ROOT / "plugins/ralphharness-codex/README.md").read_text()
 
 for skill in skills:
     assert package.count(skill) >= 1, skill
@@ -226,7 +226,7 @@ for skill in skills:
     root="$(repo_root)"
 
     assert_python '
-primary = (ROOT / "plugins/ralph-specum-codex/skills/ralph-specum/SKILL.md").read_text()
+primary = (ROOT / "plugins/ralphharness-codex/skills/ralphharness/SKILL.md").read_text()
 required_tokens = {
     "start": "Start, new, resume, quick mode",
     "triage": "| Triage |",
@@ -255,19 +255,19 @@ for command, token in required_tokens.items():
 
     assert_python '
 expected = {
-    "ralph-specum": ["approve current artifact", "request changes", "continue to <named next step>"],
-    "ralph-specum-start": ["wait for explicit direction", "research"],
-    "ralph-specum-research": ["approve current artifact", "continue to requirements"],
-    "ralph-specum-requirements": ["approve current artifact", "continue to design"],
-    "ralph-specum-design": ["approve current artifact", "continue to tasks"],
-    "ralph-specum-tasks": ["approve current artifact", "continue to implementation"],
-    "ralph-specum-cancel": ["whether anything was removed", "exactly what if so"],
-    "ralph-specum-triage": ["approve current artifact", "continue to the next spec"],
-    "ralph-specum-refactor": ["approve current artifact", "continue to implementation"],
+    "ralphharness": ["approve current artifact", "request changes", "continue to <named next step>"],
+    "ralphharness-start": ["wait for explicit direction", "research"],
+    "ralphharness-research": ["approve current artifact", "continue to requirements"],
+    "ralphharness-requirements": ["approve current artifact", "continue to design"],
+    "ralphharness-design": ["approve current artifact", "continue to tasks"],
+    "ralphharness-tasks": ["approve current artifact", "continue to implementation"],
+    "ralphharness-cancel": ["whether anything was removed", "exactly what if so"],
+    "ralphharness-triage": ["approve current artifact", "continue to the next spec"],
+    "ralphharness-refactor": ["approve current artifact", "continue to implementation"],
 }
 
 for skill, tokens in expected.items():
-    text = (ROOT / "plugins/ralph-specum-codex/skills" / skill / "agents/openai.yaml").read_text()
+    text = (ROOT / "plugins/ralphharness-codex/skills" / skill / "agents/openai.yaml").read_text()
     for token in tokens:
         assert token in text, {"skill": skill, "token": token}
 ' "$root"
@@ -292,11 +292,11 @@ pairs = {
     "index": ["specs/.index", "dry run", "deterministic"],
     "refactor": ["requirements.md", "design.md", "tasks.md", "[VERIFY]"],
     "feedback": ["GitHub issue", "Codex package", "Claude plugin"],
-    "help": ["$ralph-specum-triage", "Large effort flow", ".current-epic"],
+    "help": ["$ralphharness-triage", "Large effort flow", ".current-epic"],
 }
 
 for name, tokens in pairs.items():
-    text = (ROOT / f"plugins/ralph-specum-codex/skills/ralph-specum-{name}/SKILL.md").read_text()
+    text = (ROOT / f"plugins/ralphharness-codex/skills/ralphharness-{name}/SKILL.md").read_text()
     for token in tokens:
         assert token in text, {"skill": name, "token": token}
 ' "$root"
@@ -317,7 +317,7 @@ expected = {
 }
 
 for name, tokens in expected.items():
-    text = (ROOT / f"plugins/ralph-specum-codex/skills/ralph-specum-{name}/SKILL.md").read_text()
+    text = (ROOT / f"plugins/ralphharness-codex/skills/ralphharness-{name}/SKILL.md").read_text()
     for token in tokens:
         assert token in text, {"skill": name, "token": token}
 ' "$root"
@@ -329,16 +329,16 @@ for name, tokens in expected.items():
     proot="$(plugin_root)"
 
     assert_python '
-bootstrap = (ROOT / "plugins/ralph-specum-codex/assets/bootstrap/AGENTS.md").read_text()
-bootstrap_local = (ROOT / "plugins/ralph-specum-codex/assets/bootstrap/ralph-specum.local.md").read_text()
-primary = (ROOT / "plugins/ralph-specum-codex/skills/ralph-specum/SKILL.md").read_text()
-workflow = (ROOT / "plugins/ralph-specum-codex/references/workflow.md").read_text()
-path_resolution = (ROOT / "plugins/ralph-specum-codex/references/path-resolution.md").read_text()
-state_contract = (ROOT / "plugins/ralph-specum-codex/references/state-contract.md").read_text()
+bootstrap = (ROOT / "plugins/ralphharness-codex/assets/bootstrap/AGENTS.md").read_text()
+bootstrap_local = (ROOT / "plugins/ralphharness-codex/assets/bootstrap/ralphharness.local.md").read_text()
+primary = (ROOT / "plugins/ralphharness-codex/skills/ralphharness/SKILL.md").read_text()
+workflow = (ROOT / "plugins/ralphharness-codex/references/workflow.md").read_text()
+path_resolution = (ROOT / "plugins/ralphharness-codex/references/path-resolution.md").read_text()
+state_contract = (ROOT / "plugins/ralphharness-codex/references/state-contract.md").read_text()
 
 assert "create, resume, or run in quick mode" in bootstrap
 assert "`quick_mode_default` is removed and ignored" in bootstrap_local
-assert "Use only when the user explicitly invokes `$ralph-specum`" in primary
+assert "Use only when the user explicitly invokes `$ralphharness`" in primary
 assert "## Response Handoff" in primary
 assert "epic.md" not in primary.split("## Current Workflow Expectations")[0]
 assert "epic.md" not in workflow.split("Treat `continue to <named next step>` as approval of the current artifact.")[0]
@@ -369,8 +369,8 @@ template_names = [
 ]
 
 for name in template_names:
-    codex = headings(ROOT / "plugins/ralph-specum-codex/templates" / name)
-    plugin = headings(ROOT / "plugins/ralph-specum/templates" / name)
+    codex = headings(ROOT / "plugins/ralphharness-codex/templates" / name)
+    plugin = headings(ROOT / "plugins/ralphharness/templates" / name)
     missing = [
         heading for heading in codex
         if not any(other.startswith(heading) for other in plugin)
@@ -388,8 +388,8 @@ must_match_exactly = [
 ]
 
 for name in must_match_exactly:
-    codex = headings(ROOT / "plugins/ralph-specum-codex/templates" / name)
-    plugin = headings(ROOT / "plugins/ralph-specum/templates" / name)
+    codex = headings(ROOT / "plugins/ralphharness-codex/templates" / name)
+    plugin = headings(ROOT / "plugins/ralphharness/templates" / name)
     assert codex == plugin, {"template": name, "codex": codex, "plugin": plugin}
 ' "$root"
 }
@@ -401,14 +401,14 @@ for name in must_match_exactly:
     assert_python '
 import re
 
-bootstrap = (ROOT / "plugins/ralph-specum-codex/assets/bootstrap/AGENTS.md").read_text()
-settings = (ROOT / "plugins/ralph-specum-codex/assets/bootstrap/ralph-specum.local.md").read_text()
-count_tasks = (ROOT / "plugins/ralph-specum-codex/scripts/count_tasks.py").read_text()
-merge_state = (ROOT / "plugins/ralph-specum-codex/scripts/merge_state.py").read_text()
-resolve_paths = (ROOT / "plugins/ralph-specum-codex/scripts/resolve_spec_paths.py").read_text()
+bootstrap = (ROOT / "plugins/ralphharness-codex/assets/bootstrap/AGENTS.md").read_text()
+settings = (ROOT / "plugins/ralphharness-codex/assets/bootstrap/ralphharness.local.md").read_text()
+count_tasks = (ROOT / "plugins/ralphharness-codex/scripts/count_tasks.py").read_text()
+merge_state = (ROOT / "plugins/ralphharness-codex/scripts/merge_state.py").read_text()
+resolve_paths = (ROOT / "plugins/ralphharness-codex/scripts/resolve_spec_paths.py").read_text()
 frontmatter = settings.split("---", 2)[1]
 
-assert "$ralph-specum-start" in bootstrap
+assert "$ralphharness-start" in bootstrap
 assert ".current-spec" in bootstrap
 assert "specs_dirs" in settings
 assert re.search(r"(?m)^quick_mode_default\\s*:", frontmatter) is None

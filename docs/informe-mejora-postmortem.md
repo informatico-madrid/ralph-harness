@@ -1,4 +1,4 @@
-# Smart Ralph — Post-mortem y Análisis de Mejoras
+# RalphHarness — Post-mortem y Análisis de Mejoras
 **Proyecto**: `ha-ev-trip-planner` · refactor `rfactory-clean-architecture`
 **Revisores**: Perplexity (arquitectura HA), Qwen (typing, spec hygiene), JOAO (producto)
 **Fecha**: Abril 2026
@@ -7,7 +7,7 @@
 
 ## 1. Resumen Ejecutivo
 
-Durante el sprint de refactorización del integración `ha-ev-trip-planner`, Smart Ralph produjo spec-documents (design.md, requirements.md, tasks.md) que contenían **cinco categorías de errores** que requirieron corrección humana antes de la implementación. Ninguno era un error de lógica de negocio — todos eran errores de **precisión técnica en la especificación**. Este informe analiza cada error, traza su causa raíz en la arquitectura de prompts y herramientas de Smart Ralph, y propone mejoras concretas y priorizadas.
+Durante el sprint de refactorización de la integración `ha-ev-trip-planner`, RalphHarness produjo spec-documents (design.md, requirements.md, tasks.md) que contenían **cinco categorías de errores** que requirieron corrección humana antes de la implementación. Ninguno era un error de lógica de negocio — todos eran errores de **precisión técnica en la especificación**. Este informe analiza cada error, traza su causa raíz en la arquitectura de prompts y herramientas de RalphHarness, y propone mejoras concretas y priorizadas.
 
 ***
 
@@ -89,13 +89,13 @@ A continuación se listan todos los problemas que requirieron corrección humana
 
 ***
 
-## 4. Análisis Sistémico: Qué Revela Esto Sobre Smart Ralph
+## 4. Análisis Sistémico: Qué Revela Esto Sobre RalphHarness
 
-Los cinco errores anteriores no son incidentes aislados. Revelan **tres debilidades estructurales** en el diseño actual de Smart Ralph.
+Los cinco errores anteriores no son incidentes aislados. Revelan **tres debilidades estructurales** en el diseño actual de RalphHarness.
 
 ### 4.1 Debilidad: Los agentes producen pero no revisan
 
-El flujo actual de Smart Ralph es **lineal y unidireccional**:
+El flujo actual de RalphHarness es **lineal y unidireccional**:
 
 ```
 research-analyst → product-manager → architect-reviewer → task-planner → spec-executor
@@ -130,7 +130,7 @@ En el caso de E4, el architect-reviewer hizo una afirmación sobre el modelo de 
 
 ## 5. Comparativa: Cómo lo Haría un Arquitecto Senior Humano
 
-Un arquitecto senior humano que revisa una spec antes de enviarla al equipo hace exactamente lo que Smart Ralph no hace:
+Un arquitecto senior humano que revisa una spec antes de enviarla al equipo hace exactamente lo que RalphHarness no hace:
 
 | Lo que hace un humano | Lo que hace Ralph actualmente | Gap |
 |----------------------|------------------------------|-----|
@@ -271,9 +271,9 @@ Before implementing any task that involves `Callable`, `Awaitable`, `Coroutine` 
 
 #### M5 — Introducir un agente `spec-reviewer` post-architect (ya existe en el repo, pero ¿se usa?)
 
-**Observación**: El repositorio de Smart Ralph ya tiene un archivo `agents/spec-reviewer.md` en la lista de agentes. Sin embargo, el flujo actual (`research → requirements → design → tasks → implement`) no parece invocar al `spec-reviewer` de forma automática después del `architect-reviewer`.
+**Observación**: El repositorio de RalphHarness ya tiene un archivo `agents/spec-reviewer.md` en la lista de agentes. Sin embargo, el flujo actual (`research → requirements → design → tasks → implement`) no parece invocar al `spec-reviewer` de forma automática después del `architect-reviewer`.
 
-**Propuesta**: Hacer que el comando `/ralph-specum:design` invoque al `spec-reviewer` automáticamente al final, pasándole el design.md recién generado con el mandato de buscar:
+**Propuesta**: Hacer que el comando `/ralphharness:design` invoque al `spec-reviewer` automáticamente al final, pasándole el design.md recién generado con el mandato de buscar:
 - Tipos inconsistentes
 - Secciones duplicadas
 - Afirmaciones técnicas no citadas
@@ -319,7 +319,7 @@ After completing design.md, for each `[VERIFY]` marker:
 
 **Observación**: El error E3 surgió porque la spec fue actualizada en múltiples iteraciones (el usuario pidió cambios, el agente los aplicó) y el preámbulo quedó obsoleto. El flujo actual no tiene un concepto de "versión de la spec" ni de "diff entre la versión anterior y la actual".
 
-**Propuesta**: Cuando `/ralph-specum:requirements` (u otro comando de spec) se ejecuta sobre una spec existente, el agent debería:
+**Propuesta**: Cuando `/ralphharness:requirements` (u otro comando de spec) se ejecuta sobre una spec existente, el agent debería:
 1. Leer la versión actual del documento
 2. Aplicar los cambios
 3. Generar un "micro-changelog" de las secciones modificadas
@@ -445,7 +445,7 @@ E5 ilustra que el orden correcto estaba en el código de ejemplo, pero sin docum
 
 ### Lección 3: Las actualizaciones iterativas son el principal vector de inconsistencia
 
-Los errores E3 y la contradicción del User Adjustment #2 no surgieron en la generación inicial de la spec, sino en actualizaciones posteriores. El flujo de Smart Ralph es robusto para la generación inicial pero frágil para las iteraciones de refinamiento. Las mejoras M3 y M7 apuntan directamente a este vector.
+Los errores E3 y la contradicción del User Adjustment #2 no surgieron en la generación inicial de la spec, sino en actualizaciones posteriores. El flujo de RalphHarness es robusto para la generación inicial pero frágil para las iteraciones de refinamiento. Las mejoras M3 y M7 apuntan directamente a este vector.
 
 ### Lección 4: Un agente que no se autocuestiona produce documentos que suenan correctos pero tienen sutilezas incorrectas
 

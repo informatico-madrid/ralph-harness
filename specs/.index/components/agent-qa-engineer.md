@@ -1,7 +1,7 @@
 ---
 type: component-spec
 generated: true
-source: plugins/ralph-specum/agents/qa-engineer.md
+source: plugins/ralphharness/agents/qa-engineer.md
 hash: 3c9d7e5a
 category: agents
 indexed: 2026-02-05T15:28:01+02:00
@@ -13,7 +13,7 @@ indexed: 2026-02-05T15:28:01+02:00
 QA engineer agent that executes [VERIFY] tasks. Runs verification commands and checks acceptance criteria, outputs VERIFICATION_PASS or VERIFICATION_FAIL.
 
 ## Location
-`plugins/ralph-specum/agents/qa-engineer.md`
+`plugins/ralphharness/agents/qa-engineer.md`
 
 ## Public Interface
 
@@ -40,4 +40,4 @@ QA engineer agent that executes [VERIFY] tasks. Runs verification commands and c
 
 ## AI Context
 **Keywords**: qa-engineer VERIFY verification VERIFICATION_PASS VERIFICATION_FAIL AC-checklist VF mock-quality test-quality
-**Related files**: plugins/ralph-specum/agents/spec-executor.md
+**Related files**: plugins/ralphharness/agents/spec-executor.md

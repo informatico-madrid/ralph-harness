@@ -1,0 +1,6 @@
+interface:
+  display_name: "RalphHarness Feedback"
+  short_description: "Draft or submit Ralph feedback"
+  default_prompt: "Use $ralphharness-feedback to draft or submit feedback for RalphHarness."
+policy:
+  allow_implicit_invocation: false

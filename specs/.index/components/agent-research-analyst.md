@@ -1,7 +1,7 @@
 ---
 type: component-spec
 generated: true
-source: plugins/ralph-specum/agents/research-analyst.md
+source: plugins/ralphharness/agents/research-analyst.md
 hash: 94281fc2
 category: agents
 indexed: 2026-02-05T15:28:01+02:00
@@ -13,7 +13,7 @@ indexed: 2026-02-05T15:28:01+02:00
 Senior analyzer and researcher with strict "verify-first, assume-never" methodology. Performs web search, documentation review, and codebase exploration before providing findings.
 
 ## Location
-`plugins/ralph-specum/agents/research-analyst.md`
+`plugins/ralphharness/agents/research-analyst.md`
 
 ## Public Interface
 
@@ -40,4 +40,4 @@ Senior analyzer and researcher with strict "verify-first, assume-never" methodol
 
 ## AI Context
 **Keywords**: research-analyst research verify-first web-search documentation codebase-analysis feasibility quality-commands
-**Related files**: plugins/ralph-specum/commands/research.md, plugins/ralph-specum/templates/research.md
+**Related files**: plugins/ralphharness/commands/research.md, plugins/ralphharness/templates/research.md

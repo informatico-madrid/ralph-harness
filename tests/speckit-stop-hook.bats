@@ -1,6 +1,6 @@
 #!/usr/bin/env bats
 # Speckit Stop Hook Unit Tests
-# Tests the loop control logic in ralph-speckit's stop-watcher.sh
+# Tests the loop control logic in ralphharness-speckit's stop-watcher.sh
 
 load 'speckit-helpers/setup.bash'
 
@@ -237,7 +237,7 @@ load 'speckit-helpers/setup.bash'
     [ "$status" -eq 0 ]
     assert_json_block
     assert_json_reason_contains "Continue feature"
-    assert_json_system_message_contains "Ralph-speckit"
+    assert_json_system_message_contains "ralphharness"
 }
 
 @test "max iterations error exits cleanly with stderr message" {
@@ -278,7 +278,7 @@ load 'speckit-helpers/setup.bash'
     local stderr_output
     stderr_output=$(run_stop_watcher 2>&1 >/dev/null || true)
 
-    [[ "$stderr_output" == *"[ralph-speckit]"* ]]
+    [[ "$stderr_output" == *"[ralphharness-speckit]"* ]]
     [[ "$stderr_output" == *"Task: 3/5"* ]]
     [[ "$stderr_output" == *"Attempt: 3"* ]]
 }

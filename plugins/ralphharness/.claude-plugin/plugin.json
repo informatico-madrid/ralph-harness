@@ -1,0 +1,10 @@
+{
+  "name": "ralphharness",
+  "version": "5.0.0",
+  "description": "Spec-driven development with smart compaction. A Claude Code plugin that combines the Ralph Wiggum agentic loop with structured specification workflow.",
+  "author": {
+    "name": "informatico-madrid"
+  },
+  "license": "MIT",
+  "keywords": ["ralph", "spec-driven", "research", "requirements", "design", "tasks", "autonomous", "loop", "epic", "triage", "chat-protocol"]
+}

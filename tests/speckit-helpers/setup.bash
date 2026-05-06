@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# Bats-core test helpers for ralph-speckit
+# Bats-core test helpers for ralphharness-speckit
 # Common setup/teardown functions and fixture helpers
 
 # Path to the stop-watcher script under test
 # BATS_TEST_DIRNAME is the directory containing the .bats file (tests/)
-STOP_WATCHER_SCRIPT="${BATS_TEST_DIRNAME}/../plugins/ralph-speckit/hooks/scripts/stop-watcher.sh"
+STOP_WATCHER_SCRIPT="${BATS_TEST_DIRNAME}/../plugins/ralphharness-speckit/hooks/scripts/stop-watcher.sh"
 
 # Test workspace directory (created fresh for each test)
 TEST_WORKSPACE=""
@@ -118,7 +118,7 @@ EOF
 create_settings_file() {
     local enabled="${1:-true}"
 
-    cat > "$TEST_WORKSPACE/.claude/ralph-speckit.local.md" <<EOF
+    cat > "$TEST_WORKSPACE/.claude/ralphharness-speckit.local.md" <<EOF
 ---
 enabled: $enabled
 ---
@@ -162,7 +162,7 @@ assert_stderr_contains() {
 
 # Extract JSON portion from output (filters out stderr lines mixed in by bats run)
 _extract_json_from_output() {
-    echo "$output" | grep -v '^\[ralph-speckit\]' | jq -s 'last'
+    echo "$output" | grep -v '^\[ralphharness-speckit\]' | jq -s 'last'
 }
 
 # Assert output is valid JSON with decision="block"

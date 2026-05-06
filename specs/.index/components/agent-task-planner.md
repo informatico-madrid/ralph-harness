@@ -1,7 +1,7 @@
 ---
 type: component-spec
 generated: true
-source: plugins/ralph-specum/agents/task-planner.md
+source: plugins/ralphharness/agents/task-planner.md
 hash: 4e8f2a1b
 category: agents
 indexed: 2026-02-05T15:28:01+02:00
@@ -13,7 +13,7 @@ indexed: 2026-02-05T15:28:01+02:00
 Task planning specialist that breaks designs into executable implementation steps. Focus on POC-first workflow, clear task definitions, and quality gates.
 
 ## Location
-`plugins/ralph-specum/agents/task-planner.md`
+`plugins/ralphharness/agents/task-planner.md`
 
 ## Public Interface
 
@@ -40,4 +40,4 @@ Task planning specialist that breaks designs into executable implementation step
 
 ## AI Context
 **Keywords**: task-planner tasks POC-first phases quality-checkpoints VERIFY autonomous no-manual commit-conventions
-**Related files**: plugins/ralph-specum/commands/tasks.md, plugins/ralph-specum/templates/tasks.md
+**Related files**: plugins/ralphharness/commands/tasks.md, plugins/ralphharness/templates/tasks.md

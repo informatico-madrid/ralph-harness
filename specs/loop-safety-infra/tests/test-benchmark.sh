@@ -5,8 +5,8 @@
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(dirname "$(dirname "$(dirname "$SCRIPT_DIR")")")"
-STOP_WATCHER="$ROOT_DIR/plugins/ralph-specum/hooks/scripts/stop-watcher.sh"
-METRIC_SCRIPT="$ROOT_DIR/plugins/ralph-specum/hooks/scripts/write-metric.sh"
+STOP_WATCHER="$ROOT_DIR/plugins/ralphharness/hooks/scripts/stop-watcher.sh"
+METRIC_SCRIPT="$ROOT_DIR/plugins/ralphharness/hooks/scripts/write-metric.sh"
 
 PASS=0
 FAIL=0

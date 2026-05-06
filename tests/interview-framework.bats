@@ -2,18 +2,18 @@
 # Smart Ralph Plugin Content Tests
 # Verifies agent files, commands, references, and templates contain required sections and protocols.
 
-SKILL_FILE="plugins/ralph-specum/skills/interview-framework/SKILL.md"
-ALGORITHM_FILE="plugins/ralph-specum/skills/interview-framework/references/algorithm.md"
-GOAL_INTERVIEW="plugins/ralph-specum/references/goal-interview.md"
+SKILL_FILE="plugins/ralphharness/skills/interview-framework/SKILL.md"
+ALGORITHM_FILE="plugins/ralphharness/skills/interview-framework/references/algorithm.md"
+GOAL_INTERVIEW="plugins/ralphharness/references/goal-interview.md"
 
-EXTERNAL_REVIEWER="plugins/ralph-specum/agents/external-reviewer.md"
-QA_ENGINEER="plugins/ralph-specum/agents/qa-engineer.md"
-SPEC_EXECUTOR="plugins/ralph-specum/agents/spec-executor.md"
-TASK_PLANNER="plugins/ralph-specum/agents/task-planner.md"
-IMPLEMENT_CMD="plugins/ralph-specum/commands/implement.md"
-COORDINATOR="plugins/ralph-specum/references/coordinator-pattern.md"
-FAILURE_RECOVERY="plugins/ralph-specum/references/failure-recovery.md"
-CHAT_TEMPLATE="plugins/ralph-specum/templates/chat.md"
+EXTERNAL_REVIEWER="plugins/ralphharness/agents/external-reviewer.md"
+QA_ENGINEER="plugins/ralphharness/agents/qa-engineer.md"
+SPEC_EXECUTOR="plugins/ralphharness/agents/spec-executor.md"
+TASK_PLANNER="plugins/ralphharness/agents/task-planner.md"
+IMPLEMENT_CMD="plugins/ralphharness/commands/implement.md"
+COORDINATOR="plugins/ralphharness/references/coordinator-pattern.md"
+FAILURE_RECOVERY="plugins/ralphharness/references/failure-recovery.md"
+CHAT_TEMPLATE="plugins/ralphharness/templates/chat.md"
 
 # ============================================================================
 # Interview Framework (legacy tests)
@@ -76,13 +76,13 @@ CHAT_TEMPLATE="plugins/ralph-specum/templates/chat.md"
 # ============================================================================
 
 @test "plugin.json version matches marketplace.json" {
-    plugin_version=$(jq -r '.version' "plugins/ralph-specum/.claude-plugin/plugin.json")
-    market_version=$(jq -r '.plugins[] | select(.name == "ralph-specum") | .version' ".claude-plugin/marketplace.json")
+    plugin_version=$(jq -r '.version' "plugins/ralphharness/.claude-plugin/plugin.json")
+    market_version=$(jq -r '.plugins[] | select(.name == "ralphharness") | .version' ".claude-plugin/marketplace.json")
     [ "$plugin_version" = "$market_version" ]
 }
 
 @test "plugin.json version is not 0.0.0 or empty" {
-    version=$(jq -r '.version' "plugins/ralph-specum/.claude-plugin/plugin.json")
+    version=$(jq -r '.version' "plugins/ralphharness/.claude-plugin/plugin.json")
     [ "$version" != "0.0.0" ]
     [ -n "$version" ]
 }

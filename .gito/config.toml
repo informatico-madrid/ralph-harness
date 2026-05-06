@@ -1,4 +1,4 @@
-# Gito project configuration for smart-ralph
+# Gito project configuration for RalphHarness
 
 # Exclude patterns — files that should NOT be reviewed
 exclude_files = [
@@ -57,6 +57,27 @@ requirements = """
 - For plugins: use plugin.json manifest, follow Claude Code plugin conventions
 - For specs: use specs/<name>/tasks.md with done-when + verify commands
 - Never commit directly to main — always PR
+
+[RENAMING FEATURE CONTEXT — feature/renaming → main]
+Branch: feature/renaming (67 commits)
+Goal: Rename ralph-specum → RalphHarness, Smart Ralph → RalphHarness everywhere
+INTENTIONAL PATTERNS (NOT BUGS — DO NOT FLAG):
+- All references of "ralph-specum" → "ralphharness"
+- All references of "Smart Ralph" → "RalphHarness"
+- All references of "ralph-harness" → "ralphharness"
+- Plugin path: plugins/ralph-specum/ → plugins/ralphharness/
+- Slash commands: /ralph-specum:* → /ralphharness:*
+- All agent names, scripts, docs, templates updated
+- Version bumps in .claude-plugin/plugin.json and .claude-plugin/marketplace.json
+- CHANGELOG updates from ralph-specum → RalphHarness
+KNOWN TRUE ISSUES (ALREADY FIXED, DO NOT FLAG AGAIN):
+#1 plugins/ralphharness/commands/cancel.md L77: Added SPEC_NAME variable
+#2 plugins/ralphharness/hooks/scripts/path-resolver.sh L136: tr → sed for space preservation
+#3 plugins/ralphharness/references/loop-safety.md L35: gmtime | strftime
+#4 plugins/ralphharness/references/phase-rules.md: Removed duplicate EOF sections
+#5 plugins/ralphharness/skills/e2e/examples/homeassistant-selector-map.skill.md L50: :scope >> → text=
+#6 plugins/ralphharness-codex/scripts/merge_state.py: FileExistsError try/except
+REVIEW FOCUS: Flag ONLY NEW issues unrelated to the rename. Do not flag any naming, version, or path changes from the rename. Do not flag build output or generated files.
 """
 
 # Summary-specific requirements

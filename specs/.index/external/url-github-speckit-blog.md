@@ -50,4 +50,4 @@ Provides clarity: "Instead of guessing at your needs, it knows what to build, ho
 
 ## AI Context
 **Keywords**: spec-kit github specify plan tasks implement greenfield feature-development legacy-modernization
-**Related components**: plugins/ralph-speckit, plugins/ralph-specum
+**Related components**: plugins/ralph-speckit, plugins/ralphharness

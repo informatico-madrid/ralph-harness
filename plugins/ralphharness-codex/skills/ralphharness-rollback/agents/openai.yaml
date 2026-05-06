@@ -1,0 +1,6 @@
+interface:
+  display_name: "RalphHarness Rollback"
+  short_description: "Rollback to pre-execution git checkpoint"
+  default_prompt: "Use $ralphharness-rollback to restore the working tree to the pre-execution git checkpoint and tell me what was reverted."
+policy:
+  allow_implicit_invocation: false

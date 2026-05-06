@@ -4,7 +4,7 @@ set -uo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../../" && pwd)"
-source "$PROJECT_ROOT/plugins/ralph-specum/hooks/scripts/checkpoint.sh"
+source "$PROJECT_ROOT/plugins/ralphharness/hooks/scripts/checkpoint.sh"
 
 PASSED=0
 FAILED=0

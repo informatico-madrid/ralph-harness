@@ -1,7 +1,7 @@
 ---
 type: component-spec
 generated: true
-source: plugins/ralph-specum/commands/implement.md
+source: plugins/ralphharness/commands/implement.md
 hash: 19181307
 category: commands
 indexed: 2026-02-05T15:28:01+02:00
@@ -13,12 +13,12 @@ indexed: 2026-02-05T15:28:01+02:00
 Start task execution loop for a spec. Initializes execution state, writes coordinator prompt, and invokes Ralph Loop for autonomous task completion.
 
 ## Location
-`plugins/ralph-specum/commands/implement.md`
+`plugins/ralphharness/commands/implement.md`
 
 ## Public Interface
 
 ### Exports
-- `/ralph-specum:implement` slash command
+- `/ralphharness:implement` slash command
 
 ### Methods
 
@@ -40,4 +40,4 @@ Start task execution loop for a spec. Initializes execution state, writes coordi
 
 ## AI Context
 **Keywords**: implement execution loop coordinator Ralph-Loop taskIndex totalTasks TASK_COMPLETE ALL_TASKS_COMPLETE parallel recovery-mode
-**Related files**: plugins/ralph-specum/agents/spec-executor.md, plugins/ralph-specum/commands/start.md
+**Related files**: plugins/ralphharness/agents/spec-executor.md, plugins/ralphharness/commands/start.md

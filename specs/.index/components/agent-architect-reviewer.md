@@ -1,7 +1,7 @@
 ---
 type: component-spec
 generated: true
-source: plugins/ralph-specum/agents/architect-reviewer.md
+source: plugins/ralphharness/agents/architect-reviewer.md
 hash: 8b2c4e3a
 category: agents
 indexed: 2026-02-05T15:28:01+02:00
@@ -13,7 +13,7 @@ indexed: 2026-02-05T15:28:01+02:00
 Senior systems architect with expertise in designing scalable, maintainable systems. Focus on architecture decisions, component boundaries, patterns, and technical feasibility.
 
 ## Location
-`plugins/ralph-specum/agents/architect-reviewer.md`
+`plugins/ralphharness/agents/architect-reviewer.md`
 
 ## Public Interface
 
@@ -40,4 +40,4 @@ Senior systems architect with expertise in designing scalable, maintainable syst
 
 ## AI Context
 **Keywords**: architect-reviewer architecture design components interfaces data-flow trade-offs test-strategy patterns
-**Related files**: plugins/ralph-specum/commands/design.md, plugins/ralph-specum/templates/design.md
+**Related files**: plugins/ralphharness/commands/design.md, plugins/ralphharness/templates/design.md

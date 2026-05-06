@@ -3,13 +3,13 @@ Aquí tienes el prompt listo para pegar en Claude Code:
 ***
 
 ```
-/ralph-specum:define agent-chat-protocol
+/ralphharness:define agent-chat-protocol
 
 Quiero crear una nueva spec llamada **agent-chat-protocol**.
 
 ## Contexto del sistema actual
 
-El sistema ralph-specum ya tiene:
+El sistema ralphharness ya tiene:
 - `spec-executor.md` — agente que implementa tareas secuencialmente
 - `external-reviewer.md` — agente revisor paralelo que corre en una segunda sesión de Claude Code
 - `task_review.md` — canal unidireccional: el revisor escribe FAIL/PASS/WARNING, el executor lo lee
@@ -39,10 +39,10 @@ Un canal de **chat bidireccional en tiempo real** entre el executor (o cualquier
 7. El reviewer puede demarcar tareas pero tiene que explicar en el chat por qué antes de hacerlo
 
 ### Archivos que cambian (mínimo impacto):
-- **NUEVO**: `plugins/ralph-specum/templates/chat.md` — template del canal de chat
-- **MODIFICA**: `plugins/ralph-specum/agents/spec-executor.md` — añadir `## Chat Protocol` 
-- **MODIFICA**: `plugins/ralph-specum/agents/external-reviewer.md` — ampliar con protocolo de chat proactivo
-- **OPCIONAL**: `plugins/ralph-specum/agents/interview-framework.md` — preguntar si se activa el chat al inicio de `/implement`
+- **NUEVO**: `plugins/ralphharness/templates/chat.md` — template del canal de chat
+- **MODIFICA**: `plugins/ralphharness/agents/spec-executor.md` — añadir `## Chat Protocol` 
+- **MODIFICA**: `plugins/ralphharness/agents/external-reviewer.md` — ampliar con protocolo de chat proactivo
+- **OPCIONAL**: `plugins/ralphharness/agents/interview-framework.md` — preguntar si se activa el chat al inicio de `/implement`
 
 ### Archivos que NO cambian:
 - `task_review.md` template — sigue igual, sigue siendo el canal formal
@@ -60,7 +60,7 @@ Genera `specs/agent-chat-protocol/requirements.md` con:
 
 ***
 
-Ese prompt activa el flujo `define` del product-manager de ralph-specum directamente con todo el contexto necesario para que no te haga preguntas obvias y vaya al grano con los requirements.
+Ese prompt activa el flujo `define` del product-manager de ralphharness directamente con todo el contexto necesario para que no te haga preguntas obvias y vaya al grano con los requirements.
 
 
 
@@ -152,11 +152,11 @@ Limpio, legible para el humano, y los agentes pueden parsearlo con un grep senci
 
 ACTUALIZACION DE REGLAS ESTAS NUEVAS REGLAS SON MAS AJUSTADAS A NUESTRO CASO DE USO REAL EN ESTE PROYECTO. LAS RELGLAS ANTERIORES ES ALGO MAS GENERICO. 
 
-Ahora tengo todo lo necesario. Aquí el análisis real, regla por regla, contra el flujo de smart-ralph:
+Ahora tengo todo lo necesario. Aquí el análisis real, regla por regla, contra el flujo de ralphharness:
 
-Análisis de las 6 reglas FLOC contra smart-ralph
+Análisis de las 6 reglas FLOC contra ralphharness
 Los actores reales del sistema (esto cambia todo)
-Antes de las reglas: el flujo de smart-ralph tiene 4 agentes activos simultáneamente, no 2. El chat no es una conversación bilateral — es un canal que pueden usar:
+Antes de las reglas: el flujo de ralphharness tiene 4 agentes activos simultáneamente, no 2. El chat no es una conversación bilateral — es un canal que pueden usar:
 
 Agente	Rol	Sesión	Puede usar chat?
 spec-executor	Implementa, orquesta	Sesión 1	✅ escritor principal
@@ -166,7 +166,7 @@ architect-reviewer	Diseña, aprueba	Sesión 3 (fase design)	✅ pero no durante 
 Problema crítico con las reglas actuales: el qa-engineer no es un agente con sesión independiente — es un subagente delegado que spec-executor invoca con la tool Task y espera su respuesta antes de continuar . No puede escribir en el chat de forma independiente. El chat real es spec-executor ↔ external-reviewer. El qa-engineer comunica su resultado a spec-executor via VERIFICATION_PASS/FAIL/DEGRADED, no via chat.
 
 Regla 1 — OVER: "Espero respuesta antes de continuar"
-¿Sobrevive al flujo de smart-ralph? ⚠️ Parcialmente — necesita precisión
+¿Sobrevive al flujo de ralphharness? ⚠️ Parcialmente — necesita precisión
 
 El problema: spec-executor ya tiene un mecanismo de bloqueo propio — la lectura de task_review.md al inicio de cada tarea . Si hay un PENDING ahí, el executor ya espera. Si el executor escribe OVER en chat.md y además hay un PENDING en task_review.md, hay dos mecanismos de bloqueo en paralelo que pueden entrar en conflicto.
 
@@ -195,19 +195,19 @@ Regla 4 — URGENT rompe cualquier boundary
 
 El executor puede estar en medio de: (a) escribir un archivo, (b) ejecutar un test, (c) delegando al qa-engineer y esperando su VERIFICATION_PASS. El qa-engineer no puede ser interrumpido una vez delegado — spec-executor espera sincrónicamente.
 
-Ajuste necesario: URGENT no puede interrumpir durante una delegación activa a qa-engineer. El boundary mínimo real en smart-ralph es: "terminar el task tool actual (qa-engineer o cualquier subagente) antes de leer el URGENT". El executor lee el chat entre tareas y justo después de recibir VERIFICATION_PASS/FAIL, no en mitad de una delegación.
+Ajuste necesario: URGENT no puede interrumpir durante una delegación activa a qa-engineer. El boundary mínimo real en ralphharness es: "terminar el task tool actual (qa-engineer o cualquier subagente) antes de leer el URGENT". El executor lee el chat entre tareas y justo después de recibir VERIFICATION_PASS/FAIL, no en mitad de una delegación.
 
 Regla 5 — HOLD es recíproco (executor también puede HOLD)
 ¿Sobrevive? ✅ Sí, y es especialmente importante en este sistema
 
-Este es el gap más claro en smart-ralph hoy. El executor puede encontrar una contradicción entre design.md y el código existente en mitad de la implementación — ahora solo puede loggearlo en .progress.md. No puede pedir al reviewer que pare y mire antes de continuar.
+Este es el gap más claro en ralphharness hoy. El executor puede encontrar una contradicción entre design.md y el código existente en mitad de la implementación — ahora solo puede loggearlo en .progress.md. No puede pedir al reviewer que pare y mire antes de continuar.
 
 Ajuste necesario: cuando el executor escribe → HOLD, debe especificar qué tarea está bloqueando: → HOLD | task-2.4 | contradicción en design.md §Ordering vs código existente. Y debe escribir también en task_review.md una entrada status: PENDING para esa tarea, para que si el reviewer no lee el chat, igual ve el bloqueo. Doble canal, mismo efecto.
 
 Regla 6 — El silencio por defecto es STILL
-¿Sobrevive? ❌ Inversa en smart-ralph — el silencio aquí es ambiguo negativamente
+¿Sobrevive? ❌ Inversa en ralphharness — el silencio aquí es ambiguo negativamente
 
-En smart-ralph, el reviewer tiene sesiones independientes con ciclos de ~30s . Si el reviewer lleva 5 minutos sin escribir nada, puede significar: (a) silencio sano/STILL, (b) la sesión se cerró, (c) está investigando algo complejo. El executor no tiene forma de saber cuál es.
+En ralphharness, el reviewer tiene sesiones independientes con ciclos de ~30s . Si el reviewer lleva 5 minutos sin escribir nada, puede significar: (a) silencio sano/STILL, (b) la sesión se cerró, (c) está investigando algo complejo. El executor no tiene forma de saber cuál es.
 
 El anti-stuck protocol del reviewer ya monitoriza .ralph-state.json buscando taskIteration >= 3. Si el reviewer está "silenciosamente activo" pero el executor entra en Stuck State Protocol, el reviewer debería recibir esa señal. Ahora no la recibe porque no hay canal de vuelta.
 
