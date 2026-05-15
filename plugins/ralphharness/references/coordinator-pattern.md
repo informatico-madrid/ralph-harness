@@ -1,6 +1,7 @@
 # Coordinator Pattern
 
 > Used by: implement.md
+> See also: `references/channel-map.md` (shared filesystem channels and fd allocations)
 
 ## Role Definition
 
@@ -162,6 +163,8 @@ BEFORE entering the Chat Protocol and BEFORE delegating any task, the coordinato
 ## Signal Protocol
 
 Control signals (HOLD, PENDING, URGENT, DEADLOCK, INTENT-FAIL, SPEC-ADJUSTMENT, SPEC-DEFICIENCY) are written to and read from `signals.jsonl` — **not** `chat.md`. The coordinator reads `signals.jsonl` BEFORE reading `chat.md` in each delegation cycle.
+
+> **Channel map**: fd 202 is allocated for `signals.jsonl.lock` — see `references/channel-map.md` for the full channel registry and locking strategy.
 
 ### Atomic-append snippet (canonical)
 

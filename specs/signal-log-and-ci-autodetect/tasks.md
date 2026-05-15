@@ -617,7 +617,7 @@ Goal: dedupe and clean up. No new features. Code that landed inline in Phase 1 m
   - **Verify**: `bash -n plugins/ralphharness/hooks/scripts/lib-signals.sh && grep -q dedupe_ci_commands plugins/ralphharness/commands/implement.md && grep -q "dedupe_ci_commands" plugins/ralphharness/hooks/scripts/lib-signals.sh && echo OK`
   - **Commit**: `refactor(phase6): dedupe_ci_commands helper in lib-signals.sh replaces inline jq`
 
-- [ ] 2.3 [VERIFY] Refactor preserves behaviour
+- [x] 2.3 [VERIFY] Refactor preserves behaviour
   - **Phase**: 2 (Refactor)
   - **Maps to**: quality-checkpoints.md
   - **Verify**:
@@ -627,7 +627,7 @@ Goal: dedupe and clean up. No new features. Code that landed inline in Phase 1 m
     - All schema JSON still valid: `jq -e . plugins/ralphharness/schemas/spec.schema.json >/dev/null`.
   - **Commit**: none. Log to `.progress.md`.
 
-- [ ] 2.4 Cosmetic alignment: references trio (channel-map / verification-layers / coordinator-pattern)
+- [x] 2.4 Cosmetic alignment: references trio (channel-map / verification-layers / coordinator-pattern)
   - **Phase**: 2 (Refactor)
   - **Maps to**: doc consistency
   - **Depends on**: 2.3

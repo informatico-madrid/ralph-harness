@@ -10,6 +10,9 @@ authoritative contract for which agent reads and writes which channel, and when.
 If a channel has more than one writer, it requires exclusive locking — see the
 Locking Strategy column.
 
+For the verification layer model (where channels feed into Layer 0–4 checks), see
+`references/verification-layers.md`.
+
 ## Channel Registry
 
 | Channel | Path | Writer(s) | Reader(s) | Timing | Locking |
@@ -102,4 +105,4 @@ Before adding a new agent to the system:
 3. If it writes to a channel with an existing writer: add locking (pick the next available fd)
 4. If it introduces a new shared channel: add a row to this table and a Risk Register entry
 5. Update the relevant agent files to reference the new contract
-6. > **Full boundary checklist**: See `references/role-contracts.md` for the complete access matrix, "Adding a New Agent" checklist (4 steps with template code blocks), and cross-spec dependency tracking. `references/role-contracts.md` is the single source of truth for agent read/write permissions.
+6. > **Full boundary checklist**: See `references/role-contracts.md` for the complete access matrix, "Adding a New Agent" checklist (4 steps with template code blocks), and cross-spec dependency tracking. `references/role-contracts.md` is the single source of truth for agent read/write permissions. See also `references/verification-layers.md` for where these channels feed into the 5-layer verification pipeline.

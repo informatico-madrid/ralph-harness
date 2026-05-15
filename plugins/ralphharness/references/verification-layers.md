@@ -1,6 +1,7 @@
 # Verification Layers
 
 > Used by: implement.md
+> See also: `references/channel-map.md` (shared filesystem channels where signals.jsonl and chat.md reside), `references/coordinator-pattern.md` (Signal Protocol for signal emission and HOLD gate wiring)
 
 Five verification layers run BEFORE advancing taskIndex after a task reports TASK_COMPLETE. All must pass.
 
