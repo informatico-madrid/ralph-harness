@@ -601,3 +601,15 @@
 - fix_hint: N/A
 - review_submode: post-task
 - resolved_at: 2026-05-15T22:06:00Z
+
+### [task-4.1] Bump plugin version to 5.2.0
+- status: PASS
+- severity: none
+- reviewed_at: 2026-05-15T22:07:00Z
+- criterion_failed: none
+- evidence: |
+  plugin.json version: 5.2.0
+  marketplace.json ralphharness version: 5.2.0
+- fix_hint: N/A
+- review_submode: post-task
+- resolved_at: 2026-05-15T22:07:00Z (reviewer verified independently)

@@ -549,7 +549,7 @@ Focus: Add comprehensive test coverage. One RED/GREEN pair per Test Coverage Tab
 
 Focus: Version bump, all local checks pass, AC checklist verification, PR creation and CI monitoring. VE tasks are not applicable — RalphHarness is a markdown-only plugin with no UI.
 
-- [ ] 4.1 Bump plugin version in `plugin.json` and `marketplace.json`
+- [x] 4.1 Bump plugin version in `plugin.json` and `marketplace.json`
   - **Do**:
     1. Bump `plugins/ralphharness/.claude-plugin/plugin.json` version from `5.1.0` to `5.2.0` (minor bump — additive feature)
     2. Bump `plugins/ralphharness` entry in `.claude-plugin/marketplace.json` version from `5.1.0` to `5.2.0`
