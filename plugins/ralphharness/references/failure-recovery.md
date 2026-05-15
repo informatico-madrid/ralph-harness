@@ -580,7 +580,7 @@ The BUG_DISCOVERY trigger reuses all existing fix-task infrastructure verbatim:
 
 ### Dedup Rule
 
-Before generating a fix task from a BUG_DISCOVERY row, the coordinator checks `fixTaskMap[task_id]` for an existing fix task matching the same `criterion_failed` + `evidence`:
+Before generating a fix task from a BUG_DISCOVERY row, the coordinator performs a dedup check: it reads `fixTaskMap[task_id]` for an existing fix task matching the same `criterion_failed` + `evidence`:
 
 - **Match found**: Skip fix-task generation. Mark the `task_review.md` row `resolved_at` = `already-handled`.
 - **No match**: Proceed to generate fix task normally.

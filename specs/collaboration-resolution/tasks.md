@@ -571,7 +571,7 @@ Focus: Version bump, all local checks pass, AC checklist verification, PR creati
   - _Requirements: NFR-1_
   - _Design: All components_
 
-- [ ] 4.3 [VERIFY] AC checklist — verify all 27 acceptance criteria
+- [x] 4.3 [VERIFY] AC checklist — verify all 27 acceptance criteria
   - **Do**: Read requirements.md and programmatically verify each AC-*:
     1. AC-1.1 through AC-1.4: `grep collaboration-resolution.md` for workflow block, steps, ANY-regression, non-E2E coverage
     2. AC-2.1 through AC-2.4: `grep chat.md` for 6 signals in Collaboration markers table with definitions
