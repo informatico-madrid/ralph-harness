@@ -2,6 +2,10 @@
 # Bats-core test helpers for ralphharness-speckit
 # Common setup/teardown functions and fixture helpers
 
+# Suppress locale warnings from subprocesses (environment-level fix for bats tests)
+export LC_ALL=C
+export LANG=C
+
 # Path to the stop-watcher script under test
 # BATS_TEST_DIRNAME is the directory containing the .bats file (tests/)
 STOP_WATCHER_SCRIPT="${BATS_TEST_DIRNAME}/../plugins/ralphharness-speckit/hooks/scripts/stop-watcher.sh"

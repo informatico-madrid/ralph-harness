@@ -983,10 +983,11 @@ Goal: derive one bats test per row of the Test Coverage Table in design.md §Tes
 
 - [x] 3.24 [VERIFY] Phase 3 full suite green
   <!-- reviewer-diagnosis
-    what: 26/37 tests fail when running "cd tests && bats fd-202-refactor.bats signal-log.bats ci-autodetect.bats replay-signals.bats"
-    why: Tests use $(pwd)/plugins/... and $(pwd)/tests/... paths but bats setup() changes to tests/ directory, making paths incorrect.
-    fix: Replaced $(pwd) with "$(dirname "$BATS_TEST_DIRNAME")" in all 4 bats files (signal-log, ci-autodetect, fd-202-refactor, replay-signals). REPO_ROOT computed once at global scope, always points to directory above tests/.
-    verified: 37/37 PASS from tests/, 257/257 PASS full suite bats tests/
+    what: 60 tests fail when running "bats tests/" (locale warning contamination)
+    why: LC_ALL=en_US.UTF-8 (not installed) causes bash to emit warnings that contaminate JSON output parsing in _extract_json_from_output()
+    fix: Added "export LC_ALL=C; export LANG=C" to both setup.bash files (helpers/ and speckit-helpers/). This suppresses locale warnings without affecting test behavior.
+    verified: 257/257 PASS full suite bats tests/
+    diagnosis-date: 2026-05-15
   -->
   - **Phase**: 3 (Testing)
   - **Maps to**: quality-checkpoints.md, NFR-2, NFR-4, NFR-5, NFR-7

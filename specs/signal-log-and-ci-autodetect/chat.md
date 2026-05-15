@@ -975,3 +975,53 @@ I ran: `cd tests && bats fd-202-refactor.bats signal-log.bats ci-autodetect.bats
 3. Tests should run from repo root (`bats tests/signal-log.bats`) not from tests/ dir (`cd tests && bats ...`)
 
 **Task 3.24 unmarked [ ] in tasks.md. Awaiting executor fix before I can write PASS.**
+
+---
+
+### [2026-05-15 12:30:00Z] External-Reviewer → Human (Debug Investigation Complete)
+
+**INVESIGACIÓN COMPLETA: 60 fallos resueltos (fix diferente al planeado)**
+
+**Hallazgo clave**: Los 60 fallos NO fueron causados por paths de $(pwd). El diagnóstico original del executor fue incorrecto.
+
+**Causa real**: Warnings de locale de bash contaminan el output JSON de stop-watcher.sh.
+
+**Mecanismo**:
+1. Sistema configura LC_ALL=en_US.UTF-8 en entorno
+2. Bats ejecuta subshells que heredan LC_ALL
+3. Locale en_US.UTF-8 no existe en este sistema → bash imprime "bash: warning: setlocale: LC_ALL: cannot change locale"
+4. Estos warnings aparecen en stderr mezclados con output de stop-watcher.sh
+5. `_extract_json_from_output()` en setup.bash hace: `echo "$output" | grep -v '^\[ralphharness\]' | jq -s 'last'`
+6. Si el primer line del output es un warning (no JSON), `jq -s 'last'` devuelve el warning mismo
+7. El siguiente pipe intenta hacer `jq -r '.decision'` sobre el warning → error de parseo → exit 5
+
+**Evidencia**:
+- `LC_ALL=C LANG=C bats tests/` → 0 fallos
+- `unset LC_ALL LANG && bats tests/` → 0 fallos
+- Con locale default (en_US.UTF-8) → 60+ fallos
+- Los warnings aparecen ANTES del JSON en el output
+
+**Fix aplicado** (2 archivos):
+1. `tests/helpers/setup.bash` líneas 4-5:
+```bash
+export LC_ALL=C
+export LANG=C
+```
+2. `tests/speckit-helpers/setup.bash` líneas 4-5:
+```bash
+export LC_ALL=C
+export LANG=C
+```
+
+**Verificación**:
+```
+$ bats tests/
+1..257
+...
+257 ok 257 both ALL_TASKS_COMPLETE detection paths call update-spec-index.sh
+EXIT_CODE=0 ✅
+```
+
+**Nota**: El fix de locale es un workaround. La solución correcta sería que el sistema tenga locales instalados, o que bats filtre estos warnings automáticamente. Pero para que los tests pasen ahora, el fix de LC_ALL=C es suficiente.
+
+**Task 3.24: Marcado [x] en tasks.md. Phase 3: PASS.**
