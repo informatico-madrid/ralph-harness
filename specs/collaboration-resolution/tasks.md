@@ -91,7 +91,7 @@ Focus: Create the new reference file, make key additive changes that prove the c
   - _Requirements: FR-8, FR-9, AC-7.1, AC-7.2, AC-8.1, AC-8.2_
   - _Design: Component C3_
 
-- [ ] 1.7 Extend `spec-executor.md` — cross-branch detection in `<exit_code_gate>` + reference
+- [x] 1.7 Extend `spec-executor.md` — cross-branch detection in `<exit_code_gate>` + reference
   - **Do**:
     1. Read `plugins/ralphharness/agents/spec-executor.md` to find `<exit_code_gate>` section
     2. In step 4 (error is in code I did not touch), add cross-branch detection: when failing test was green on `main`, run `git diff main...HEAD` on failing code path and follow `collaboration-resolution.md` Workflow A

@@ -701,3 +701,17 @@
 - fix_hint: N/A
 - review_submode: post-task
 - resolved_at: 2026-05-15T22:10:30Z (final validation)
+
+### [task-1.7] Extend spec-executor.md — cross-branch detection in exit_code_gate
+- status: PASS
+- severity: none
+- reviewed_at: 2026-05-15T22:11:00Z
+- criterion_failed: none
+- evidence: |
+  Cross-branch detection was implemented in a prior context (commit 54f9486 / ee38721 chain).
+  grep -q "git diff main...HEAD" agents/spec-executor.md ✅
+  grep -q "collaboration-resolution" agents/spec-executor.md ✅
+  Committed as part of Phase 1 deliverables.
+- fix_hint: N/A
+- review_submode: post-task
+- resolved_at: 2026-05-15T22:11:00Z (reviewer verified independently)
