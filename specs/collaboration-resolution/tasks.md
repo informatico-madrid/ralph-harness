@@ -143,7 +143,7 @@ Focus: Create the new reference file, make key additive changes that prove the c
   - _Requirements: FR-13b, D2_
   - _Design: Component C6_
 
-- [ ] 1.11 POC Checkpoint
+- [x] 1.11 POC Checkpoint
   - **Do**: Verify all six deliverables exist and contain required content:
     1. `collaboration-resolution.md` exists with both workflow blocks (Cross-branch + Experiment-propose-validate)
     2. `chat.md` Collaboration markers table contains all 6 new signals

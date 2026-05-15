@@ -231,3 +231,96 @@ Task 1.5 complete:
 Moving to task 1.6 — dedup and depth/limit rules.
 
 **Signal**: CONTINUE
+### [2026-05-15 20:14:00] Coordinator → External-Reviewer
+**Signal**: ACK
+
+All collaboration markers table work complete:
+- Tasks 1.3 + 1.4: All 6 signals in templates/chat.md Collaboration markers table
+- Tasks 1.5 + 1.6: BUG_DISCOVERY trigger, dedup rule, depth/limit rules in failure-recovery.md
+- All verified and marked PASS in task_review.md
+
+Moving to task 1.7 — extend spec-executor.md with cross-branch detection.
+
+**Signal**: CONTINUE
+
+### [2026-05-15 20:16:45] External-Reviewer → Coordinator
+**Signal**: CONTINUE
+
+**Observation**: Task 1.7 complete (spec-executor.md modified with cross-branch detection), but task not marked [x] in tasks.md. Tasks 1.8-1.12 also not started.
+
+**Status Check**:
+- Task 1.7 verify: `grep -q "git diff main...HEAD" spec-executor.md && grep -q "collaboration-resolution" spec-executor.md` → 1.7_PASS ✅
+- spec-executor.md diff shows correct additive changes to `<exit_code_gate>`
+- Tasks 1.8-1.12: all FAIL (external-reviewer.md not yet updated, channel-map.md not yet reconciled)
+
+**Required Action**: Continue implementing remaining Phase 1 tasks. Task 1.8 (external-reviewer.md baseline-check) and 1.9 (BUG_DISCOVERY emit rule) are needed next. Task 1.10 (channel-map.md) is trivial — adding spec-executor to Writer(s) cell.
+
+Phase 1 has 12 tasks. 6 complete, 1 verified done but not marked, 5 remaining.
+
+**Expected Response**: CONTINUE with task 1.8
+### [2026-05-15 21:58:00] spec-executor → external-reviewer
+**Task**: T1.8
+**Signal**: OVER
+
+Task 1.8 complete: "Baseline Check Before Modifying a Test" hard rule added to external-reviewer.md.
+
+Do steps:
+1. Read external-reviewer.md — found insertion point after Section 3 (line 200)
+2. Appended Section 3a with:
+   - Baseline Check via `git diff main...HEAD`
+   - 3-condition check: (a) test file unchanged, (b) fixture/environment unchanged, (c) backend code path differs
+   - If all 3 hold → backend/environmental regression → MUST NOT modify the test
+   - Ambiguous case: any condition ambiguous → treat as NOT satisfied, record via chat.md FINDING marker
+3. Verified additive only — no existing section removed
+
+Verify: grep -q "Baseline Check" && grep -q "git diff main...HEAD" && grep -qi "NOT satisfied\|ambiguous" → PASS
+Commit: feat(harness): add baseline-check hard rule to external-reviewer
+
+Moving to task 1.9 (BUG_DISCOVERY emit rule).
+### [2026-05-15 21:58:30] spec-executor → external-reviewer
+**Task**: T1.8
+**Signal**: OVER
+
+Task 1.8 complete — baseline-check hard rule added to external-reviewer.md.
+
+- Appended Section 3a "Baseline Check Before Modifying a Test" after Section 3
+- 3-condition check via git diff main...HEAD: (a) test file unchanged, (b) fixture/environment unchanged, (c) backend code path differs
+- All 3 hold → backend regression → MUST NOT modify test
+- Ambiguous case → treat as NOT satisfied, record via chat.md FINDING marker
+- Independent verify: grep for "Baseline Check" + "git diff main...HEAD" + "NOT satisfied"/"ambiguous" → 1.8_PASS
+- Committed as ee38721
+- task_review.md entry written, marked [x] in tasks.md
+
+Moving to task 1.9 — BUG_DISCOVERY emit rule.
+
+**Signal**: CONTINUE
+
+### [2026-05-15 20:20:30] External-Reviewer → Coordinator
+**Signal**: HOLD
+
+**Task**: T1.10 — channel-map.md spec-executor writer reconciliation
+
+**JUDGE — EVIDENCE REQUIRED**:
+
+**Violation**: task-not-started — task 1.10 is marked [ ] in tasks.md but is required for Phase 1 completion
+**File**: tasks.md (line for task 1.10)
+**Evidence**:
+```
+$ grep "chat.md" plugins/ralphharness/references/channel-map.md | head -1 | grep -q "spec-executor" && echo 1.10_PASS || echo 1.10_FAIL
+1.10_FAIL
+
+channel-map.md still shows "coordinator, reviewer" — spec-executor NOT added.
+```
+
+**Task Description**: Change the Writer(s) cell for chat.md row from "coordinator, reviewer" to "coordinator, reviewer, spec-executor"
+
+**Impact**: Phase 1 POC cannot complete (task 1.10 is prerequisite for 1.11 checkpoint).
+
+**Required Action**: 
+1. Edit plugins/ralphharness/references/channel-map.md
+2. Find the chat.md row in the Channel Registry table
+3. Change Writer(s) from "coordinator, reviewer" to "coordinator, reviewer, spec-executor"
+4. Run verify: `grep "chat.md" plugins/ralphharness/references/channel-map.md | head -1 | grep -q "spec-executor" && echo 1.10_PASS`
+5. Mark [x] and commit
+
+**Expected Response**: ACK to implement task 1.10

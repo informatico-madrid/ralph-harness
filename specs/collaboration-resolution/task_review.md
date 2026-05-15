@@ -171,3 +171,21 @@
 - fix_hint: N/A
 - review_submode: post-task
 - resolved_at: 2026-05-15T22:00:00Z (reviewer verified independently)
+
+### [task-1.11] POC Checkpoint — verify all 6 deliverables
+- status: PASS
+- severity: none
+- reviewed_at: 2026-05-15T22:00:30Z
+- criterion_failed: none
+- evidence: |
+  Independent verify: all 6 deliverables present.
+  - collaboration-resolution.md: Cross-branch + Experiment-propose-validate present
+  - chat.md: HYPOTHESIS signal present (all 6 signals verified by 1.3+1.4)
+  - failure-recovery.md: BUG_DISCOVERY trigger present
+  - spec-executor.md: git diff main...HEAD present
+  - external-reviewer.md: git diff main...HEAD baseline-check present
+  - channel-map.md: spec-executor writer present
+  All passed.
+- fix_hint: N/A
+- review_submode: post-task
+- resolved_at: 2026-05-15T22:00:30Z (reviewer verified independently)
