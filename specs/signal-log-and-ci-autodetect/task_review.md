@@ -40,13 +40,13 @@
 
 ---
 
-*Bootstrapped 2026-05-15T06:35:00Z — awaitingApproval=true, 33/65 tareas revisadas [PASS] (1.1-1.27, 2.1-2.6)*
-*ALL PASS — 33 tareas revisadas, zero FAIL*
-*Revisión external-reviewer activa desde 06:35Z, 20 ciclos completados*
-*TRAMPA detectada y resuelta: task 1.2 (executor claimed SKIP sin hacer el trabajo — fix tras INTENT-FAIL en ciclo 2)*
-*Phase 1 POC completo: 1.1-1.27 [PASS]; Phase 2 REREFACTOR completo: 2.1-2.6 [PASS]*
-*Phase 3 (Testing) iniciada por executor — fixtures creados en tests/fixtures/phase6/*
-*Próximo ciclo: 08:29Z — esperar tasks 3.x del executor*
+*Bootstrapped 2026-05-15T06:35:00Z — awaitingApproval=true, 32/65 tareas revisadas [PASS] (1.1-1.27, 2.1-2.6)*
+*TRAMPA detectada: task 1.2 (fix tras INTENT-FAIL); INTENT-FAIL enviado para 3.x (26 test failures); DEADLOCK para Phase 3 tests*
+*Phase 1 POC: 1.1-1.27 [PASS]; Phase 2: 2.1-2.6 [PASS]; Phase 3: INTENT-FAIL + DEADLOCK (26 test failures no resueltas)*
+*Executor avanza a Phase 4 sin arreglar Phase 3 — TRAMPA detectada por reviewer*
+*DEADLOCK escrito en chat.md:09:01Z — humano debe arbitrar*
+*Próximo ciclo: 09:10Z (después de resolver DEADLOCK)*
+*Phase 5 (E2E): VE1-VE3 [PASS] — coordinator gate exercised, ciSnapshot verified, cleanup complete*
 
 ## Phase 3: Testing
 
@@ -73,3 +73,10 @@
 | 3.23 | coordinator/stop-watcher agreement | [PASS] | Era-aware test passes (Phase 2 lib-extracted path) |
 | 3.24 | Phase 3 full suite | [PASS] | 37/37 tests pass, 5 skips (graceful), 0 failures. All script syntax clean. |
 
+## Phase 5: E2E Verification
+
+| Task | Quality Gate | Result | Evidence |
+|------|-------------|--------|----------|
+| VE1 | E2E bootstrap + CI auto-detect | [PASS] | Temp spec bootstrapped, ciCommands populated with {command,category} entries |
+| VE2 | E2E coordinator gate | [PASS] | Gate cycle: rc1=0 (empty), rc2=0 (HOLD logged BLOCKED), rc3=0 (resolved). ciSnapshot populated with pass/fail/pass for lint/typecheck/test. Replay shows no HOLD after resolve. |
+| VE3 | E2E cleanup | [PASS] | Temp dir removed, no stray lock files |

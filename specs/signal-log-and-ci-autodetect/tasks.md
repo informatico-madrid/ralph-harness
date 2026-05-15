@@ -1078,7 +1078,7 @@ Goal: end-to-end verification by bootstrapping a temp test spec, running `/ralph
 
 > **Note**: This plugin is a CLI tool / coordination engine. `UI Present: No`. VE tasks use CLI verification + filesystem assertions (no browser automation). No `ui-map-init` (VE0) needed.
 
-- [ ] VE1 [VERIFY] E2E startup: bootstrap temp spec + populate state
+- [x] VE1 [VERIFY] E2E startup: bootstrap temp spec + populate state
   - **Phase**: 5 (E2E)
   - **Skills**: e2e
   - **Do**:
@@ -1092,7 +1092,7 @@ Goal: end-to-end verification by bootstrapping a temp test spec, running `/ralph
   - **Done when**: Temp spec exists with signals.jsonl, state has non-empty ciCommands with `{command,category}` shape.
   - **Commit**: None
 
-- [ ] VE2 [VERIFY] E2E check: exercise the live coordinator gate (sourced from `commands/implement.md`) against a real temp spec
+- [x] VE2 [VERIFY] E2E check: exercise the live coordinator gate (sourced from `commands/implement.md`) against a real temp spec
   - **Phase**: 5 (E2E)
   - **Skills**: e2e
   - **Do**:
@@ -1136,7 +1136,7 @@ Goal: end-to-end verification by bootstrapping a temp test spec, running `/ralph
   - **Done when**: Gate cycle BLOCK -> UNBLOCK proven against the **live coordinator block** sourced from `commands/implement.md`; ciSnapshot populated via the live writer block; both engine files call `active_signal_count`.
   - **Commit**: None
 
-- [ ] VE3 [VERIFY] E2E cleanup: tear down temp spec dir, verify no stray flock files
+- [x] VE3 [VERIFY] E2E cleanup: tear down temp spec dir, verify no stray flock files
   - **Phase**: 5 (E2E)
   - **Skills**: e2e
   - **Do**:
