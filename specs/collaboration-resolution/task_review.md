@@ -221,3 +221,19 @@
 - fix_hint: N/A
 - review_submode: post-task
 - resolved_at: 2026-05-15T22:01:00Z (qa-engineer VERIFICATION_PASS)
+
+### [task-2.1] Verify NFR-1 additivity
+- status: PASS
+- severity: none
+- reviewed_at: 2026-05-15T22:02:00Z
+- criterion_failed: none
+- evidence: |
+  $ for f in "templates/chat.md" "references/failure-recovery.md" "agents/spec-executor.md" "agents/external-reviewer.md"; do if git diff HEAD -- "plugins/ralphharness/$f" | grep -q "^-[^-]"; then echo "DELETION in $f"; else echo "OK: $f"; fi; done && echo 2.1_PASS
+  OK: templates/chat.md
+  OK: references/failure-recovery.md
+  OK: agents/spec-executor.md
+  OK: agents/external-reviewer.md
+  2.1_PASS
+- fix_hint: N/A
+- review_submode: post-task
+- resolved_at: 2026-05-15T22:02:00Z (reviewer verified independently)

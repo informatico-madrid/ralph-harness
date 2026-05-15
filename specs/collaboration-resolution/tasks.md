@@ -172,7 +172,7 @@ Focus: Create the new reference file, make key additive changes that prove the c
 
 Focus: Verify all changes follow NFR-1 (additivity). No new features. Verification only.
 
-- [ ] 2.1 Verify NFR-1 additivity — no sections removed or rewritten in existing files
+- [x] 2.1 Verify NFR-1 additivity — no sections removed or rewritten in existing files
   - **Do**:
     1. Check that `chat.md` change is purely additive (only new table rows in Collaboration markers)
     2. Check that `failure-recovery.md` change adds a new section only
