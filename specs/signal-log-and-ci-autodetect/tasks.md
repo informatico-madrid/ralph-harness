@@ -651,7 +651,7 @@ Goal: dedupe and clean up. No new features. Code that landed inline in Phase 1 m
     ```
   - **Commit**: `docs(phase6): cross-link references trio for fd 202 / Signal Protocol`
 
-- [ ] 2.5 chat.md template: split signal legend into control vs collaboration tables
+- [x] 2.5 chat.md template: split signal legend into control vs collaboration tables
   - **Phase**: 2 (Refactor)
   - **Maps to**: FR-9, AC-3.6
   - **Depends on**: 2.4
