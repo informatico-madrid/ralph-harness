@@ -198,7 +198,7 @@ Focus: Verify all changes follow NFR-1 (additivity). No new features. Verificati
   - _Requirements: FR-5, NFR-5_
   - _Design: Component C2_
 
-- [ ] 2.3 Verify BUG_DISCOVERY column-to-failure-object mapping is consistent
+- [x] 2.3 Verify BUG_DISCOVERY column-to-failure-object mapping is consistent
   - **Do**:
     1. Read `plugins/ralphharness/references/failure-recovery.md` BUG_DISCOVERY section
     2. Confirm field mapping matches design: `task_id` → `taskId`, `evidence` → `failure.error`, `fix_hint` → `failure.attemptedFix`, `fix_type: bug_discovery`
