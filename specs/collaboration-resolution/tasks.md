@@ -119,7 +119,7 @@ Focus: Create the new reference file, make key additive changes that prove the c
   - _Requirements: FR-11, FR-12, AC-5.1, AC-9.1, AC-9.2_
   - _Design: Component C5_
 
-- [ ] 1.9 Add BUG_DISCOVERY emit rule and workflow reference to `external-reviewer.md`
+- [x] 1.9 Add BUG_DISCOVERY emit rule and workflow reference to `external-reviewer.md`
   - **Do**:
     1. Append "Recording a Discovered Bug" rule: when reviewer finds a bug via investigation, write `status: BUG_DISCOVERY` row to `task_review.md` carrying evidence and fix_hint
     2. State reviewer gains no new write permission; `task_review.md` is reviewer-owned

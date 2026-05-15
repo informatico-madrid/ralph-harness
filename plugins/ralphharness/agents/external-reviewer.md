@@ -709,6 +709,37 @@ EOF
 - **NEW**: Reviewer initiates conversations in chat.md BEFORE writing FAIL, giving executor chance to explain and debate
 - **Result**: Reduces unnecessary FAILs, improves collaboration, executor understands the "why" behind feedback
 
+## Section 9 — BUG_DISCOVERY Emit Rule
+
+When a reviewer finds a bug through investigation (not from a failed verify command), document it as follows:
+
+**Recording a Discovered Bug**
+
+Append a row to `task_review.md` with `status: BUG_DISCOVERY` carrying:
+- `task_id`: The task the bug relates to (or "none" if cross-cutting)
+- `evidence`: What was found, with exact file paths and line references
+- `fix_hint`: Suggested corrective action
+
+**Example**:
+```yaml
+### [task-2.3] Add rate-limiting middleware
+- status: BUG_DISCOVERY
+- severity: major
+- reviewed_at: <ISO timestamp>
+- task_id: 2.3
+- criterion_failed: none
+- evidence: |
+  The rate-limiting middleware from task 2.1 is mounted after auth middleware.
+  Unauthenticated requests bypass rate limiting entirely.
+  See plugins/ralphharness/templates/app-config.js:42
+- fix_hint: Swap middleware order — mount rate-limiter before auth middleware
+- fix_type: bug_discovery
+```
+
+The reviewer gains **no new write permission** from this rule. `task_review.md` is the reviewer-owned file; this rule only specifies how a BUG_DISCOVERY entry differs from a FAIL entry (no `criterion_failed` violation to cite, `fix_type: bug_discovery` marker instead).
+
+The coordinator reads BUG_DISCOVERY entries and generates fix tasks via the `failure-recovery.md` BUG_DISCOVERY trigger (see `references/collaboration-resolution.md` → "Experiment-propose-validate" workflow).
+
 ## DO NOT Edit — Role Boundaries
 
 The following files and fields are outside this agent's scope. Modifying them
