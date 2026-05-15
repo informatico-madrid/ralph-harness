@@ -199,6 +199,24 @@ The test phase is most prone to silent degradation. The reviewer must actively d
 
 When detecting any of the above: write entry to `task_review.md` with `status: FAIL` or `WARNING`, include exact line number, affected test, and concrete suggestion (e.g., "refactor to base class", "split into 3 tests", "use fixture X instead of mock").
 
+## Section 3a — Baseline Check Before Modifying a Test
+
+Before suggesting test modifications, apply this hard rule:
+
+**Baseline Check via `git diff main...HEAD`**
+
+Run a 3-condition check to determine whether a failing test reflects an implementation bug or a backend/environmental regression:
+
+1. **(a) Test file unchanged**: `git diff main...HEAD -- <test-file>` produces no output
+2. **(b) Fixture/environment unchanged**: `git diff main...HEAD -- <fixture-dir> <env-config>` produces no output
+3. **(c) Backend code path differs**: `git diff main...HEAD -- <backend-source-path>` produces output that changes the execution path reached by the test
+
+If **all 3 conditions hold** → backend/environmental regression. The test is correct. **MUST NOT modify the test.** Instead, fix the backend code or escalate as a cross-branch regression (see `references/collaboration-resolution.md` → "Cross-branch regression investigation").
+
+If **any condition is ambiguous** (e.g., cannot determine whether fixture changed, or code diff is too broad to trace) → treat the condition as **NOT satisfied**. Record the ambiguity via a `chat.md` **FINDING** marker with the specific uncertainty. Do not guess.
+
+This rule prevents the anti-pattern of "fixing the test" when the test correctly exposed a real regression.
+
 ## Section 3b — E2E / VE Task Review (MANDATORY when task has [VERIFY] marker or description mentions E2E)
 
 <mandatory>

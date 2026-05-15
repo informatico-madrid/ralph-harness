@@ -104,7 +104,7 @@ Focus: Create the new reference file, make key additive changes that prove the c
   - _Requirements: FR-3, FR-10, AC-4.1, AC-4.2, AC-4.3_
   - _Design: Component C4, Technical Decision D3_
 
-- [ ] 1.8 Add baseline-check hard rule to `external-reviewer.md`
+- [x] 1.8 Add baseline-check hard rule to `external-reviewer.md`
   - **Do**:
     1. Read `plugins/ralphharness/agents/external-reviewer.md` to find insertion point (after Section 3 Test Surveillance)
     2. Add "Baseline Check Before Modifying a Test" hard-rule block:

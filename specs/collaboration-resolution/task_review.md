@@ -90,3 +90,15 @@
 - fix_hint: N/A
 - review_submode: post-task
 - resolved_at: 2026-05-15T20:13:00Z (reviewer verified independently)
+
+### [task-1.8] Add baseline-check hard rule to external-reviewer.md
+- status: PASS
+- severity: none
+- reviewed_at: 2026-05-15T21:58:00Z
+- criterion_failed: none
+- evidence: |
+  $ grep -q "Baseline Check" plugins/ralphharness/agents/external-reviewer.md && grep -q "git diff main...HEAD" plugins/ralphharness/agents/external-reviewer.md && grep -qi "NOT satisfied\|ambiguous" plugins/ralphharness/agents/external-reviewer.md && echo 1.8_PASS
+  1.8_PASS
+- fix_hint: N/A
+- review_submode: post-task
+- resolved_at: 2026-05-15T21:58:00Z (reviewer verified independently)
