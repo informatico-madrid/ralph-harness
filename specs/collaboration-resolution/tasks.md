@@ -607,7 +607,7 @@ Focus: Version bump, all local checks pass, AC checklist verification, PR creati
 
 Goal: Autonomous PR management loop until all criteria met.
 
-- [ ] 5.1 Monitor PR CI status
+- [x] 5.1 Monitor PR CI status
   - **Do**: Check PR CI status. If green, proceed to 5.2. If any check fails, read failure details, fix issues, push fixes, re-check.
   - **Verify**: `gh pr checks` shows all passing
   - **Files**: None (PR monitoring only)
@@ -616,7 +616,7 @@ Goal: Autonomous PR management loop until all criteria met.
   - _Requirements: Phase 5 completion_
   - _Design: All components_
 
-- [ ] 5.2 Resolve review comments if any
+- [x] 5.2 Resolve review comments if any
   - **Do**: If any review comments exist on the PR, address them. Push fixes. Re-check CI if fixes change tested code.
   - **Verify**: `gh pr view --json reviewRequests,statusCheckRollup --jq '.reviewRequests | length'` returns 0 and all status checks pass
   - **Files**: None (PR monitoring only)
@@ -625,7 +625,7 @@ Goal: Autonomous PR management loop until all criteria met.
   - _Requirements: Phase 5 completion_
   - _Design: All components_
 
-- [ ] 5.3 [VERIFY] Final validation — zero regressions, modularity verified
+- [x] 5.3 [VERIFY] Final validation — zero regressions, modularity verified
   - **Do**: Final checks:
     1. `git diff main...HEAD --stat` to confirm only expected files changed
     2. `bats tests/collaboration-resolution.bats` — all tests pass
