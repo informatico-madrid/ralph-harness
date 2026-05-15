@@ -320,7 +320,7 @@ Goal: a real test spec runs `/ralphharness:implement`, the engine reads HOLD sig
 
 ### Step 5+6 — Replace HOLD check in BOTH engine entry points (atomic landing)
 
-- [ ] 1.19 Land canonical signals.jsonl HOLD gate in implement.md AND stop-watcher.sh (single atomic commit)
+- [x] 1.19 Land canonical signals.jsonl HOLD gate in implement.md AND stop-watcher.sh (single atomic commit)
   - **Phase**: 1 (POC)
   - **Maps to**: FR-2, FR-7, FR-14, AC-3.3, AC-3.4, AC-1.2, AC-1.6
   - **Depends on**: 1.18a
