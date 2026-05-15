@@ -613,3 +613,28 @@
 - fix_hint: N/A
 - review_submode: post-task
 - resolved_at: 2026-05-15T22:07:00Z (reviewer verified independently)
+
+### [task-4.1] Bump plugin version to 5.2.0
+- status: PASS
+- severity: none
+- reviewed_at: 2026-05-15T22:07:00Z
+- criterion_failed: none
+- evidence: |
+  plugin.json: 5.1.0 → 5.2.0
+  marketplace.json: 5.1.0 → 5.2.0
+  Both verified via jq.
+- fix_hint: N/A
+- review_submode: post-task
+- resolved_at: 2026-05-15T22:07:00Z
+
+### [task-4.2] [VERIFY] Full local CI: bats tests pass
+- status: PASS
+- severity: none
+- reviewed_at: 2026-05-15T22:07:30Z
+- criterion_failed: none
+- evidence: |
+  collaboration-resolution.bats: 19/19 pass
+  signal-log.bats: 257/257 pass (all tests including skip fixtures)
+- fix_hint: N/A
+- review_submode: post-task
+- resolved_at: 2026-05-15T22:07:30Z (reviewer verified independently)

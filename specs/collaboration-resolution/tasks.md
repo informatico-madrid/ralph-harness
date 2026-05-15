@@ -560,7 +560,7 @@ Focus: Version bump, all local checks pass, AC checklist verification, PR creati
   - _Requirements: NFR-1 (version bump)_
   - _Design: All components_
 
-- [ ] 4.2 [VERIFY] Full local CI: bats tests pass
+- [x] 4.2 [VERIFY] Full local CI: bats tests pass
   - **Do**: Run all test suites:
     1. New tests: `bats tests/collaboration-resolution.bats`
     2. Existing tests: `bats tests/signal-log.bats`
