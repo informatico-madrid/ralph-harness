@@ -211,7 +211,7 @@ Focus: Verify all changes follow NFR-1 (additivity). No new features. Verificati
   - _Requirements: FR-6, AC-3.2_
   - _Design: Component C3, Interfaces section_
 
-- [ ] 2.4 [VERIFY] Quality checkpoint: verify all files present and non-empty
+- [x] 2.4 [VERIFY] Quality checkpoint: verify all files present and non-empty
   - **Do**: Verify all 6 files exist and are non-empty
   - **Verify**: `test -s plugins/ralphharness/references/collaboration-resolution.md && test -s plugins/ralphharness/templates/chat.md && test -s plugins/ralphharness/references/failure-recovery.md && test -s plugins/ralphharness/agents/spec-executor.md && test -s plugins/ralphharness/agents/external-reviewer.md && test -s plugins/ralphharness/references/channel-map.md && echo 2.4_PASS`
   - **Done when**: All 6 files exist and are non-empty
