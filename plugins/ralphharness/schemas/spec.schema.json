@@ -334,8 +334,31 @@
         },
         "ciCommands": {
           "type": "array",
-          "items": {"type": "string"},
-          "description": "List of CI commands discovered at execution start"
+          "items": {"$ref": "#/definitions/ciCommand"},
+          "description": "List of CI commands discovered at execution start, classified by category"
+        },
+        "ciSnapshot": {
+          "type": "object",
+          "description": "Per-category CI execution results recorded after Layer 3 quality checkpoints",
+          "properties": {
+            "lint": {"$ref": "#/definitions/ciResult"},
+            "typecheck": {"$ref": "#/definitions/ciResult"},
+            "test": {"$ref": "#/definitions/ciResult"},
+            "build": {"$ref": "#/definitions/ciResult"},
+            "other": {"$ref": "#/definitions/ciResult"}
+          }
+        },
+        "signals": {
+          "type": "object",
+          "description": "Signal event log state for audit/diff replay",
+          "properties": {
+            "lastProcessedLine": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "description": "Coordinators read cursor for replay/diff; active-signal check always rescans the full file"
+            }
+          }
         }
       }
     },
@@ -590,6 +613,52 @@
           "type": "string",
           "format": "date-time",
           "description": "Timestamp when resource was fetched"
+        }
+      }
+    },
+
+    "ciCommand": {
+      "type": "object",
+      "description": "A CI command with its classification category",
+      "required": ["command", "category"],
+      "properties": {
+        "command": {
+          "type": "string",
+          "description": "The CI command to execute (e.g., pytest, ruff check ., mypy .)"
+        },
+        "category": {
+          "type": "string",
+          "enum": ["lint", "typecheck", "test", "build", "other"],
+          "description": "Category of the CI command for per-category snapshot tracking"
+        }
+      }
+    },
+
+    "ciResult": {
+      "type": "object",
+      "description": "Per-category CI execution result",
+      "properties": {
+        "result": {
+          "type": "string",
+          "enum": ["pass", "fail", "skip"],
+          "description": "Execution outcome: pass, fail, or skip (missing binary)"
+        },
+        "exitCode": {
+          "type": "integer",
+          "description": "Process exit code"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO 8601 UTC timestamp of execution"
+        },
+        "iteration": {
+          "type": "integer",
+          "description": "globalIteration at execution time"
+        },
+        "command": {
+          "type": "string",
+          "description": "The command that was executed"
         }
       }
     }

@@ -79,7 +79,7 @@ Goal: a real test spec runs `/ralphharness:implement`, the engine reads HOLD sig
   - **Commit**: `feat(phase6): schema adds signals.lastProcessedLine cursor`
   - _Requirements: AC-1.5_
 
-- [ ] 1.5 Schema: upgrade `ciCommands` from string[] to array<{command,category}>
+- [x] 1.5 Schema: upgrade `ciCommands` from string[] to array<{command,category}>
   - **Phase**: 1 (POC)
   - **Maps to**: FR-4, AC-2.5
   - **Depends on**: 1.4
@@ -93,7 +93,7 @@ Goal: a real test spec runs `/ralphharness:implement`, the engine reads HOLD sig
   - **Commit**: `feat(phase6): schema upgrades ciCommands to {command,category} tuples`
   - _Requirements: AC-2.5_
 
-- [ ] 1.6 Schema: add `ciSnapshot` per-category result map
+- [x] 1.6 Schema: add `ciSnapshot` per-category result map
   - **Phase**: 1 (POC)
   - **Maps to**: FR-4, FR-12, AC-2.5
   - **Depends on**: 1.5
@@ -107,7 +107,7 @@ Goal: a real test spec runs `/ralphharness:implement`, the engine reads HOLD sig
   - **Commit**: `feat(phase6): schema adds ciSnapshot per-category result map`
   - _Requirements: AC-2.5, FR-12_
 
-- [ ] 1.7 [VERIFY] Schema sanity — JSON valid, all three additions present
+- [x] 1.7 [VERIFY] Schema sanity — JSON valid, all three additions present
   - **Phase**: 1 (POC)
   - **Maps to**: quality-checkpoints.md
   - **Verify**:
@@ -118,7 +118,7 @@ Goal: a real test spec runs `/ralphharness:implement`, the engine reads HOLD sig
 
 ### Step 2 — Template signals.jsonl
 
-- [ ] 1.8 Create `templates/signals.jsonl` seed file
+- [x] 1.8 Create `templates/signals.jsonl` seed file
   - **Phase**: 1 (POC)
   - **Maps to**: FR-1, AC-1.1
   - **Depends on**: 1.7
