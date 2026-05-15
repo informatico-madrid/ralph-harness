@@ -159,3 +159,15 @@
 - fix_hint: N/A
 - review_submode: post-task
 - resolved_at: 2026-05-15T21:59:00Z (reviewer verified independently)
+
+### [task-1.10] Reconcile channel-map.md — add spec-executor as chat.md writer
+- status: PASS
+- severity: none
+- reviewed_at: 2026-05-15T22:00:00Z
+- criterion_failed: none
+- evidence: |
+  $ grep "chat.md" plugins/ralphharness/references/channel-map.md | head -1 | grep -q "spec-executor" && echo 1.10_PASS
+  1.10_PASS
+- fix_hint: N/A
+- review_submode: post-task
+- resolved_at: 2026-05-15T22:00:00Z (reviewer verified independently)

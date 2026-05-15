@@ -131,7 +131,7 @@ Focus: Create the new reference file, make key additive changes that prove the c
   - _Requirements: FR-11, AC-5.2, AC-5.3_
   - _Design: Component C5_
 
-- [ ] 1.10 Reconcile `channel-map.md` — add spec-executor as chat.md writer
+- [x] 1.10 Reconcile `channel-map.md` — add spec-executor as chat.md writer
   - **Do**:
     1. Read `plugins/ralphharness/references/channel-map.md` to find the chat.md row in Channel Registry
     2. Add `spec-executor` to the Writer(s) cell: change from `coordinator, reviewer` to `coordinator, reviewer, spec-executor`

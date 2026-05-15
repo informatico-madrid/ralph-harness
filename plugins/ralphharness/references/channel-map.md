@@ -17,7 +17,7 @@ For the verification layer model (where channels feed into Layer 0–4 checks), 
 
 | Channel | Path | Writer(s) | Reader(s) | Timing | Locking |
 |---------|------|-----------|-----------|--------|---------|
-| **chat.md** | `<basePath>/chat.md` | coordinator, reviewer | coordinator, reviewer | Before/after every delegation (coordinator); each review cycle (reviewer) | `flock -e 200` on `chat.md.lock` — MANDATORY for all writes |
+| **chat.md** | `<basePath>/chat.md` | coordinator, reviewer, spec-executor | coordinator, reviewer | Before/after every delegation (coordinator); each review cycle (reviewer); after each task completion (spec-executor) | `flock -e 200` on `chat.md.lock` — MANDATORY for all writes |
 | **tasks.md** | `<basePath>/tasks.md` | spec-executor (marks `[x]`), reviewer (unmarks `[x]` on FAIL) | coordinator (taskIndex advance), reviewer (finds unreviewed tasks) | After each task completion (spec-executor write); on FAIL detection (reviewer write) | ⚠️ TWO WRITERS — `flock -e 201` on `tasks.md.lock` MANDATORY for reviewer unmark writes |
 | **signals.jsonl** | `<basePath>/signals.jsonl` | coordinator, external-reviewer, spec-executor, human | coordinator, stop-watcher | Signal emission (append); pre-delegation gate read (coordinator); HOLD gate read (stop-watcher) | `flock -x 202` on `signals.jsonl.lock` — MANDATORY for all writes |
 | **.progress.md** | `<basePath>/.progress.md` | coordinator, spec-executor, reviewer | coordinator, spec-executor | Continuous | Single logical writer per session (coordinator/executor share a session; reviewer is separate) — append-only reduces collision risk, but review intervention blocks use visible HTML comments as delimiters |
@@ -48,14 +48,13 @@ protects the coordinator-reads-while-reviewer-writes scenario.
 
 ### ⚠️ chat.md — MEDIUM RISK (mitigated)
 
-**Writers**: coordinator + reviewer (both append messages concurrently)
+**Writers**: coordinator + reviewer + spec-executor (all append messages concurrently via `flock -e 200`)
 
 **Risk scenario**: without locking, two concurrent appends could interleave bytes,
 producing a malformed message in chat.md.
 
 **Mitigation**: ALL writes to chat.md use `flock -e 200` on `chat.md.lock`.
-Both coordinator and reviewer use this pattern. See coordinator-pattern.md Chat Protocol
-and external-reviewer.md Section 7.
+Coordinator, reviewer, and spec-executor all use this pattern. See coordinator-pattern.md Chat Protocol, external-reviewer.md Section 7, and spec-executor.md <chat>.
 
 **Fixed in**: coordinator-pattern.md (Chat Protocol), external-reviewer.md v0.2.0 (Section 7)
 
