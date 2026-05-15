@@ -189,3 +189,67 @@ Task 1.18 complete: created migrate-state.sh with migrate_cicommands() function.
 **Verify**: bash -n OK, behavioral smoke MIGRATE_OK, grep finds migrate-state.sh in implement.md.
 
 **Expected Response**: ACK for next task (1.18a).
+### [2026-05-15 07:15:00Z] Executor → Reviewer
+**Tasks 1.4 through 1.8 → ALL COMPLETE**
+**Signal**: ACK
+
+## Summary
+
+### 1.4 Schema: add signals.lastProcessedLine
+- Added `signals` object with `lastProcessedLine` integer (min=0, default=0) under state properties
+- JSON valid
+
+### 1.5 Schema: upgrade ciCommands
+- Changed from `string[]` to `array<{command,category}>` with `$ref` to `#/definitions/ciCommand`
+- Added `ciCommand` definition: {command, category[lint|typecheck|test|build|other]} definition
+- JSON valid
+
+### 1.6 Schema: add ciSnapshot
+- Added `ciSnapshot` object with lint/typecheck/test/build/other each referencing `ciResult`
+- Added `ciResult` definition: {result[pass|fail|skip], exitCode, timestamp, iteration, command}
+- JSON valid
+
+### 1.7 [VERIFY] Schema sanity
+- All 5 checks passed: JSON valid, signals present, lastProcessedLine present, ciCommands→ciCommand ref, ciSnapshot→ciResult refs, ciCommand/ciResult defs present
+
+### 1.8 templates/signals.jsonl
+- Created at plugins/ralphharness/templates/signals.jsonl
+- Exact 6 lines matching design.md §Data Model bytes
+- File ends with newline
+
+## Commit
+- d1da5fb: feat(phase1): schema signals/ciCommands/ciSnapshot + signals.jsonl template
+- 6 files changed: schema, template, tasks.md (5 checkmarks), progress.md, chat.md, task_review.md
+
+**All 5 tasks complete. Ready for next batch.**
+
+---
+
+### [2026-05-15 07:15:00Z] Spec-Executor → External-Reviewer
+**Task**: T1.18a
+**Signal**: ACK
+
+Task 1.18a complete: documented loader sites. migrate-state.sh header lists all loaders. implement.md has Loader-site comment. stop-watcher.sh has documentation comment about legacy ciCommands not affecting this reader. Added learnings entry about 3.21 needing migrate-state.sh call in replay-signals.sh.
+
+**Verify**: LOADERS_OK. All grep patterns match.
+
+**Expected Response**: ACK for next task (1.19).
+
+### [2026-05-15 07:20:00Z] Executor → Reviewer
+**Tasks 1.9-1.16 → ALL COMPLETE**
+
+Implement `detect-ci-commands.sh` (plugins/ralphharness/hooks/scripts/detect-ci-commands.sh)
+
+**Implemented**:
+- 1.9: Skeleton with --force arg, spec-path validation, empty [] output
+- 1.10: detect_pyproject() — 4 entries (ruff x2, mypy, pytest)
+- 1.11: detect_package_json() — lockfile-aware (pnpm/yarn/npm), script categorization
+- 1.12: [VERIFY] JSON validity pass for both marker types
+- 1.13: detect_makefile() — grep lint/test/check/build targets
+- 1.14: detect_cargo() + detect_go_mod()
+- 1.15: `command -v` write-time filter with WARN logging; pure bash (no sed dependency)
+- 1.16: [VERIFY] Full matrix smoke: 5 marker families, 9 entries survive, valid JSON
+
+**Smoke test**: `MATRIX_SMOKE_OK` printed. Filtered out: mypy, pnpm, go (not on PATH).
+
+**Siguiente**: Task 1.17 — Wire orchestrator in implement.md Step 3

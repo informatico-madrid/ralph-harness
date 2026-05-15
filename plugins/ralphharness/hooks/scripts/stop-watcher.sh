@@ -675,6 +675,28 @@ if [ "$PHASE" = "execution" ] && [ "$TASK_INDEX" -lt "$TOTAL_TASKS" ]; then
     RECOVERY_MODE=$(jq -r '.recoveryMode // false' "$STATE_FILE" 2>/dev/null || echo "false")
     MAX_TASK_ITER=$(jq -r '.maxTaskIterations // 5' "$STATE_FILE" 2>/dev/null || echo "5")
 
+    # BEGIN HOLD-GATE
+    # Mechanical active-signal gate (Layer 2). Source of truth: signals.jsonl.
+    [ ! -f "$SPEC_PATH/signals.jsonl" ] && cp "$CLAUDE_PLUGIN_ROOT/templates/signals.jsonl" "$SPEC_PATH/signals.jsonl"
+    if command -v jq >/dev/null 2>&1; then
+      active_count=$(grep -v '^[[:space:]]*#' "$SPEC_PATH/signals.jsonl" 2>/dev/null \
+        | jq -c 'select(.status=="active") | select(.signal=="HOLD" or .signal=="PENDING" or .signal=="URGENT" or .signal=="DEADLOCK")' \
+        | wc -l | tr -d ' ')
+    else
+      active_count=$(grep -c '"status":"active"' "$SPEC_PATH/signals.jsonl" 2>/dev/null || echo 0)
+      echo "[ralphharness] WARN: jq unavailable, using grep fallback" >> "$SPEC_PATH/.progress.md"
+    fi
+    # Legacy [HOLD] grace fallback (AC-3.6, NFR-6) — one release cycle only.
+    if [ "$active_count" = "0" ] && grep -qE '^\[HOLD\]$|^\[PENDING\]$|^\[URGENT\]$' "${SPEC_PATH}/chat.md" 2>/dev/null; then
+      echo "[ralphharness] WARN: legacy [HOLD] marker in chat.md — migrate to signals.jsonl" >> "${SPEC_PATH}/.progress.md"
+      active_count=1
+    fi
+    if [ "$active_count" -gt 0 ]; then
+      echo "[ralphharness] HOLD gate active — not emitting continuation prompt" >&2
+      exit 0
+    fi
+    # END HOLD-GATE
+
     # Safety guard: prevent infinite re-invocation loop
     # If a stop event fires while already processing a stop-hook continuation,
     # re-blocking would cause infinite loops. Allow Claude to stop; the next

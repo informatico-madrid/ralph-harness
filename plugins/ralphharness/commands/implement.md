@@ -319,13 +319,32 @@ Then Read and follow these references in order. They contain the complete coordi
 - **Fully autonomous.** Never ask questions or wait for user input.
 - **State-driven loop.** Read .ralph-state.json each iteration to determine current task.
 - **MANDATORY: Read task_review.md BEFORE delegating.** Before every task delegation, read `<basePath>/task_review.md` if it exists. If the current task is marked FAIL, DO NOT delegate—add a fix task first. If marked PENDING, treat it as a blocking state: do not delegate or advance to another task until the review is resolved.
-- **MANDATORY: Mechanical HOLD check BEFORE delegation.** Before delegating, run:
+- **MANDATORY: Mechanical HOLD check BEFORE delegation.** Before delegating, run the canonical gate below.
   ```bash
-  count=$(grep -c '^\[HOLD\]$\|^\[PENDING\]$\|^\[URGENT\]$' "$SPEC_PATH/chat.md" 2>/dev/null || true)
+  # BEGIN HOLD-GATE
+  # Mechanical active-signal gate (Layer 2). Source of truth: signals.jsonl.
+  # Legacy chat.md [HOLD] markers are honoured for one release cycle (NFR-6, AC-3.6)
+  # via the grep fallback below — emits WARN; removed in next release.
+  [ ! -f "$SPEC_PATH/signals.jsonl" ] && cp plugins/ralphharness/templates/signals.jsonl "$SPEC_PATH/signals.jsonl"
+  if command -v jq >/dev/null 2>&1; then
+    active_count=$(grep -v '^[[:space:]]*#' "$SPEC_PATH/signals.jsonl" 2>/dev/null \
+      | jq -c 'select(.status=="active") | select(.signal=="HOLD" or .signal=="PENDING" or .signal=="URGENT" or .signal=="DEADLOCK")' \
+      | wc -l | tr -d ' ')
+  else
+    active_count=$(grep -c '"status":"active"' "$SPEC_PATH/signals.jsonl" 2>/dev/null || echo 0)
+    echo "[ralphharness] WARN: jq unavailable, using grep fallback" >> "$SPEC_PATH/.progress.md"
+  fi
+  # Legacy [HOLD] grace fallback (AC-3.6, NFR-6) — one release cycle only.
+  if [ "$active_count" = "0" ] && grep -qE '^\[HOLD\]$|^\[PENDING\]$|^\[URGENT\]$' "$SPEC_PATH/chat.md" 2>/dev/null; then
+    echo "[ralphharness] WARN: legacy [HOLD] marker in chat.md — migrate to signals.jsonl" >> "$SPEC_PATH/.progress.md"
+    active_count=1
+  fi
+  if [ "$active_count" -gt 0 ]; then
+    echo "COORDINATOR BLOCKED: active control signal in signals.jsonl for task $taskIndex" >> "$SPEC_PATH/.progress.md"
+    exit 0
+  fi
+  # END HOLD-GATE
   ```
-  If count > 0 (active signals found): block delegation immediately. Log to `.progress.md`: `"COORDINATOR BLOCKED: active HOLD/PENDING/URGENT signal in chat.md for task $taskIndex"`.
-  
-  When signals are resolved (by external-reviewer or coordinator), the signal line is changed to `[RESOLVED]` (e.g., `[HOLD]` → `[RESOLVED]`). This marker is not matched by the grep check.
 
 - **MANDATORY: Read chat.md BEFORE delegating.** Before every task delegation, read `<basePath>/chat.md` for signals from external-reviewer. Obey HOLD, PENDING, DEADLOCK signals immediately—do not delegate if blocked.
 - **CRITICAL: Verify independently, never trust executor.** The executor may FABRICATE verification results (claimed tests passed when they failed, claimed coverage when coverage was 0%). 

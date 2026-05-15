@@ -134,7 +134,7 @@ Goal: a real test spec runs `/ralphharness:implement`, the engine reads HOLD sig
 
 ### Step 3 — detect-ci-commands.sh
 
-- [ ] 1.9 Create `detect-ci-commands.sh` skeleton + argument parsing
+- [x] 1.9 Create `detect-ci-commands.sh` skeleton + argument parsing
   - **Phase**: 1 (POC)
   - **Maps to**: FR-3, AC-2.1
   - **Depends on**: 1.8
@@ -150,7 +150,7 @@ Goal: a real test spec runs `/ralphharness:implement`, the engine reads HOLD sig
   - **Commit**: `feat(phase6): detect-ci-commands.sh skeleton with --force arg`
   - _Requirements: AC-2.1_
 
-- [ ] 1.10 detect-ci-commands.sh: pyproject.toml marker matrix
+- [x] 1.10 detect-ci-commands.sh: pyproject.toml marker matrix
   - **Phase**: 1 (POC)
   - **Maps to**: FR-3, AC-2.2
   - **Depends on**: 1.9
@@ -164,7 +164,7 @@ Goal: a real test spec runs `/ralphharness:implement`, the engine reads HOLD sig
   - **Commit**: `feat(phase6): detect-ci-commands.sh handles pyproject.toml markers`
   - _Requirements: AC-2.2_
 
-- [ ] 1.11 detect-ci-commands.sh: package.json + lockfile-aware
+- [x] 1.11 detect-ci-commands.sh: package.json + lockfile-aware
   - **Phase**: 1 (POC)
   - **Maps to**: FR-3, AC-2.2
   - **Depends on**: 1.10
@@ -178,7 +178,7 @@ Goal: a real test spec runs `/ralphharness:implement`, the engine reads HOLD sig
   - **Commit**: `feat(phase6): detect-ci-commands.sh parses package.json scripts with lockfile detection`
   - _Requirements: AC-2.2_
 
-- [ ] 1.12 [VERIFY] detect-ci-commands.sh emits valid JSON for known markers
+- [x] 1.12 [VERIFY] detect-ci-commands.sh emits valid JSON for known markers
   - **Phase**: 1 (POC)
   - **Maps to**: quality-checkpoints.md
   - **Verify**:
@@ -186,7 +186,7 @@ Goal: a real test spec runs `/ralphharness:implement`, the engine reads HOLD sig
     - Tmp dir smoke for both pyproject and package.json produces valid JSON arrays (`jq -e 'type=="array" and (all(.[]; has("command") and has("category")))' >/dev/null`).
   - **Commit**: none. Log to `.progress.md`.
 
-- [ ] 1.13 detect-ci-commands.sh: Makefile lint/test/check targets
+- [x] 1.13 detect-ci-commands.sh: Makefile lint/test/check targets
   - **Phase**: 1 (POC)
   - **Maps to**: FR-3, AC-2.2
   - **Depends on**: 1.12
@@ -199,7 +199,7 @@ Goal: a real test spec runs `/ralphharness:implement`, the engine reads HOLD sig
   - **Commit**: `feat(phase6): detect-ci-commands.sh detects Makefile targets`
   - _Requirements: AC-2.2_
 
-- [ ] 1.14 detect-ci-commands.sh: Cargo.toml + go.mod
+- [x] 1.14 detect-ci-commands.sh: Cargo.toml + go.mod
   - **Phase**: 1 (POC)
   - **Maps to**: FR-3, AC-2.2
   - **Depends on**: 1.13
@@ -213,7 +213,7 @@ Goal: a real test spec runs `/ralphharness:implement`, the engine reads HOLD sig
   - **Commit**: `feat(phase6): detect-ci-commands.sh detects Cargo.toml and go.mod`
   - _Requirements: AC-2.2_
 
-- [ ] 1.15 detect-ci-commands.sh: `command -v` write-time filter
+- [x] 1.15 detect-ci-commands.sh: `command -v` write-time filter
   - **Phase**: 1 (POC)
   - **Maps to**: FR-3, AC-2.4, D5
   - **Depends on**: 1.14
@@ -227,7 +227,7 @@ Goal: a real test spec runs `/ralphharness:implement`, the engine reads HOLD sig
   - **Commit**: `feat(phase6): detect-ci-commands.sh filters by command -v at write time`
   - _Requirements: AC-2.4_
 
-- [ ] 1.16 [VERIFY] detect-ci-commands.sh full marker matrix smoke
+- [x] 1.16 [VERIFY] detect-ci-commands.sh full marker matrix smoke
   - **Phase**: 1 (POC)
   - **Maps to**: quality-checkpoints.md
   - **Verify**:
