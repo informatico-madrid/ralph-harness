@@ -237,3 +237,15 @@
 - fix_hint: N/A
 - review_submode: post-task
 - resolved_at: 2026-05-15T22:02:00Z (reviewer verified independently)
+
+### [task-2.2] Verify signals.jsonl and schema untouched
+- status: PASS
+- severity: none
+- reviewed_at: 2026-05-15T22:02:30Z
+- criterion_failed: none
+- evidence: |
+  $ git diff HEAD -- plugins/ralphharness/templates/signals.jsonl | wc -l | grep -q "0$" && grep -q "chat.md" plugins/ralphharness/templates/chat.md && echo 2.2_PASS
+  2.2_PASS
+- fix_hint: N/A
+- review_submode: post-task
+- resolved_at: 2026-05-15T22:02:30Z (reviewer verified independently)

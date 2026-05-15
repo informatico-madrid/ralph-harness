@@ -186,7 +186,7 @@ Focus: Verify all changes follow NFR-1 (additivity). No new features. Verificati
   - _Requirements: NFR-1_
   - _Design: All components_
 
-- [ ] 2.2 Verify `signals.jsonl` and schema untouched
+- [x] 2.2 Verify `signals.jsonl` and schema untouched
   - **Do**:
     1. Confirm `plugins/ralphharness/templates/signals.jsonl` is unchanged
     2. Confirm no references to signals.jsonl schema modifications in any changed file
