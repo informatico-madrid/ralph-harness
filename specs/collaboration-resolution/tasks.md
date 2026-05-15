@@ -50,7 +50,7 @@ Focus: Create the new reference file, make key additive changes that prove the c
   - _Requirements: FR-5, AC-2.2, AC-2.4_
   - _Design: Component C2_
 
-- [ ] 1.4 Append 3 collaboration-marker rows to `chat.md` — ROOT_CAUSE, FIX_PROPOSAL, BUG_DISCOVERY
+- [x] 1.4 Append 3 collaboration-marker rows to `chat.md` — ROOT_CAUSE, FIX_PROPOSAL, BUG_DISCOVERY
   - **Do**:
     1. Append 3 more rows to the Collaboration markers table:
        - `ROOT_CAUSE` — Confirmed underlying defect, agreed by both agents

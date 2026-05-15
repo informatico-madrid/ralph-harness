@@ -13,7 +13,7 @@
 | 1.1 | grep verify | PASS | File exists; "Cross-branch regression investigation" found; "git diff main...HEAD" found; "any regression / non-E2E" found |
 | 1.2 | grep verify | PASS | "Experiment-propose-validate" found; "ROOT_CAUSE" found; "FIX_PROPOSAL" found |
 | 1.3 | grep verify | FAIL | HYPOTHESIS/EXPERIMENT/FINDING NOT in templates/chat.md — premature [x] |
-| 1.4 | grep verify | PENDING | BUG_DISCOVERY signals NOT in templates/chat.md — task not marked [x] yet |
+| 1.4 | grep verify | PASS | ROOT_CAUSE, FIX_PROPOSAL, BUG_DISCOVERY all found in templates/chat.md |
 
 ### [task-1.1] Create collaboration-resolution.md — Cross-branch regression investigation workflow
 - status: PASS
@@ -52,3 +52,15 @@
   Executor re-implemented task after premature [x] was caught.
 - fix_hint: N/A
 - resolved_at: 2026-05-15T20:07:00Z
+
+### [task-1.4] Append 3 collaboration-marker rows to chat.md — ROOT_CAUSE, FIX_PROPOSAL, BUG_DISCOVERY
+- status: PASS
+- severity: none
+- reviewed_at: 2026-05-15T20:09:10Z
+- criterion_failed: none
+- evidence: |
+  $ grep -q "ROOT_CAUSE" plugins/ralphharness/templates/chat.md && grep -q "FIX_PROPOSAL" plugins/ralphharness/templates/chat.md && grep -q "BUG_DISCOVERY" plugins/ralphharness/templates/chat.md && echo 1.4_PASS
+  1.4_PASS
+- fix_hint: N/A
+- review_submode: post-task
+- resolved_at: 2026-05-15T20:09:10Z (reviewer verified independently)
