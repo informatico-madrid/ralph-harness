@@ -678,10 +678,10 @@ if [ "$PHASE" = "execution" ] && [ "$TASK_INDEX" -lt "$TOTAL_TASKS" ]; then
     # BEGIN HOLD-GATE
     # Mechanical active-signal gate (Layer 2). Source of truth: signals.jsonl.
     [ ! -f "$SPEC_PATH/signals.jsonl" ] && cp "$CLAUDE_PLUGIN_ROOT/templates/signals.jsonl" "$SPEC_PATH/signals.jsonl"
+    # Source shared signal helpers (lib-signals.sh, FR-10)
+    source "$CLAUDE_PLUGIN_ROOT/hooks/scripts/lib-signals.sh"
     if command -v jq >/dev/null 2>&1; then
-      active_count=$(grep -v '^[[:space:]]*#' "$SPEC_PATH/signals.jsonl" 2>/dev/null \
-        | jq -c 'select(.status=="active") | select(.signal=="HOLD" or .signal=="PENDING" or .signal=="URGENT" or .signal=="DEADLOCK")' \
-        | wc -l | tr -d ' ')
+      active_count=$(active_signal_count "$SPEC_PATH")
     else
       active_count=$(grep -c '"status":"active"' "$SPEC_PATH/signals.jsonl" 2>/dev/null || echo 0)
       echo "[ralphharness] WARN: jq unavailable, using grep fallback" >> "$SPEC_PATH/.progress.md"

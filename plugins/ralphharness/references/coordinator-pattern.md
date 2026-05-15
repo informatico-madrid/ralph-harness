@@ -165,10 +165,12 @@ Control signals (HOLD, PENDING, URGENT, DEADLOCK, INTENT-FAIL, SPEC-ADJUSTMENT, 
 
 ### Atomic-append snippet (canonical)
 
-All writers (coordinator, external-reviewer, spec-executor, human) use this snippet. fd `202` is reserved exclusively for `signals.jsonl.lock` (result of Implementation Step 0: stop-watcher baseline lock refactored from fd 202 → fd 204).
+Source shared helpers from `hooks/scripts/lib-signals.sh` (created by Phase 2 task 2.1). fd `202` is reserved exclusively for `signals.jsonl.lock` (result of Implementation Step 0: stop-watcher baseline lock refactored from fd 202 → fd 204).
 
 ```bash
+source "$CLAUDE_PLUGIN_ROOT/hooks/scripts/lib-signals.sh"
 # BEGIN ATOMIC-APPEND
+# Calls append_signal() — see lib-signals.sh for full implementation
 append_signal() {
   local spec_path="$1" payload="$2"
   echo "$payload" | jq -e . >/dev/null || { echo "[ralphharness] malformed signal payload, aborting" >&2; return 2; }
@@ -184,11 +186,9 @@ append_signal() {
 ### Active-signal query (canonical, used by both coordinator and stop-watcher)
 
 ```bash
-active_count=$(
-  grep -v '^[[:space:]]*#' "${spec_path}/signals.jsonl" 2>/dev/null \
-  | jq -c 'select(.status=="active") | select(.signal=="HOLD" or .signal=="PENDING" or .signal=="URGENT" or .signal=="DEADLOCK")' \
-  | wc -l
-)
+source "$CLAUDE_PLUGIN_ROOT/hooks/scripts/lib-signals.sh"
+# Calls active_signal_count() — see lib-signals.sh for full implementation
+active_count=$(active_signal_count "${spec_path}")
 ```
 
 ### Ordering

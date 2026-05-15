@@ -579,7 +579,7 @@ Goal: a real test spec runs `/ralphharness:implement`, the engine reads HOLD sig
 
 Goal: dedupe and clean up. No new features. Code that landed inline in Phase 1 moves to canonical helpers; cosmetic inconsistencies across references resolved.
 
-- [ ] 2.1 Extract atomic-append and active-signal-count helpers into `lib-signals.sh` (canonical name)
+- [x] 2.1 Extract atomic-append and active-signal-count helpers into `lib-signals.sh` (canonical name)
   - **Phase**: 2 (Refactor)
   - **Maps to**: FR-10, code dedupe
   - **Depends on**: 1.27

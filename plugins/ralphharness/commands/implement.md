@@ -358,10 +358,10 @@ Then Read and follow these references in order. They contain the complete coordi
   # Legacy chat.md [HOLD] markers are honoured for one release cycle (NFR-6, AC-3.6)
   # via the grep fallback below — emits WARN; removed in next release.
   [ ! -f "$SPEC_PATH/signals.jsonl" ] && cp plugins/ralphharness/templates/signals.jsonl "$SPEC_PATH/signals.jsonl"
+  # Source shared signal helpers (lib-signals.sh, FR-10)
+  source "$CLAUDE_PLUGIN_ROOT/hooks/scripts/lib-signals.sh"
   if command -v jq >/dev/null 2>&1; then
-    active_count=$(grep -v '^[[:space:]]*#' "$SPEC_PATH/signals.jsonl" 2>/dev/null \
-      | jq -c 'select(.status=="active") | select(.signal=="HOLD" or .signal=="PENDING" or .signal=="URGENT" or .signal=="DEADLOCK")' \
-      | wc -l | tr -d ' ')
+    active_count=$(active_signal_count "$SPEC_PATH")
   else
     active_count=$(grep -c '"status":"active"' "$SPEC_PATH/signals.jsonl" 2>/dev/null || echo 0)
     echo "[ralphharness] WARN: jq unavailable, using grep fallback" >> "$SPEC_PATH/.progress.md"
