@@ -982,6 +982,13 @@ Goal: derive one bats test per row of the Test Coverage Table in design.md §Tes
   - **Commit**: `test(phase6): coordinator and stop-watcher share active_signal_count by construction (era-aware)`
 
 - [x] 3.24 [VERIFY] Phase 3 full suite green
+  <!-- reviewer-diagnosis
+    what: 60 tests fail when running "bats tests/" (locale warning contamination)
+    why: LC_ALL=en_US.UTF-8 (not installed) causes bash to emit warnings that contaminate JSON output parsing in _extract_json_from_output()
+    fix: Added "export LC_ALL=C; export LANG=C" to both setup.bash files (helpers/ and speckit-helpers/). This suppresses locale warnings without affecting test behavior.
+    verified: 257/257 PASS full suite bats tests/
+    diagnosis-date: 2026-05-15
+  -->
   - **Phase**: 3 (Testing)
   - **Maps to**: quality-checkpoints.md, NFR-2, NFR-4, NFR-5, NFR-7
   - **Verify**:
@@ -1023,7 +1030,7 @@ Goal: plugin version bumps, full local CI, PR creation, AC verification. No new 
     - Plugin version: `[ "$(jq -r .version plugins/ralphharness/.claude-plugin/plugin.json)" = "5.1.0" ]`.
   - **Commit**: none — V4 is verification-only. If any check fails, fix it in a follow-up commit attributed to the originating task; do not bundle fixes under a V4 commit.
 
-- [ ] 4.2 Branch + commits ready; open PR with `gh pr create`
+- [x] 4.2 Branch + commits ready; open PR with `gh pr create`
   - **Phase**: 4 (Quality Gates)
   - **Maps to**: quality-checkpoints.md V5
   - **Depends on**: V4

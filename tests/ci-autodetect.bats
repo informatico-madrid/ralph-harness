@@ -6,12 +6,13 @@ FIXTURE_DIR=""
 SPECIAL_DIR=""
 DETECT_SCRIPT=""
 TEST_ROOT=""
+REPO_ROOT="$(dirname "$BATS_TEST_DIRNAME")"
 
 setup() {
     SPECIAL_DIR=$(mktemp -d)
-    FIXTURE_DIR="$(pwd)/tests/fixtures/phase6"
-    DETECT_SCRIPT="$(pwd)/plugins/ralphharness/hooks/scripts/detect-ci-commands.sh"
-    TEST_ROOT="$(pwd)"
+    FIXTURE_DIR="$REPO_ROOT/tests/fixtures/phase6"
+    DETECT_SCRIPT="$REPO_ROOT/plugins/ralphharness/hooks/scripts/detect-ci-commands.sh"
+    TEST_ROOT="$REPO_ROOT"
 }
 
 teardown() {

@@ -4,7 +4,7 @@
 
 ```
 plugins/ralphharness/
-├── .claude-plugin/plugin.json # Plugin manifest v4.9.3
+├── .claude-plugin/plugin.json # Plugin manifest v5.1.0
 ├── agents/ # 9 subagent definitions (markdown)
 │   ├── spec-executor.md # Task executor (autonomous implementation)
 │   ├── task-planner.md # POC-first task breakdown generator
@@ -34,16 +34,20 @@ plugins/ralphharness/
 ├── hooks/
 │   ├── hooks.json # 3 hooks: Stop, SessionStart, PreToolUse
 │   └── scripts/
-│       ├── stop-watcher.sh # Loop controller (500+ lines)
+│       ├── stop-watcher.sh # Loop controller (HOLD gate via signals.jsonl)
 │       ├── path-resolver.sh # Multi-directory spec discovery
 │       ├── update-spec-index.sh # Spec index maintenance
 │       ├── checkpoint.sh # Pre-loop git checkpoint (loop-safety-infra)
 │       ├── write-metric.sh # Per-task metrics append (loop-safety-infra)
-│       └── discover-ci.sh # CI command discovery (loop-safety-infra)
+│       ├── discover-ci.sh # CI command discovery (loop-safety-infra)
+│       ├── detect-ci-commands.sh # Auto-detect CI commands from project markers
+│       ├── migrate-state.sh # One-shot legacy ciCommands migrator
+│       ├── replay-signals.sh # Incident review: signals.jsonl replay at iteration N
+│       └── lib-signals.sh # Shared signal helpers (append_signal, active_signal_count)
 ├── references/ # 20 internal reference documents
 │   ├── coordinator-pattern.md # Coordinator logic bible
 │   ├── failure-recovery.md # Recovery + repair loops
-│   ├── verification-layers.md # 3-layer verification system
+│   ├── verification-layers.md # 5-layer verification system (0-4)
 │   ├── quality-checkpoints.md # VE tasks + verify-fix-reverify loop
 │   ├── triage-flow.md # Epic triage workflow
 │   ├── branch-management.md # Git branch strategy
@@ -66,9 +70,11 @@ plugins/ralphharness/
 │   ├── requirements.md
 │   ├── design.md
 │   ├── tasks.md
-│   └── epic.md
+│   ├── epic.md
+│   └── signals.jsonl # Append-only signal event log template
 └── schemas/ # JSON schemas
-    └── ralph-state.json
+    ├── ralph-state.json
+    └── spec.schema.json # (signals, ciCommands, ciSnapshot)
 
 plugins/ralph-bmad-bridge/           # BMAD structural mapper plugin
 ├── .claude-plugin/plugin.json       # Plugin manifest v0.1.0
@@ -319,7 +325,9 @@ Spec file refactorer. Incrementally updates spec files after spec changes.
 
 ### 4.1 Stop Hook (stop-watcher.sh)
 
-**500+ line loop controller.** Activated when spec-executor or coordinator outputs a signal.
+**Main loop controller.** Activated when spec-executor or coordinator outputs a signal.
+
+**Signal HOLD Gate**: Before delegation, coordinator checks `signals.jsonl` (not chat.md) for active HOLD/PENDING/DEADLOCK using jq: `jq -c 'select(.signal=="HOLD" or .signal=="PENDING" or .signal=="DEADLOCK") | select(.status=="active")'`. Count > 0 → blocks delegation. This is a mechanical check with no LLM interpretation. Legacy [HOLD] grep on chat.md is supported for backward compatibility (Phase 2 grace cycle).
 
 **Core Logic:**
 1. Read `.ralph-state.json`
@@ -403,6 +411,10 @@ Circuit breaker, pre-loop git checkpoint, per-task metrics, and read-only detect
 - **Metrics**: `write-metric.sh` appends per-task timing and iteration count
 - **Read-only detection**: Heartbeat write check to detect stuck agents
 - **CI discovery**: `discover-ci.sh` auto-detects project CI commands
+- **CI autodetect**: `detect-ci-commands.sh` auto-discovers CI commands from project markers (pyproject.toml, package.json, Makefile, Cargo.toml, go.mod)
+- **Legacy migration**: `migrate-state.sh` upgrades legacy `ciCommands: string[]` to `{command, category}` tuples
+- **Signal replay**: `replay-signals.sh` deterministic replay of signals.jsonl at iteration N for incident review
+- **Signal library**: `lib-signals.sh` provides shared helpers (append_signal, active_signal_count, dedupe_ci_commands)
 
 ## 5.5 BMAD Bridge Plugin (`plugins/ralph-bmad-bridge/`)
 
@@ -642,7 +654,14 @@ Assembled from stop-watcher.sh detection logic and spec-executor.md output forma
 | REPAIR_ESCALATE | stop-watcher | (internal) | Internal only |
 | ALL_TASKS_COMPLETE | coordinator | stop-watcher | Yes (primary) |
 | RECOVERY_MODE | stop-watcher | coordinator | Via prompt only |
+| HOLD (signals.jsonl) | agent → signals.jsonl | stop-watcher + coordinator | Yes (jq filter) |
+| PENDING (signals.jsonl) | agent → signals.jsonl | stop-watcher + coordinator | Yes (jq filter) |
+| DEADLOCK (signals.jsonl) | agent → signals.jsonl | stop-watcher + coordinator | Yes (jq filter) |
+| URGENT (signals.jsonl) | agent → signals.jsonl | stop-watcher | Yes (jq filter) |
+| ACK (signals.jsonl) | agent → signals.jsonl | coordinator | No |
+| CONTINUE (signals.jsonl) | agent → signals.jsonl | coordinator | No |
 
 ---
 
 *Generated 2026-04-04 from codebase analysis, revised after counter-analysis review*
+*Updated 2026-05-15 — signals.jsonl channel, ciSnapshot, new hooks, 5-layer verification*

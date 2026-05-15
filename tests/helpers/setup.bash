@@ -2,6 +2,10 @@
 # Bats-core test helpers for ralphharness
 # Common setup/teardown functions and fixture helpers
 
+# Suppress locale warnings from subprocesses (environment-level fix for bats tests)
+export LC_ALL=C
+export LANG=C
+
 # Path to the stop-watcher script under test
 # BATS_TEST_DIRNAME is the directory containing the .bats file (tests/)
 STOP_WATCHER_SCRIPT="${BATS_TEST_DIRNAME}/../plugins/ralphharness/hooks/scripts/stop-watcher.sh"
@@ -164,7 +168,7 @@ assert_stderr_contains() {
 
 # Extract JSON portion from output (filters out stderr lines mixed in by bats run)
 _extract_json_from_output() {
-    echo "$output" | grep -v '^\[ralphharness\]' | jq -s 'last'
+    echo "$output" | grep -v '^\[ralphharness\]' | jq -s 'last' 2>/dev/null
 }
 
 # Assert output is valid JSON with decision="block"
