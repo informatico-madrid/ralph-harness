@@ -6,7 +6,7 @@ Focus: Create the new reference file, make key additive changes that prove the c
 
 ### POC Core — Create deliverables
 
-- [ ] 1.1 Create `references/collaboration-resolution.md` — Cross-branch regression investigation workflow block
+- [x] 1.1 Create `references/collaboration-resolution.md` — Cross-branch regression investigation workflow block
   - **Do**:
     1. Create `plugins/ralphharness/references/collaboration-resolution.md`
     2. Add workflow block "Cross-branch regression investigation" with:
