@@ -1,6 +1,7 @@
 # Verification Layers
 
 > Used by: implement.md
+> See also: `references/channel-map.md` (shared filesystem channels where signals.jsonl and chat.md reside), `references/coordinator-pattern.md` (Signal Protocol for signal emission and HOLD gate wiring)
 
 Five verification layers run BEFORE advancing taskIndex after a task reports TASK_COMPLETE. All must pass.
 
@@ -33,6 +34,10 @@ If TASK_COMPLETE appears alongside any contradiction phrase:
 - Increment taskIteration and retry
 
 ## Layer 2: TASK_COMPLETE Signal Verification
+
+> **HOLD gate (Layer 2 source of truth)**: The HOLD/PENDING gate reads `signals.jsonl` via the canonical `jq` query from `implement.md` (pre-delegation) and `stop-watcher.sh` (loop continuation). Both code paths are byte-identical, eliminating the C2 root cause of two readers using different filters. Legacy `[HOLD]` markers in `chat.md` are honoured for one release cycle as a grep fallback when jq active-count is 0.
+>
+> **Phase 6 transition**: `signals.jsonl` replaced `chat.md` grep as the primary HOLD detection path. This layer's SIGNAL verification (below) ensures spec-executor emits the required `TASK_COMPLETE` signal.
 
 Verify spec-executor explicitly output TASK_COMPLETE (or ALL_TASKS_COMPLETE):
 - Must be present in response

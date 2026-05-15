@@ -16,6 +16,7 @@ fi
 
 # Source path resolver for spec directory resolution
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+CLAUDE_PLUGIN_ROOT="${CLAUDE_PLUGIN_ROOT:-$(cd "$SCRIPT_DIR/../../" && pwd)}"
 RALPH_CWD="$CWD"
 export RALPH_CWD
 source "$SCRIPT_DIR/path-resolver.sh"
@@ -33,6 +34,11 @@ fi
 
 # Resolve current spec using path resolver (handles multi-directory support)
 SPEC_PATH=$(ralph_resolve_current 2>/dev/null)
+# Ensure SPEC_PATH is absolute (ralph_resolve_current may return relative path)
+case "$SPEC_PATH" in
+    /*) ;; # already absolute
+    *) SPEC_PATH="$(cd "$CWD" && cd "$(dirname "$SPEC_PATH")" && pwd)/$(basename "$SPEC_PATH")" ;;
+esac
 if [ -z "$SPEC_PATH" ]; then
     exit 0
 fi
@@ -40,7 +46,11 @@ fi
 # Extract spec name from path (last component)
 SPEC_NAME=$(basename "$SPEC_PATH")
 
-STATE_FILE="$CWD/$SPEC_PATH/.ralph-state.json"
+if [[ "$SPEC_PATH" == /* ]]; then
+    STATE_FILE="$SPEC_PATH/.ralph-state.json"
+else
+    STATE_FILE="$CWD/$SPEC_PATH/.ralph-state.json"
+fi
 if [ ! -f "$STATE_FILE" ]; then
     exit 0
 fi
@@ -419,6 +429,9 @@ REPAIR_EOF
     # --- End Phase 3 ---
 fi  # closes: if [ -n "$TRANSCRIPT_PATH" ] && [ -f "$TRANSCRIPT_PATH" ]
 
+# Loader documentation: stop-watcher.sh reads .ralph-state.json via `jq empty` for corruption check only;
+# it does NOT read .ciCommands shape, so legacy ciCommands string[] does not affect this reader.
+# See hooks/scripts/migrate-state.sh for canonical loader list.
 # Validate state file is readable JSON
 if ! jq empty "$STATE_FILE" 2>/dev/null; then
     REASON=$(cat <<EOF
@@ -569,8 +582,8 @@ fi
 # Perform field-level validation if baseline is available and valid
 if [ $VALIDATION_SKIPPED -eq 0 ]; then
     (
-        exec 202>"${BASELINE_FILE}.lock"
-        flock -x 202 || exit 0
+        exec 204>"${BASELINE_FILE}.lock"
+        flock -x 204 || exit 0
 
         # Iterate over each field defined in the baseline (flat JSON format)
         # Flat format: {"field": "string" | ["array"]} — values are owners directly
@@ -621,7 +634,7 @@ if [ $VALIDATION_SKIPPED -eq 0 ]; then
             # In Phase 1, we report agent identity as "unknown"
             echo "[ralphharness] BOUNDARY_VIOLATION field=$FIELD owner=$BASELINE_OWNER severity=HIGH agent=unknown" >&2
         done
-    ) 202>"${BASELINE_FILE}.lock"
+    ) 204>"${BASELINE_FILE}.lock"
 fi
 # --- End Role Boundaries Validation ---
 
@@ -671,6 +684,28 @@ if [ "$PHASE" = "execution" ] && [ "$TASK_INDEX" -lt "$TOTAL_TASKS" ]; then
     # Read recovery mode for prompt customization
     RECOVERY_MODE=$(jq -r '.recoveryMode // false' "$STATE_FILE" 2>/dev/null || echo "false")
     MAX_TASK_ITER=$(jq -r '.maxTaskIterations // 5' "$STATE_FILE" 2>/dev/null || echo "5")
+
+    # BEGIN HOLD-GATE
+    # Mechanical active-signal gate (Layer 2). Source of truth: signals.jsonl.
+    [ ! -f "$SPEC_PATH/signals.jsonl" ] && cp "$CLAUDE_PLUGIN_ROOT/templates/signals.jsonl" "$SPEC_PATH/signals.jsonl"
+    # Source shared signal helpers (lib-signals.sh, FR-10)
+    source "$CLAUDE_PLUGIN_ROOT/hooks/scripts/lib-signals.sh"
+    if command -v jq >/dev/null 2>&1; then
+      active_count=$(active_signal_count "$SPEC_PATH")
+    else
+      active_count=$(grep -c '"status":"active"' "$SPEC_PATH/signals.jsonl" 2>/dev/null || echo 0)
+      echo "[ralphharness] WARN: jq unavailable, using grep fallback" >> "$SPEC_PATH/.progress.md"
+    fi
+    # Legacy [HOLD] grace fallback (AC-3.6, NFR-6) — one release cycle only.
+    if [ "$active_count" = "0" ] && grep -qE '^\[HOLD\]$|^\[PENDING\]$|^\[URGENT\]$' "${SPEC_PATH}/chat.md" 2>/dev/null; then
+      echo "[ralphharness] WARN: legacy [HOLD] marker in chat.md — migrate to signals.jsonl" >> "${SPEC_PATH}/.progress.md"
+      active_count=1
+    fi
+    if [ "$active_count" -gt 0 ]; then
+      echo "[ralphharness] HOLD gate active — not emitting continuation prompt" >&2
+      exit 0
+    fi
+    # END HOLD-GATE
 
     # Safety guard: prevent infinite re-invocation loop
     # If a stop event fires while already processing a stop-hook continuation,

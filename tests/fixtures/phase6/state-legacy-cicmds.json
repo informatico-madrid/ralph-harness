@@ -1,0 +1,12 @@
+{
+  "source": "spec",
+  "name": "legacy-test-spec",
+  "basePath": "specs/legacy-test",
+  "phase": "execution",
+  "taskIndex": 0,
+  "totalTasks": 10,
+  "taskIteration": 1,
+  "maxTaskIterations": 5,
+  "ciCommands": ["pytest", "ruff check ."],
+  "ciSnapshot": {}
+}

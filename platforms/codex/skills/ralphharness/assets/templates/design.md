@@ -31,6 +31,12 @@ graph TB
 - {{Responsibility 1}}
 - {{Responsibility 2}}
 
+#### Component C
+**Purpose**: {{What this component does}}
+**Responsibilities**:
+- {{Responsibility 1}}
+- {{Responsibility 2}}
+
 ### Data Flow
 
 ```mermaid
@@ -102,16 +108,41 @@ interface {{ComponentOutput}} {
 
 - {{Performance approach or constraint}}
 
+## Concurrency & Ordering Risks
+
+- {{Race condition risks}}
+- {{Ordering constraints}}
+- {{Lock contention risks}}
+
 ## Test Strategy
 
-### Unit Tests
+### Test Double Policy
+- {{What to test vs what to mock}}
+
+### Mock Boundary
+- {{What to mock and why}}
+
+### Fixtures & Test Data
+- {{Fixture strategy}}
+
+### Test Coverage Table
+- | Test | Component | Expected |
+|------|-----------|----------|
+
+### Skip Policy
+- {{When to skip tests}}
+
+### Test File Conventions
+- {{Naming and location conventions}}
+
+### Test types:
+#### Unit Tests
 - {{Component/function to test}}
 - Mock requirements: {{what to mock}}
 
 ### Integration Tests
 - {{Integration point to test}}
-
-### E2E Tests (if UI)
+#### E2E Tests (if UI)
 - {{User flow to test}}
 
 ## Existing Patterns to Follow

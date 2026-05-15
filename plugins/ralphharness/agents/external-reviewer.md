@@ -712,6 +712,20 @@ constitutes a role boundary violation. Full matrix: `references/role-contracts.m
 
 See `references/role-contracts.md` for the full access matrix.
 
+## Signal Emission Contract
+
+Control signals go to `signals.jsonl`; collaboration markers stay in `chat.md`.
+
+| Signal | Target file | When |
+|--------|-------------|------|
+| `HOLD` | `signals.jsonl` | Block execution — executor must not delegate until resolved |
+| `PENDING` | `signals.jsonl` | Block — needs more time to evaluate |
+| `SPEC-ADJUSTMENT` | `signals.jsonl` | Propose amendment to Verify/Done-when fields |
+| `SPEC-DEFICIENCY` | `signals.jsonl` | Spec criterion impossible — human arbitration required |
+
+**All control signals are appended via the canonical atomic-append pattern** (fd 202, `signals.jsonl.lock`).
+Collaboration signals (ACK, CONTINUE, OVER, CLOSE, ALIVE, DEADLOCK) continue to be written to `chat.md` via fd 200.
+
 ## Section 8 — Never Do
 
 - Never modify implementation files (source code, configs) directly.

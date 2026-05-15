@@ -1,0 +1,34 @@
+{"command":"make ${target}","category":"${category}"}")
+  done < <(grep -E '^[a-zA-Z_-]+:' "$makefile" 2>/dev/null | sed 's/:.*//' | grep -E '^(lint|test|check|build|lint-|test-)' || true)
+}
+
+detect_cargo() {
+  local base="$1"
+  [[ -f "$base/Cargo.toml" ]] || return 0
+
+  ENTRIES+=('{"command":"cargo clippy","category":"lint"}')
+  ENTRIES+=('{"command":"cargo fmt --check","category":"lint"}')
+  ENTRIES+=('{"command":"cargo test","category":"test"}')
+}
+
+detect_go_mod() {
+  local base="$1"
+  [[ -f "$base/go.mod" ]] || return 0
+
+  ENTRIES+=('{"command":"go vet ./...","category":"lint"}')
+  ENTRIES+=('{"command":"go test ./...","category":"test"}')
+}
+
+# --- Execute all marker detectors ---
+detect_pyproject "$SPEC_PATH"
+detect_package_json "$SPEC_PATH"
+detect_makefile "$SPEC_PATH"
+detect_cargo "$SPEC_PATH"
+detect_go_mod "$SPEC_PATH"
+
+# --- Output ---
+if [[ ${#ENTRIES[@]} -eq 0 ]]; then
+  echo "[]"
+else
+  printf '%s\n' "${ENTRIES[@]}" | jq -s '.'
+fi

@@ -189,7 +189,7 @@ Bmalph avoids this by putting complexity in **infra** (git commands, exit codes,
 | What | Why | How |
 |------|-----|-----|
 | Text-based HOLD check | LLM reasons past the rule | Replace with `grep -c "\[HOLD\]\|\[PENDING\]\|\[URGENT\]"` + exit code |
-| 5-reference coordinator context (~2,118 lines) | Model loses attention | Split into modular refs, load on demand |
+| 5-reference coordinator context (~2,118 lines) | Model loses attention | ❌ CANCELLED — addressed via Specs 3-5 instead |
 | 8 Native Task Sync sections (duplicated pattern) | Each can fail silently, same logic repeated 8x | Consolidate to 2: "before delegation" and "after completion" |
 | Verification layers defined in 2 contradictory files | Anti-fabrication not always active | Single canonical source |
 | Quality checkpoint rules in 3 files | Divergence risk | Single source |
@@ -233,14 +233,14 @@ Bmalph avoids this by putting complexity in **infra** (git commands, exit codes,
 └──────────────────────┬──────────────────────────────┘
                        │
 ┌──────────────────────▼──────────────────────────────┐
-│  PHASE 2: Reduce Bloat                              │
-│  Spec: prompt-diet-refactor                         │
+│  PHASE 2: Reduce Bloat ❌ CANCELLED                  │
+│  Spec: prompt-diet-refactor (ABANDONED)             │
 │                                                     │
 │  1. Split coordinator-pattern.md → modular refs     │
 │  2. Eliminate duplications → single source each     │
 │  3. Remove dead text from agent context             │
 │  4. Consolidate 8 sync sections → 2                 │
-│  5. Target: <5,000 tokens per iteration (was 15K+)  │
+│  ⚠️ CANCELLED 2026-05-13: Risks > Benefits          │
 └──────────────────────┬──────────────────────────────┘
                        │
 ┌──────────────────────▼──────────────────────────────┐
@@ -273,8 +273,18 @@ Bmalph avoids this by putting complexity in **infra** (git commands, exit codes,
 └──────────────────────┬──────────────────────────────┘
                        │
 ┌──────────────────────▼──────────────────────────────┐
-│  PHASE 6: Agent Collaboration Protocol              │
-│  Spec: collaboration-resolution                     │
+│ PHASE 6: Signal Event Log + CI Auto-Detection       │
+│ Spec: signal-log-and-ci-autodetect                  │
+│                                                      │
+│ 1. signals.jsonl → immutable event log for control  │
+│ 2. chat.md → rich collaboration only                │
+│ 3. detect-ci-commands.sh → auto from project markers│
+│ 4. Upgrade HOLD check from grep to jq on JSONL      │
+└──────────────────────┬──────────────────────────────┘
+                       │
+┌──────────────────────▼──────────────────────────────┐
+│ PHASE 7: Agent Collaboration Protocol │
+│ Spec: collaboration-resolution │
 │                                                     │
 │  1. Cross-branch regression investigation workflow   │
 │  2. Experiment-propose-validate pattern in chat     │
@@ -283,13 +293,34 @@ Bmalph avoids this by putting complexity in **infra** (git commands, exit codes,
 └──────────────────────┬──────────────────────────────┘
                        │
 ┌──────────────────────▼──────────────────────────────┐
-│  PHASE 7: Pair Debug Trigger                        │
-│  Spec: pair-debug-auto-trigger                      │
-│                                                     │
-│  1. Auto-detect condition → enter pair mode         │
-│  2. Driver/Navigator role split (no human push)     │
-│  3. Debug logging as first-class technique          │
-│  4. "First fix failed → escalate to pair" pattern   │
+│ PHASE 8: Pair Debug Trigger │
+│ Spec: pair-debug-auto-trigger │
+│ │
+│ 1. Auto-detect condition → enter pair mode │
+│ 2. Driver/Navigator role split (no human push) │
+│ 3. Debug logging as first-class technique │
+│ 4. "First fix failed → escalate to pair" pattern │
+└──────────────────────┬──────────────────────────────┘
+                       │
+┌──────────────────────▼──────────────────────────────┐
+│ PHASE 9: Pre-Execution Critic                        │
+│ Spec: pre-execution-critic                           │
+│                                                      │
+│ 1. Security risk levels per tool call                │
+│ 2. Pre-execution hook → block HIGH/CRITICAL          │
+│ 3. Confirmation policy for risky operations          │
+│ 4. Mechanical enforcement of role contracts           │
+└──────────────────────┬──────────────────────────────┘
+                       │
+┌──────────────────────▼──────────────────────────────┐
+│ PHASE 10: Context Middleware                          │
+│ Spec: context-middleware                              │
+│ (Replaces cancelled Spec 2 with middleware approach)  │
+│                                                      │
+│ 1. Proactive condensation → threshold-based          │
+│ 2. Reactive condensation → on context overflow       │
+│ 3. Tool result eviction → large outputs to filesystem│
+│ 4. Tool argument truncation → old calls compressed   │
 └─────────────────────────────────────────────────────┘
 ```
 
@@ -299,7 +330,7 @@ Bmalph avoids this by putting complexity in **infra** (git commands, exit codes,
 
 ## 6. Spec Briefs (One Per Phase)
 
-### Spec 1: `engine-state-hardening`
+### Spec 1: `engine-state-hardening` ✅ COMPLETED
 
 **Targets**: C1, C2, C3, C4, I4 (partial)
 
@@ -315,18 +346,27 @@ Bmalph avoids this by putting complexity in **infra** (git commands, exit codes,
 
 ---
 
-### Spec 2: `prompt-diet-refactor`
+### Spec 2: `prompt-diet-refactor` ❌ **CANCELLED**
+
+> **Cancellation Date**: 2026-05-13
+> **Decision**: Analysis determined that the risks of this refactoring outweigh the benefits. The complexity of splitting coordinator-pattern.md into 5 modular references, consolidating 8 Native Task Sync sections, and eliminating duplications presented too much risk of introducing regressions and breaking existing functionality. The spec was **not executed** and is **formally abandoned**.
 
 **Targets**: I1
 
 | # | Change | Detail |
 |---|--------|--------|
-| 1 | **Split coordinator-pattern.md** (1,098 lines → ~150 lines core + references) | Extract to: `coordinator-core.md` (~150 lines: role, FSM, critical rules, signal protocol), `ve-verification-contract.md` (VE task delegation, skills loading, anti-patterns reference), `task-modification.md` (SPLIT/PREREQ/FOLLOWUP/SPEC_ADJUSTMENT, reindexing), `pr-lifecycle.md` (Phase 5 PR management), `git-strategy.md` (commit/push strategy) |
-| 2 | **Consolidate 8 Native Task Sync sections → 2** | "Before delegation" (Initial Setup + Pre-Delegation + Bidirectional + Parallel + Failure + Modification) and "After completion" (Post-Verification + Completion). Same graceful degradation pattern, defined once, referenced twice. |
-| 3 | **Single source of truth** for duplicated content | Quality checkpoints → ONLY in `quality-checkpoints.md`. Remove from `phase-rules.md` and `task-planner.md`. VE definitions → ONLY in `quality-checkpoints.md`. Remove from `phase-rules.md` and `task-planner.md`. E2E anti-patterns → ONLY in `e2e-anti-patterns.md`. Remove inline from `coordinator-pattern.md` (now `coordinator-core.md`). Intent classification → ONLY in `intent-classification.md`. Remove from `task-planner.md` and skills. Test integrity → ONLY in `test-integrity.md`. Remove from `quality-checkpoints.md`. |
-| 4 | **Move dead text out of agent context** | Detailed bash/jq scripts for atomic chat append, flock locks, jq merge patterns → `hooks/scripts/` (reference by name in prompts). VE-cleanup skip-forward pseudocode → `hooks/scripts/` (reference by name). Native Task Sync algorithm details → `hooks/scripts/` (reference by name). |
-| 5 | **Update implement.md reference list** | After split, coordinator loads: `coordinator-core.md` (always), plus one of `ve-verification-contract.md` / `task-modification.md` / `pr-lifecycle.md` / `git-strategy.md` (on demand, based on current task type). Never all at once. |
-| 6 | **Target metric** | <5,000 tokens per coordinator iteration (down from ~15,000+). Measured as total lines of references loaded × ~4 tokens/line. |
+| 1 | ~~**Split coordinator-pattern.md**~~ | ~~(1,098 lines → ~150 lines core + references)~~ |
+| 2 | ~~**Consolidate 8 Native Task Sync sections → 2**~~ | ~~"Before delegation" and "After completion"~~ |
+| 3 | ~~**Single source of truth** for duplicated content~~ | ~~Quality checkpoints, VE definitions, E2E anti-patterns~~ |
+| 4 | ~~**Move dead text out of agent context**~~ | ~~Bash/jq scripts → hooks/scripts/~~ |
+| 5 | ~~**Update implement.md reference list**~~ | ~~Modular loading never implemented~~ |
+
+**Cancellation Rationale**:
+- Risk of regressions in coordinator logic too high
+- Splitting 1,098-line file into 5 references risks breaking existing coordination patterns
+- 8 Native Task Sync sections have proven stable in practice
+- Token context problem was addressed partially via other means (specs 3-5)
+- Cost/benefit analysis: high complexity for uncertain gain
 
 ---
 
@@ -395,7 +435,38 @@ Bmalph avoids this by putting complexity in **infra** (git commands, exit codes,
 
 ---
 
-### Spec 6: `collaboration-resolution`
+### Spec 6: `signal-log-and-ci-autodetect`
+
+**Targets**: C2 (upgrade from grep to JSONL), C4 (CI auto-detection), new gaps from harness engineering research
+
+**Context**: Spec 1 (engine-state-hardening) implemented a grep-based HOLD check on `chat.md` and a conceptual CI snapshot rule. The harness engineering research (OpenHands SDK + Deep Agents) revealed better approaches: an **immutable signal event log** (JSONL) for control signals, and **auto-detection of CI commands** from project markers. This spec upgrades both — without re-executing Spec 1.
+
+**What currently exists (verified against real code)**:
+- ✅ Spec 1 grep-based HOLD check: `grep -c "^\[HOLD\]\|^\[PENDING\]\|^\[URGENT\]" "$SPEC_PATH/chat.md"` (implemented)
+- ✅ Spec 1 CI snapshot conceptual rule: executor reports task verification + CI snapshot separately (implemented)
+- ✅ Spec 4 CI command discovery from Verification Contract in requirements.md (implemented)
+- ✅ chat.md bidirectional communication with atomic append (flock-based)
+- ❌ **No signal event log** — control signals (HOLD, PENDING, DEADLOCK) are text in chat.md, requiring LLM interpretation
+- ❌ **No auto-detection of CI commands** — CI commands must be manually specified in Verification Contract
+- ❌ **No separation of control vs collaboration** — chat.md mixes control signals with rich collaboration
+
+**Key design decisions**:
+- **Complexity**: LOW-MEDIUM. Adding a new file format (signals.jsonl) and a detection script. No restructuring of existing files.
+- **Benefit**: HIGH. (a) HOLD check becomes truly mechanical (jq on JSONL, not grep on text). (b) CI commands auto-discovered — no manual specification. (c) chat.md freed for rich collaboration (prerequisite for Spec 7).
+- **Approach**: Add signals.jsonl alongside chat.md. Migrate control signals to JSONL. Keep chat.md for collaboration. Add detect-ci-commands.sh for auto-discovery.
+
+| # | Change | File | Detail |
+|---|--------|------|--------|
+| 1 | **Signal event log (signals.jsonl)** | NEW `templates/signals.jsonl` | **Separation of concerns**: Control signals (HOLD, PENDING, DEADLOCK, URGENT, ACK, CONTINUE, OVER, CLOSE) move from `chat.md` to an **immutable event log** (`signals.jsonl`). Each signal is a JSON line with `type`, `signal`, `from`, `task`, `status` (active/resolved), `timestamp`. `chat.md` remains for **rich collaboration** — pair programming, hypothesis exchange, context sharing, experiment results. **Source**: OpenHands SDK uses immutable event log with typed events (see `docs/harness-engineering/11-openhands-deep-dive.md` section 4). |
+| 2 | **Upgrade HOLD check from grep to jq** | `commands/implement.md` (coordinator prompt) | Replace Spec 1's grep-based check with: `jq -r 'select(.signal=="HOLD" or .signal=="PENDING" or .signal=="DEADLOCK") | select(.status=="active")' "$SPEC_PATH/signals.jsonl" | wc -l`. Count > 0 → block delegation. Count == 0 → proceed. **Why JSONL is better than grep on chat.md**: (a) No LLM interpretation — structured data, not text. (b) `status: active/resolved` is explicit, not inferred from text markers. (c) Immutable — signals are appended, never edited. (d) chat.md stays clean for collaboration. |
+| 3 | **Skills auto-detection** | NEW `hooks/scripts/detect-ci-commands.sh` | At spec start, auto-discover CI commands from project markers: `pyproject.toml` → ruff/mypy/pytest, `package.json` → pnpm lint/check-types/test, `Makefile` → make lint/test, `Cargo.toml` → cargo clippy/test. Store discovered commands in `.ralph-state.json` as `ciCommands: string[]`. This extends Spec 4's CI command discovery (from Verification Contract) with **automatic detection** — no manual specification needed. **Source**: OpenHands SDK auto-detects skills from project markers like `uv.lock`, `deno.json` (see `docs/harness-engineering/11-openhands-deep-dive.md` section 9). |
+| 4 | **Update agent files for signal migration** | `agents/spec-executor.md`, `agents/external-reviewer.md` | Update signal emission instructions: control signals (HOLD, PENDING, DEADLOCK) → append to `signals.jsonl`. Collaboration content (hypotheses, findings, experiments) → append to `chat.md`. This is the migration path from Spec 1's grep-based approach. |
+
+**NOT in scope**: Don't re-execute or modify Spec 1's completed work. Don't change the coordinator's core loop. Don't add LLM-based summarization. Don't modify existing chat.md content.
+
+---
+
+### Spec 7: `collaboration-resolution`
 
 **Targets**: New gap from Brainstorm 3 — agents collaborating to solve regressions without escalating to human.
 
@@ -430,7 +501,7 @@ Bmalph avoids this by putting complexity in **infra** (git commands, exit codes,
 
 ---
 
-### Spec 7: `pair-debug-auto-trigger`
+### Spec 8: `pair-debug-auto-trigger`
 
 **Targets**: Critical gap — collaboration emerges with human push, needs to emerge automatically.
 
@@ -464,14 +535,84 @@ Bmalph avoids this by putting complexity in **infra** (git commands, exit codes,
 
 ---
 
+### Spec 9: `pre-execution-critic`
+
+**Targets**: I2 (mechanical enforcement of role boundaries), new gap from harness engineering research
+
+**Context**: Spec 3 (role-boundaries) added file-access constraints as **rules in agent prompts** ("DO NOT edit .ralph-state.json"). But rules in prompts are text interpretation — the LLM can still violate them. OpenHands SDK solves this with a **CriticMixin** that evaluates actions **before** execution, blocking dangerous operations mechanically. This spec adds the same capability to RalphHarness.
+
+**What currently exists (verified against real code)**:
+- ✅ Role contracts in `references/role-contracts.md` (Spec 3)
+- ✅ "DO NOT edit" lists in agent files (Spec 3)
+- ✅ State integrity hook that detects unauthorized edits after the fact (Spec 3)
+- ❌ **No pre-execution evaluation** — actions are only checked after they execute
+- ❌ **No security risk levels** — all write operations treated equally
+- ❌ **No confirmation policy** — no mechanism to pause before risky operations
+
+**Key design decisions**:
+- **Complexity**: LOW. This is about adding a hook that checks tool calls before execution, not building new infrastructure.
+- **Benefit**: HIGH. Converts role boundaries from "prompt rules" to "mechanical constraints" — exactly the pattern the roadmap identifies as the root solution (Section 3: "Move critical rules from text to mechanics").
+- **Approach**: Add a pre-execution check script that the coordinator runs before delegating to the executor. The script evaluates the proposed action against role contracts and risk levels. HIGH/CRITICAL risk actions require explicit coordinator approval.
+
+| # | Change | File | Detail |
+|---|--------|------|--------|
+| 1 | **Security risk level classification** | `references/security-risk-levels.md` (NEW) | Define risk levels for tool call types: `LOW` (read-only: ls, read, grep, glob), `MEDIUM` (write within spec scope: edit files in spec paths), `HIGH` (write outside spec scope: edit files not covered by spec), `CRITICAL` (destructive: delete files, force push, reset state). Map each tool to its default risk level. |
+| 2 | **Pre-execution check script** | `hooks/scripts/pre-execution-check.sh` (NEW) | Before each tool call delegation, coordinator runs this script. Input: tool name, target file/path, agent role. Output: risk level + allow/block decision. Logic: (a) check role contracts for forbidden operations → block, (b) classify risk level → if HIGH/CRITICAL, require confirmation, (c) if LOW/MEDIUM, allow. |
+| 3 | **Confirmation policy in coordinator** | `references/coordinator-pattern.md` (extend) | When pre-execution check returns HIGH or CRITICAL: coordinator pauses delegation, logs to .progress.md with "PRE-EXECUTION CHECK: HIGH risk operation detected — [details]", and waits for explicit human approval or rejection. This is the same pattern as OpenHands's confirmation policy. |
+| 4 | **Mechanical role contract enforcement** | `hooks/scripts/pre-execution-check.sh` | Integrate role contracts from `references/role-contracts.md` into the pre-execution check. If the agent's role forbids writing to a file, the check blocks it mechanically — no LLM interpretation needed. This makes Spec 3's role contracts **enforced by code**, not just by prompt rules. |
+
+**Source**: OpenHands SDK `CriticMixin` + `SecurityRisk` enum + confirmation policy (see `docs/harness-engineering/11-openhands-deep-dive.md` sections 7 and 8).
+
+**NOT in scope**: Don't create new agent types. Don't change the execution loop structure. Don't add LLM-based critic evaluation (the check is deterministic, based on rules). Don't block read-only operations.
+
+---
+
+### Spec 10: `context-middleware`
+
+**Targets**: I1 (prompt bloat / context overflow), replacement for cancelled Spec 2
+
+**Context**: Spec 2 (`prompt-diet-refactor`) was cancelled because splitting coordinator-pattern.md into modular files carried too much regression risk. But the underlying problem remains: the coordinator reads ~2,118 lines of references every iteration, and as specs grow (30+ tasks), context overflows. Deep Agents and OpenHands solve this with **middleware/condensation** — intercepting and transforming the context before it reaches the LLM, without restructuring the source files.
+
+**What currently exists (verified against real code)**:
+- ✅ Circuit breaker stops runaway loops (Spec 4)
+- ✅ Metrics tracking per task (Spec 4)
+- ❌ **No context size management** — coordinator loads all references every iteration
+- ❌ **No tool result eviction** — large tool outputs stay in context forever
+- ❌ **No condensation** — no mechanism to compact history when context grows
+- ❌ **No argument truncation** — old tool call arguments stay at full size
+
+**Key design decisions**:
+- **Complexity**: MEDIUM. This requires a new layer between the coordinator and the LLM, but it's **additive** — no existing files are restructured.
+- **Benefit**: HIGH. This is the difference between "coordinator works for 10 tasks" and "coordinator works for 50+ tasks without context overflow."
+- **Approach**: Add a context management layer that runs before each LLM call. It doesn't restructure source files — it transforms what the LLM sees. This is the **middleware pattern** from Deep Agents, not the **file split pattern** from cancelled Spec 2.
+
+| # | Change | File | Detail |
+|---|--------|------|--------|
+| 1 | **Proactive condensation** | `hooks/scripts/condense-context.sh` (NEW) | Before each coordinator iteration, estimate context size (word count of references + chat.md + .progress.md). If exceeds threshold (configurable, default ~80% of model window): (a) archive .progress.md entries older than last 5 tasks to `.progress.archive.md`, (b) truncate chat.md to last N messages (archive full chat.md to `chat.archive.md`), (c) log condensation to .progress.md. **Source**: Deep Agents `SummarizationMiddleware` proactive threshold (see `docs/harness-engineering/10-deep-agents-deep-dive.md` section 4.2). |
+| 2 | **Reactive condensation** | `hooks/scripts/stop-watcher.sh` (extend) | When coordinator LLM call fails with context overflow error: (a) archive full chat.md to `chat.archive.md`, (b) create condensed chat.md with only current task context, (c) archive .progress.md to `.progress.archive.md`, (d) create minimal .progress.md with current task status, (e) retry iteration. **Source**: OpenHands `CondensationRequest` reactive pattern (see `docs/harness-engineering/11-openhands-deep-dive.md` section 6.3). |
+| 3 | **Tool result eviction** | `references/context-middleware.md` (NEW) | Rule for spec-executor: when a tool result exceeds N lines (configurable, default 200), write full result to `specs/<name>/.tool-results/<task-index>-<tool-call-id>.txt` and replace in context with preview (first 5 + last 5 lines + reference path). **Source**: Deep Agents `FilesystemMiddleware` eviction (see `docs/harness-engineering/10-deep-agents-deep-dive.md` section 5.3). |
+| 4 | **Tool argument truncation** | `references/context-middleware.md` | Rule for coordinator: when constructing context for LLM call, truncate arguments of tool calls from completed tasks (keep only first 50 + last 50 chars of each arg). Active task tool calls remain at full size. **Source**: Deep Agents `TruncateArgsSettings` (see `docs/harness-engineering/10-deep-agents-deep-dive.md` section 4.3). |
+
+**Why this replaces Spec 2 without its risks**:
+- Spec 2 tried to **restructure source files** (split coordinator-pattern.md into 5 files) → high regression risk
+- Spec 9 adds a **transformation layer** that doesn't modify source files → low regression risk
+- If the middleware breaks, you can disable it and the coordinator works as before (just with larger context)
+- The middleware is **opt-in** — it only activates when context exceeds thresholds
+
+**NOT in scope**: Don't restructure any existing files. Don't add LLM-based summarization (too expensive per iteration). Don't change the coordinator's core loop. Don't modify agent prompts.
+
+---
+
 ## 7. Master File Change List
 
 | File | Change | Spec |
 |------|--------|------|
 | `schemas/spec.schema.json` | Add nativeTaskMap, nativeSyncEnabled, nativeSyncFailureCount, chat.executor.lastReadLine | 1 |
 | `references/verification-layers.md` | **Canonical source** — update to 5 layers (add Layer 0 EXECUTOR_START, Layer 3 Anti-fabrication) | 1 |
-| `references/coordinator-pattern.md` | Reference unified verification, add mechanical HOLD check, then split in Spec 2 | 1 + 2 |
-| `commands/implement.md` | State validator, mechanical HOLD, CI snapshot rule, checkpoint, circuit breaker, update reference list after split | 1 + 4 + 2 |
+| `references/coordinator-pattern.md` | Reference unified verification, add mechanical HOLD check | 1 |
+| `commands/implement.md` | State validator, mechanical HOLD check, CI snapshot rule, checkpoint, circuit breaker, update reference list after split | 1 + 4 + 2 |
+| NEW: `templates/signals.jsonl` | Signal event log template (JSONL format for HOLD/PENDING/DEADLOCK signals) | 6 |
+| NEW: `hooks/scripts/detect-ci-commands.sh` | Auto-detect CI commands from project markers (pyproject.toml, package.json, Makefile, Cargo.toml) | 6 |
 | `references/quality-checkpoints.md` | Keep as canonical. Remove duplicated test integrity section. | 2 |
 | `references/phase-rules.md` | Remove duplicated quality checkpoint rules and VE definitions | 2 |
 | `agents/task-planner.md` | Remove duplicated intent classification, VE definitions, quality checkpoint rules | 2 |
@@ -489,15 +630,21 @@ Bmalph avoids this by putting complexity in **infra** (git commands, exit codes,
 | NEW: `references/loop-safety.md` | All safety rules (checkpoint, circuit breaker, metrics, read-only detection) | 4 |
 | NEW: `hooks/scripts/checkpoint.sh` | Git checkpoint utilities | 4 |
 | NEW: `plugins/ralph-bmad-bridge/` | BMAD bridge plugin | 5 |
-| NEW: `references/collaboration-resolution.md` | Cross-branch regression workflow, experiment pattern, chat signals | 6 |
-| `references/failure-recovery.md` | Extend fix task generation to support BUG_DISCOVERY trigger | 6 |
-| `templates/chat.md` | Add collaboration signals (HYPOTHESIS, EXPERIMENT, FINDING, ROOT_CAUSE, FIX_PROPOSAL, BUG_DISCOVERY) | 6 |
-| `agents/external-reviewer.md` | Add "before modifying tests, check baseline" rule, reference collaboration-resolution | 6 |
-| `agents/spec-executor.md` | Reference collaboration-resolution for cross-branch investigation | 6 |
-| NEW: `references/pair-debug.md` | Auto-trigger condition, Driver/Navigator roles, pair mode announcement | 7 |
-| `references/failure-recovery.md` | Extend to announce pair-debug mode before fix task (pre-existing test failures) | 7 |
-| `agents/spec-executor.md` | Add debug logging as first-class investigation technique (in pair mode) | 7 |
-| `references/coordinator-pattern.md` (or `coordinator-core.md`) | Add pair-debug mode announcement to signal handling | 7 |
+| NEW: `references/collaboration-resolution.md` | Cross-branch regression workflow, experiment pattern, chat signals | 7 |
+| `references/failure-recovery.md` | Extend fix task generation to support BUG_DISCOVERY trigger | 7 |
+| `templates/chat.md` | Add collaboration signals (HYPOTHESIS, EXPERIMENT, FINDING, ROOT_CAUSE, FIX_PROPOSAL, BUG_DISCOVERY) | 7 |
+| `agents/external-reviewer.md` | Add "before modifying tests, check baseline" rule, reference collaboration-resolution | 7 |
+| `agents/spec-executor.md` | Reference collaboration-resolution for cross-branch investigation | 7 |
+| NEW: `references/pair-debug.md` | Auto-trigger condition, Driver/Navigator roles, pair mode announcement | 8 |
+| `references/failure-recovery.md` | Extend to announce pair-debug mode before fix task (pre-existing test failures) | 8 |
+| `agents/spec-executor.md` | Add debug logging as first-class investigation technique (in pair mode) | 8 |
+| `references/coordinator-pattern.md` (or `coordinator-core.md`) | Add pair-debug mode announcement to signal handling | 8 |
+| NEW: `references/security-risk-levels.md` | Risk level classification for tool calls (LOW/MEDIUM/HIGH/CRITICAL) | 9 |
+| NEW: `hooks/scripts/pre-execution-check.sh` | Pre-execution check: role contract enforcement + risk level evaluation | 9 |
+| `references/coordinator-pattern.md` | Add confirmation policy for HIGH/CRITICAL risk operations | 9 |
+| NEW: `references/context-middleware.md` | Context management rules: eviction, truncation, condensation thresholds | 10 |
+| NEW: `hooks/scripts/condense-context.sh` | Proactive condensation: archive old .progress.md and chat.md when context exceeds threshold | 10 |
+| `hooks/stop-watcher.sh` | Add reactive condensation on context overflow error | 10 |
 
 ---
 
@@ -506,23 +653,30 @@ Bmalph avoids this by putting complexity in **infra** (git commands, exit codes,
 | # | Criteria | How to Verify |
 |---|----------|--------------|
 | 1 | **No verification contradictions** | `grep -c "layer" references/verification-layers.md references/coordinator-pattern.md commands/implement.md` — all reference 5 layers |
-| 2 | **HOLD cannot be missed** | Mechanical grep check returns exit code > 0 → blocks delegation. No LLM interpretation involved. Test: place HOLD in chat.md, start execution, verify it blocks. |
+| 2 | **HOLD cannot be missed** | Signal event log (`signals.jsonl`) check: `jq` filter for active HOLD/PENDING/DEADLOCK returns count > 0 → blocks delegation. No LLM interpretation involved. Test: append HOLD signal to signals.jsonl, start execution, verify it blocks. |
 | 3 | **State drift detected at start** | Pre-loop validation: if tasks.md [x] count ≠ taskIndex, log to .progress.md and correct before proceeding. Test: manually change taskIndex, run implement, verify correction. |
 | 4 | **Schema complete** | All fields used in implement.md and coordinator-pattern.md are defined in spec.schema.json. Test: JSON schema validation passes for real .ralph-state.json files. |
 | 5 | **CI snapshot separated from task verify** | Executor reports task verification AND CI snapshot separately. One cannot mask the other. Test: create task where verify passes but ruff fails — both must be reported. |
-| 6 | **Coordinator context < 5,000 tokens** | After Spec 2: count lines of references loaded per iteration. Must be < ~1,200 lines. |
-| 7 | **No duplicated rules** | After Spec 2: grep for "Quality checkpoint", "VE0", "VE1", "page.goto" — each appears in only one canonical file. |
+| 6 | ~~**Coordinator context < 5,000 tokens**~~ | ❌ Spec 2 cancelled — **replaced by Spec 9** (context-middleware) with middleware approach instead of file split. |
+| 7 | ~~**No duplicated rules**~~ | ❌ Spec 2 cancelled — dedup work deferred. Current duplication remains as acceptable technical debt. |
 | 8 | **No reviewer editing state files** | After Spec 3: role contract in all agent files. Test: ask reviewer to edit .ralph-state.json — it must refuse. |
 | 9 | **Rollback available** | After Spec 4: pre-loop checkpoint SHA stored in .ralph-state.json. Test: run spec, intentionally break code, `git reset --hard <SHA>` restores. |
 | 10 | **Circuit breaker stops runaway loops** | After Spec 4: after N consecutive failures, execution stops with error. Test: create spec with failing tasks, verify stop. |
 | 11 | **Metrics visible** | After Spec 4: `.metrics.jsonl` file exists after execution with per-task entries. |
 | 12 | **BMAD specs accepted** | After Spec 5: `/ralph-bmad:import` produces valid spec in `specs/<name>/` that `/ralphharness:implement` can execute. |
 | 13 | **Human escalation only for judgment** | Problems like "tests broken", "coverage faked", "state inconsistent" caught by engine. Only semantic/product decisions reach human. |
-| 14 | **Cross-branch regression solved autonomously** | After Spec 6: when a test passes on main but fails on HEAD (with no test/fixture changes), agents follow the collaboration workflow to find root cause without human escalation. Test: intentionally break code in a spec, verify agents investigate via git diff and find the bug. |
-| 15 | **BUG_DISCOVERY creates fix tasks** | After Spec 6: reviewer can write BUG_DISCOVERY to task_review.md, coordinator generates a fix task from it. Test: reviewer discovers a bug, verify fix task is created and executed. |
-| 16 | **Pair-debug auto-triggers without human push** | After Spec 7: when a pre-existing test fails and first fix attempt fails (taskIteration >= 2), coordinator announces pair-debug mode in chat.md automatically. No human instruction needed. Test: intentionally break code, let agents attempt fix, verify pair mode activates on second iteration. |
-| 17 | **Driver/Navigator collaboration produces root cause** | After Spec 7: in pair-debug mode, Driver (executor) instruments code, Navigator (reviewer) analyzes diff/architecture, they exchange hypotheses and converge on root cause. Test: verify chat.md shows hypothesis exchange pattern, not just sequential fix attempts. |
-| 18 | **Debug logging added and cleaned up** | After Spec 7: debug logging is used as investigation tool in pair mode, and is removed (or converted to tests) before task completion. Test: verify no orphan debug logging remains after pair-debug session completes. |
+| 14 | **Cross-branch regression solved autonomously** | After Spec 7: when a test passes on main but fails on HEAD (with no test/fixture changes), agents follow the collaboration workflow to find root cause without human escalation. Test: intentionally break code in a spec, verify agents investigate via git diff and find the bug. |
+| 15 | **BUG_DISCOVERY creates fix tasks** | After Spec 7: reviewer can write BUG_DISCOVERY to task_review.md, coordinator generates a fix task from it. Test: reviewer discovers a bug, verify fix task is created and executed. |
+| 16 | **Pair-debug auto-triggers without human push** | After Spec 8: when a pre-existing test fails and first fix attempt fails (taskIteration >= 2), coordinator announces pair-debug mode in chat.md automatically. No human instruction needed. Test: intentionally break code, let agents attempt fix, verify pair mode activates on second iteration. |
+| 17 | **Driver/Navigator collaboration produces root cause** | After Spec 8: in pair-debug mode, Driver (executor) instruments code, Navigator (reviewer) analyzes diff/architecture, they exchange hypotheses and converge on root cause. Test: verify chat.md shows hypothesis exchange pattern, not just sequential fix attempts. |
+| 18 | **Debug logging added and cleaned up** | After Spec 8: debug logging is used as investigation tool in pair mode, and is removed (or converted to tests) before task completion. Test: verify no orphan debug logging remains after pair-debug session completes. |
+| 19 | **Pre-execution critic blocks forbidden operations** | After Spec 9: when spec-executor attempts a write operation forbidden by role contracts, the pre-execution check blocks it mechanically before the file is modified. Test: instruct executor to edit .ralph-state.json, verify the operation is blocked by pre-execution-check.sh. |
+| 20 | **Security risk levels active** | After Spec 9: every tool call delegation includes a risk level (LOW/MEDIUM/HIGH/CRITICAL). HIGH/CRITICAL operations require coordinator confirmation. Test: create a task that writes outside spec scope, verify coordinator pauses for confirmation. |
+| 21 | **Proactive condensation prevents overflow** | After Spec 10: when context exceeds threshold, .progress.md and chat.md are automatically archived and condensed. Test: run a 30+ task spec, verify condensation triggers before context overflow. |
+| 22 | **Reactive condensation recovers from overflow** | After Spec 10: when coordinator LLM call fails with context overflow, condensation runs automatically and the iteration retries. Test: artificially inflate context, verify recovery without human intervention. |
+| 23 | **Tool result eviction works** | After Spec 10: tool results exceeding 200 lines are evicted to filesystem with preview + reference. Test: run a task that produces large grep output, verify eviction to .tool-results/ directory. |
+| 24 | **CI commands auto-detected** | After Spec 6: `detect-ci-commands.sh` discovers lint/test/typecheck commands from project markers (pyproject.toml, package.json, Makefile). Test: run in a Python project with pyproject.toml, verify ruff/mypy/pytest are discovered and stored in .ralph-state.json. |
+| 25 | **Signal event log replaces grep-based HOLD check** | After Spec 6: `signals.jsonl` exists with typed JSON entries. HOLD check uses `jq` filter on JSONL, not `grep` on chat.md. Test: append HOLD signal to signals.jsonl, start execution, verify it blocks. Verify chat.md contains no control signals. |
 
 ---
 
@@ -535,8 +689,8 @@ Bmalph avoids this by putting complexity in **infra** (git commands, exit codes,
 5. **No breaking changes**: Existing specs must continue to work after each spec.
 6. **Minimal scope per spec**: One spec = one problem cluster. Don't bleed into other specs.
 7. **Every claim verified against real code**: If a brainstorm claim doesn't match reality, adjust the plan based on what the code actually does.
-8. **Spec 6 is special**: It encodes a pattern that already works in practice (agent collaboration via chat). The goal is to make it reliable and repeatable, not to invent new behavior.
-9. **Spec 7 is the crown jewel**: It encodes the trigger that makes pair-debug happen automatically, without human push. This is the difference between "agents that collaborate when told to" and "agents that collaborate when stuck."
+8. **Spec 7 is special**: It encodes a pattern that already works in practice (agent collaboration via chat). The goal is to make it reliable and repeatable, not to invent new behavior.
+9. **Spec 8 is the crown jewel**: It encodes the trigger that makes pair-debug happen automatically, without human push. This is the difference between "agents that collaborate when told to" and "agents that collaborate when stuck."
 
 ---
 
@@ -559,25 +713,42 @@ This document differs from earlier versions in these ways (after full codebase a
 
 | Idea | Veredicto | Acción |
 |------|-----------|--------|
-| "Agentes debaten hipótesis por chat.md" | ✅ **Ya funciona en práctica** — pero ad hoc, no por reglas explícitas | Spec 6: codificar el patrón exitoso |
-| "git diff main vs HEAD para encontrar root cause" | ✅ **Parcialmente** — spec-executor puede hacer git diff, pero no como workflow first-class | Spec 6: cross-branch regression workflow |
-| "Experimentos (subir timeout) para validar hipótesis" | ✅ **Ad hoc** — no hay patrón formal experiment-propose-validate | Spec 6: formalize en chat protocol |
-| "BUG_DISCOVERY → auto fix task" | ❌ **No existe** — fix tasks solo se generan por executor failure | Spec 6: extend failure-recovery.md |
-| "Before modifying tests, check baseline en main" | ❌ **No existe** — ninguna regla previene cambios a tests sin verificar baseline | Spec 6: hard rule en external-reviewer |
+| "Agentes debaten hipótesis por chat.md" | ✅ **Ya funciona en práctica** — pero ad hoc, no por reglas explícitas | Spec 7: codificar el patrón exitoso |
+| "git diff main vs HEAD para encontrar root cause" | ✅ **Parcialmente** — spec-executor puede hacer git diff, pero no como workflow first-class | Spec 7: cross-branch regression workflow |
+| "Experimentos (subir timeout) para validar hipótesis" | ✅ **Ad hoc** — no hay patrón formal experiment-propose-validate | Spec 7: formalize en chat protocol |
+| "BUG_DISCOVERY → auto fix task" | ❌ **No existe** — fix tasks solo se generan por executor failure | Spec 7: extend failure-recovery.md |
+| "Before modifying tests, check baseline en main" | ❌ **No existe** — ninguna regla previene cambios a tests sin verificar baseline | Spec 7: hard rule en external-reviewer |
 | "E2E diagnostics script" | ❌ Descartado — no es infra prioritaria, es patrón de colaboración | No action (podría ser spec futura separada) |
 
 ### From Brainstorm 4 (Pair Programming — CRÍTICO)
 
 | Idea | Veredicto | Acción |
 |------|-----------|--------|
-| "Colaboración emerge con empujón humano" | ✅ **Confirmado en práctica** — Spec 6 lo codifica, pero necesita trigger automático | Spec 7: auto-trigger sin humano |
-| "Driver/Navigator roles" | ❌ **No existen** — ningún agent file menciona estos roles | Spec 7: codificar en pair-debug.md |
-| "Modo pair-debug automático" | ❌ **No existe** — no hay named mode ni trigger condition | Spec 7: 3-condition trigger |
-| "Debug logging como técnica de investigación" | ❌ **No está** en spec-executor.md como técnica explícita | Spec 7: add to investigation techniques |
-| "First fix failed → escalate to pair" | ❌ **No existe** — escalation va a retry o humano | Spec 7: extend failure-recovery.md |
-| "3-condition trigger: test no cambió + fix falló + reviewer no FAILO" | ❌ **No existe** | Spec 7: pair-debug.md trigger logic |
+| "Colaboración emerge con empujón humano" | ✅ **Confirmado en práctica** — Spec 7 lo codifica, pero necesita trigger automático | Spec 8: auto-trigger sin humano |
+| "Driver/Navigator roles" | ❌ **No existen** — ningún agent file menciona estos roles | Spec 8: codificar en pair-debug.md |
+| "Modo pair-debug automático" | ❌ **No existe** — no hay named mode ni trigger condition | Spec 8: 3-condition trigger |
+| "Debug logging como técnica de investigación" | ❌ **No está** en spec-executor.md como técnica explícita | Spec 8: add to investigation techniques |
+| "First fix failed → escalate to pair" | ❌ **No existe** — escalation va a retry o humano | Spec 8: extend failure-recovery.md |
+| "3-condition trigger: test no cambió + fix falló + reviewer no FAILO" | ❌ **No existe** | Spec 8: pair-debug.md trigger logic |
 
 **Insight clave del Brainstorm 4**: Lo que funcionó no fue quitarle roles al revisor, sino darles a **ambos** la misma instrucción de "plantear hipótesis y escuchar hipótesis del otro". El revisor naturalmente se fue a Navigator (analizar diff, arquitectura, proponer experimentos) y el executor se quedó como Driver (instrumentar, aplicar fixes). **La separación de roles se mantiene — lo que cambia es el modo de interacción.**
+
+### From Harness Engineering Research (2026-05-13)
+
+| Idea | Source | Veredicto | Acción |
+|------|--------|-----------|--------|
+| "Event log inmutable para signals" | OpenHands SDK | ✅ **Probado en producción** — OpenHands usa EventLog inmutable con eventos tipados | Spec 6: signals.jsonl + chat.md para colaboración |
+| "Critic pre-execution" | OpenHands SDK | ✅ **Probado** — CriticMixin evalúa acciones antes de ejecutar | Spec 9: pre-execution-critic |
+| "Middleware componible" | Deep Agents (LangChain) | ✅ **Probado** — wrap_model_call intercepta y transforma requests | Spec 10: context-middleware (reemplaza Spec 2 cancelado) |
+| "Skills auto-detection por marcadores" | OpenHands SDK | ✅ **Probado** — AgentContext detecta uv.lock, deno.json | Spec 6: detect-ci-commands.sh |
+| "Proactive condensation con threshold" | Deep Agents (LangChain) | ✅ **Probado** — SummarizationMiddleware a 85% de ventana | Spec 10: condense-context.sh |
+| "Reactive condensation on overflow" | OpenHands SDK | ✅ **Probado** — CondensationRequest on LLMContextWindowExceedError | Spec 10: stop-watcher.sh extension |
+| "Tool result eviction to filesystem" | Deep Agents (LangChain) | ✅ **Probado** — FilesystemMiddleware evicta ToolMessages > 20K tokens | Spec 10: context-middleware.md rule |
+| "Tool argument truncation" | Deep Agents (LangChain) | ✅ **Probado** — TruncateArgsSettings trunca args de tool calls viejos | Spec 10: context-middleware.md rule |
+| "Security risk levels (LOW/MEDIUM/HIGH/CRITICAL)" | OpenHands SDK | ✅ **Probado** — SecurityRisk enum + confirmation policy | Spec 9: security-risk-levels.md |
+| "Confirmation policy for risky operations" | OpenHands SDK | ✅ **Probado** — HIGH/CRITICAL requieren aprobación | Spec 9: coordinator-pattern.md extension |
+
+**Documentación de referencia**: `docs/harness-engineering/` — 11 documentos con deep dives en OpenHands SDK y Deep Agents (LangChain), incluyendo implementación concreta extraída del código fuente.
 
 ---
 
@@ -586,9 +757,9 @@ This document differs from earlier versions in these ways (after full codebase a
 **This document is frozen as the source of truth for the ralphharness engine.**
 Location: `docs/ENGINE_ROADMAP.md`
 
-**To create Spec 1, give this to your VS Code agent:**
+**To create the next spec, give this to your VS Code agent:**
 
-> Create spec `engine-state-hardening` using ralphharness's own workflow.
+> Create spec `signal-log-and-ci-autodetect` using ralphharness's own workflow.
 > Use `docs/ENGINE_ROADMAP.md` as the single source of truth for gaps and requirements.
-> Follow the Spec 1 brief in Section 6. Read `plugins/ralphharness/templates/` for format.
+> Follow the Spec 6 brief in Section 6. Read `plugins/ralphharness/templates/` for format.
 > Show me tasks.md for review before implementing.

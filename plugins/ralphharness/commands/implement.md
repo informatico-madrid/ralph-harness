@@ -178,6 +178,69 @@ ci_cmds=$(discover_ci_commands "$REPO_ROOT")
 jq --argjson cmds "$ci_cmds" '.ciCommands = $cmds' "$STATE_FILE" > "${STATE_FILE}.tmp" && mv "${STATE_FILE}.tmp" "$STATE_FILE"
 ```
 
+# Loader-site #1 of N. See hooks/scripts/migrate-state.sh header for the canonical list.
+# Migrate legacy ciCommands shape (string[] -> [{command,category}]) before any consumer reads state.
+bash "$CLAUDE_PLUGIN_ROOT/hooks/scripts/migrate-state.sh" "$STATE_FILE"
+
+# BEGIN ORCHESTRATOR
+# Orchestrate CI command discovery: compose discover-ci.sh + detect-ci-commands.sh,
+# dedupe by (command, category) tuple, write to .ralph-state.json.ciCommands.
+
+# Source detect-ci-commands.sh (marker-based CI auto-detection, FR-3, FR-11)
+source "$CLAUDE_PLUGIN_ROOT/hooks/scripts/detect-ci-commands.sh"
+
+# Source shared signal helpers (lib-signals.sh for dedupe, FR-11)
+source "$CLAUDE_PLUGIN_ROOT/hooks/scripts/lib-signals.sh"
+
+# Discover marker-based CI commands
+detect_cmds=$(detect_ci_commands "$REPO_ROOT")
+
+# Compose: merge discover output + detect output via jq -s 'add', then dedupe by (command, category) tuple
+combined=$(printf '%s\n%s' "$ci_cmds" "$detect_cmds" | dedupe_ci_commands)
+jq --argjson cmds "$combined" '.ciCommands = $cmds' "$STATE_FILE" > "${STATE_FILE}.tmp" && mv "${STATE_FILE}.tmp" "$STATE_FILE"
+
+# END ORCHESTRATOR
+
+# BEGIN CI-SNAPSHOT-WRITER
+# Write per-category CI results to .ralph-state.json.ciSnapshot after quality checkpoints.
+# Categories: lint, typecheck, test, build (not-run categories stay null).
+# Source shared helpers for jq + atomic write.
+source "$CLAUDE_PLUGIN_ROOT/hooks/scripts/lib-signals.sh"
+
+# Initialize ciSnapshot if missing (categories: lint, typecheck, test, build, other → null)
+jq '.ciSnapshot //= {lint:null, typecheck:null, test:null, build:null, other:null}' \
+  "$STATE_FILE" > "${STATE_FILE}.tmp" && mv "${STATE_FILE}.tmp" "$STATE_FILE"
+
+# Call this function after each quality checkpoint to record the result.
+# Usage: record_ci_snapshot "lint" 0 "ruff check ."
+record_ci_snapshot() {
+  local category="$1" result_code="$2" command_str="$3"
+  local timestamp iter result exit_code
+  timestamp=$(date -u +%FT%TZ)
+  iter=$(jq -r '.globalIteration // 1' "$STATE_FILE" 2>/dev/null || echo 1)
+  exit_code=$result_code
+  if [ "$exit_code" -eq 0 ]; then
+    result="pass"
+  elif [ "$exit_code" -eq 127 ]; then
+    result="skip"
+  else
+    result="fail"
+  fi
+  # Build the snapshot JSON object for this category
+  local snapshot_entry
+  snapshot_entry=$(jq -n \
+    --arg result "$result" \
+    --argjson exitCode "$exit_code" \
+    --arg timestamp "$timestamp" \
+    --argjson iteration "$iter" \
+    --arg command "$command_str" \
+    '{result: $result, exitCode: $exitCode, timestamp: $timestamp, iteration: $iteration, command: $command}')
+  # Atomically update ciSnapshot for this category
+  jq --arg cat "$category" --argjson entry "$snapshot_entry" \
+    '.ciSnapshot[$cat] = $entry' "$STATE_FILE" > "${STATE_FILE}.tmp" && mv "${STATE_FILE}.tmp" "$STATE_FILE"
+}
+# END CI-SNAPSHOT-WRITER
+
 **Preserved fields** (set by earlier phases, must NOT be removed):
 - `source`, `name`, `basePath`, `commitSpec`, `relatedSpecs`
 
@@ -299,13 +362,64 @@ Then Read and follow these references in order. They contain the complete coordi
 - **Fully autonomous.** Never ask questions or wait for user input.
 - **State-driven loop.** Read .ralph-state.json each iteration to determine current task.
 - **MANDATORY: Read task_review.md BEFORE delegating.** Before every task delegation, read `<basePath>/task_review.md` if it exists. If the current task is marked FAIL, DO NOT delegate—add a fix task first. If marked PENDING, treat it as a blocking state: do not delegate or advance to another task until the review is resolved.
-- **MANDATORY: Mechanical HOLD check BEFORE delegation.** Before delegating, run:
+- **MANDATORY: Mechanical HOLD check BEFORE delegation.** Before delegating, run the canonical gate below.
   ```bash
-  count=$(grep -c '^\[HOLD\]$\|^\[PENDING\]$\|^\[URGENT\]$' "$SPEC_PATH/chat.md" 2>/dev/null || true)
+  # BEGIN MALFORMED-CHECK
+  # Validate signals.jsonl lines are valid JSON before active-signal query.
+  # A malformed line indicates a torn write — escalate to DEADLOCK and halt.
+  line_num=0
+  malformed_found=0
+  while IFS= read -r sig_line; do
+    line_num=$((line_num + 1))
+    # Skip comment lines
+    case "$sig_line" in
+      '#'*|''|' ') continue ;;
+    esac
+    if ! echo "$sig_line" | jq -e . >/dev/null 2>&1; then
+      echo "[ralphharness] ERROR: malformed JSON line in signals.jsonl at line $line_num" >> "$SPEC_PATH/.progress.md"
+      echo "MALFORMED SIGNAL LINE at line $line_num: $sig_line" >> "$SPEC_PATH/.progress.md"
+      malformed_found=1
+      break
+    fi
+  done < "$SPEC_PATH/signals.jsonl"
+  if [ "$malformed_found" -eq 1 ]; then
+    # Auto-emit DEADLOCK signal and halt
+    iter=$(jq -r '.globalIteration // 1' "$STATE_FILE" 2>/dev/null || echo 1)
+    deadlock_payload='{"type":"control","signal":"DEADLOCK","from":"coordinator","to":"all","task":"all","status":"active","timestamp":"'"$(date -u +%FT%TZ)"'","iteration":'"$iter"',"reason":"malformed JSON line in signals.jsonl"}'
+    # Atomic append via flock fd 202
+    (
+      exec 202>"${SPEC_PATH}/signals.jsonl.lock"
+      flock -x -w 5 202 || exit 75
+      printf '%s\n' "$deadlock_payload" >> "${SPEC_PATH}/signals.jsonl"
+    ) 202>"${SPEC_PATH}/signals.jsonl.lock"
+    exit 1
+  fi
+  # END MALFORMED-CHECK
+
+  # BEGIN HOLD-GATE
+  # Mechanical active-signal gate (Layer 2). Source of truth: signals.jsonl.
+  # Legacy chat.md [HOLD] markers are honoured for one release cycle (NFR-6, AC-3.6)
+  # via the grep fallback below — emits WARN; removed in next release.
+  [ ! -f "$SPEC_PATH/signals.jsonl" ] && cp plugins/ralphharness/templates/signals.jsonl "$SPEC_PATH/signals.jsonl"
+  # Source shared signal helpers (lib-signals.sh, FR-10)
+  source "$CLAUDE_PLUGIN_ROOT/hooks/scripts/lib-signals.sh"
+  if command -v jq >/dev/null 2>&1; then
+    active_count=$(active_signal_count "$SPEC_PATH")
+  else
+    active_count=$(grep -c '"status":"active"' "$SPEC_PATH/signals.jsonl" 2>/dev/null || echo 0)
+    echo "[ralphharness] WARN: jq unavailable, using grep fallback" >> "$SPEC_PATH/.progress.md"
+  fi
+  # Legacy [HOLD] grace fallback (AC-3.6, NFR-6) — one release cycle only.
+  if [ "$active_count" = "0" ] && grep -qE '^\[HOLD\]$|^\[PENDING\]$|^\[URGENT\]$' "$SPEC_PATH/chat.md" 2>/dev/null; then
+    echo "[ralphharness] WARN: legacy [HOLD] marker in chat.md — migrate to signals.jsonl" >> "$SPEC_PATH/.progress.md"
+    active_count=1
+  fi
+  if [ "$active_count" -gt 0 ]; then
+    echo "COORDINATOR BLOCKED: active control signal in signals.jsonl for task $taskIndex" >> "$SPEC_PATH/.progress.md"
+    exit 0
+  fi
+  # END HOLD-GATE
   ```
-  If count > 0 (active signals found): block delegation immediately. Log to `.progress.md`: `"COORDINATOR BLOCKED: active HOLD/PENDING/URGENT signal in chat.md for task $taskIndex"`.
-  
-  When signals are resolved (by external-reviewer or coordinator), the signal line is changed to `[RESOLVED]` (e.g., `[HOLD]` → `[RESOLVED]`). This marker is not matched by the grep check.
 
 - **MANDATORY: Read chat.md BEFORE delegating.** Before every task delegation, read `<basePath>/chat.md` for signals from external-reviewer. Obey HOLD, PENDING, DEADLOCK signals immediately—do not delegate if blocked.
 - **CRITICAL: Verify independently, never trust executor.** The executor may FABRICATE verification results (claimed tests passed when they failed, claimed coverage when coverage was 0%). 

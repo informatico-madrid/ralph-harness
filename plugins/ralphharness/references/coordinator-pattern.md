@@ -1,6 +1,7 @@
 # Coordinator Pattern
 
 > Used by: implement.md
+> See also: `references/channel-map.md` (shared filesystem channels and fd allocations)
 
 ## Role Definition
 
@@ -158,6 +159,46 @@ BEFORE entering the Chat Protocol and BEFORE delegating any task, the coordinato
 | **Current task marked WARNING** | Note in `.progress.md` but may proceed. Do NOT block. |
 | **Previous task has WARNING** | Log to `.progress.md`: `"WARNING on task N noted but not blocking"`. Proceed. |
 </mandatory>
+
+## Signal Protocol
+
+Control signals (HOLD, PENDING, URGENT, DEADLOCK, INTENT-FAIL, SPEC-ADJUSTMENT, SPEC-DEFICIENCY) are written to and read from `signals.jsonl` — **not** `chat.md`. The coordinator reads `signals.jsonl` BEFORE reading `chat.md` in each delegation cycle.
+
+> **Channel map**: fd 202 is allocated for `signals.jsonl.lock` — see `references/channel-map.md` for the full channel registry and locking strategy.
+
+### Atomic-append snippet (canonical)
+
+Source shared helpers from `hooks/scripts/lib-signals.sh` (created by Phase 2 task 2.1). fd `202` is reserved exclusively for `signals.jsonl.lock` (result of Implementation Step 0: stop-watcher baseline lock refactored from fd 202 → fd 204).
+
+```bash
+source "$CLAUDE_PLUGIN_ROOT/hooks/scripts/lib-signals.sh"
+# BEGIN ATOMIC-APPEND
+# Calls append_signal() — see lib-signals.sh for full implementation
+append_signal() {
+  local spec_path="$1" payload="$2"
+  echo "$payload" | jq -e . >/dev/null || { echo "[ralphharness] malformed signal payload, aborting" >&2; return 2; }
+  (
+    exec 202>"${spec_path}/signals.jsonl.lock"
+    flock -x -w 5 202 || { echo "[ralphharness] flock timeout on signals.jsonl.lock" >&2; exit 75; }
+    printf '%s\n' "$payload" >> "${spec_path}/signals.jsonl"
+  ) 202>"${spec_path}/signals.jsonl.lock"
+}
+# END ATOMIC-APPEND
+```
+
+### Active-signal query (canonical, used by both coordinator and stop-watcher)
+
+```bash
+source "$CLAUDE_PLUGIN_ROOT/hooks/scripts/lib-signals.sh"
+# Calls active_signal_count() — see lib-signals.sh for full implementation
+active_count=$(active_signal_count "${spec_path}")
+```
+
+### Ordering
+
+1. **signals.jsonl read precedes chat.md read** in every delegation cycle
+2. `flock -x` serialises writers; line N+1 is appended after line N
+3. `flock` timeout is 5 seconds — on timeout, writer logs WARN and retries once with jitter
 
 ## Chat Protocol — MANDATORY before every delegation
 

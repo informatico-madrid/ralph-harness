@@ -10,17 +10,22 @@ authoritative contract for which agent reads and writes which channel, and when.
 If a channel has more than one writer, it requires exclusive locking — see the
 Locking Strategy column.
 
+For the verification layer model (where channels feed into Layer 0–4 checks), see
+`references/verification-layers.md`.
+
 ## Channel Registry
 
 | Channel | Path | Writer(s) | Reader(s) | Timing | Locking |
 |---------|------|-----------|-----------|--------|---------|
 | **chat.md** | `<basePath>/chat.md` | coordinator, reviewer | coordinator, reviewer | Before/after every delegation (coordinator); each review cycle (reviewer) | `flock -e 200` on `chat.md.lock` — MANDATORY for all writes |
-| **task_review.md** | `<basePath>/task_review.md` | reviewer only | coordinator (Pre-Delegation Check), spec-executor (External Review Protocol step 2b) | Each review cycle (write); before every delegation (read) | Single writer — no locking needed |
 | **tasks.md** | `<basePath>/tasks.md` | spec-executor (marks `[x]`), reviewer (unmarks `[x]` on FAIL) | coordinator (taskIndex advance), reviewer (finds unreviewed tasks) | After each task completion (spec-executor write); on FAIL detection (reviewer write) | ⚠️ TWO WRITERS — `flock -e 201` on `tasks.md.lock` MANDATORY for reviewer unmark writes |
+| **signals.jsonl** | `<basePath>/signals.jsonl` | coordinator, external-reviewer, spec-executor, human | coordinator, stop-watcher | Signal emission (append); pre-delegation gate read (coordinator); HOLD gate read (stop-watcher) | `flock -x 202` on `signals.jsonl.lock` — MANDATORY for all writes |
 | **.progress.md** | `<basePath>/.progress.md` | coordinator, spec-executor, reviewer | coordinator, spec-executor | Continuous | Single logical writer per session (coordinator/executor share a session; reviewer is separate) — append-only reduces collision risk, but review intervention blocks use visible HTML comments as delimiters |
 | **.ralph-state.json** | `<basePath>/.ralph-state.json` | coordinator (all fields), spec-executor (`chat.executor.lastReadLine`), reviewer (`chat.reviewer.lastReadLine`, `external_unmarks`), planning-agents [`architect-reviewer`, `product-manager`, `research-analyst`, `task-planner`] (`awaitingApproval`) | coordinator, reviewer, spec-executor | Every state transition | coordinator owns all fields except `chat.reviewer.*`, `chat.executor.*`, and `external_unmarks` (reviewer-owned) and `awaitingApproval` (planning-agents-owned) — write via `jq` + `mv` atomic pattern |
+| **.ralph-field-baseline.json.lock** | baseline field ownership | coordinator (read baseline) | stop-watcher (read baseline during role-boundary validation) | After state file written (coordinator); each stop-watcher invocation | `flock -x 204` on `.ralph-field-baseline.json.lock` — used exclusively by stop-watcher's field-level validation subshell |
 | **chat.md.lock** | coordinator, reviewer | — | — | Created on first flock | Lock file only — never read for content |
 | **tasks.md.lock** | reviewer | — | — | Created on first reviewer unmark | Lock file only — never read for content |
+| **task_review.md** | `<basePath>/task_review.md` | reviewer only | coordinator (Pre-Delegation Check), spec-executor (External Review Protocol step 2b) | Each review cycle (write); before every delegation (read) | Single writer — no locking needed |
 
 ## Race Condition Risk Register
 
@@ -100,4 +105,4 @@ Before adding a new agent to the system:
 3. If it writes to a channel with an existing writer: add locking (pick the next available fd)
 4. If it introduces a new shared channel: add a row to this table and a Risk Register entry
 5. Update the relevant agent files to reference the new contract
-6. > **Full boundary checklist**: See `references/role-contracts.md` for the complete access matrix, "Adding a New Agent" checklist (4 steps with template code blocks), and cross-spec dependency tracking. `references/role-contracts.md` is the single source of truth for agent read/write permissions.
+6. > **Full boundary checklist**: See `references/role-contracts.md` for the complete access matrix, "Adding a New Agent" checklist (4 steps with template code blocks), and cross-spec dependency tracking. `references/role-contracts.md` is the single source of truth for agent read/write permissions. See also `references/verification-layers.md` for where these channels feed into the 5-layer verification pipeline.

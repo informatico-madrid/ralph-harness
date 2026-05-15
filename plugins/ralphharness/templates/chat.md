@@ -2,21 +2,34 @@
 
 ## Signal Legend
 
+### Control signals (→ signals.jsonl)
+
+Control signals are written to `signals.jsonl` via atomic flock — **not** as text in chat.md.
+
 | Signal | Meaning |
 |--------|---------|
-| OVER | Task/turn complete, no more output |
-| ACK | Acknowledged, understood |
-| CONTINUE | Work in progress, more to come |
 | HOLD | Paused, waiting for input or resource |
 | PENDING | Still evaluating; blocking — do not advance until resolved |
-| STILL | Still alive/active, no progress but not dead |
-| ALIVE | Initial check-in or heartbeat |
-| CLOSE | Conversation closing |
 | URGENT | Needs immediate attention |
 | DEADLOCK | Blocked, cannot proceed |
 | INTENT-FAIL | Could not fulfill stated intent |
 | SPEC-ADJUSTMENT | Spec criterion cannot be met cleanly; proposing minimal Verify/Done-when amendment |
 | SPEC-DEFICIENCY | Spec criterion fundamentally broken; human decision required |
+
+### Collaboration markers (→ chat.md, this file)
+
+Collaboration markers are written as `**Signal**: <NAME>` in chat.md message bodies.
+
+| Signal | Meaning |
+|--------|---------|
+| OVER | Task/turn complete, no more output |
+| ACK | Acknowledged, understood |
+| CONTINUE | Work in progress, more to come |
+| STILL | Still alive/active, no progress but not dead |
+| ALIVE | Initial check-in or heartbeat |
+| CLOSE | Conversation closing |
+
+> **Migration Note**: Legacy `[HOLD]` markers in chat.md continue to work for one release cycle (grep fallback). New control signals must use signals.jsonl — see `references/coordinator-pattern.md` §Signal Protocol.
 
 ## Message Format
 

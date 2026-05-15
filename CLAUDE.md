@@ -71,6 +71,7 @@ Fine is the default. Coarse reduces token consumption ~3-5x for sequential execu
 > 1. **ALWAYS bump the version** in BOTH files for the modified plugin:
 >    - `plugins/<plugin-name>/.claude-plugin/plugin.json` (the plugin you're modifying)
 >    - `.claude-plugin/marketplace.json` (update the corresponding plugin entry)
+    - Current version: 5.1.0 (signal-log-and-ci-autodetect spec)
 > 2. Use semantic versioning: patch (fixes), minor (features), major (breaking)
 > 3. Bump once per set of related changes (not per commit)
 > 4. Only update the version for plugins you actually modified
@@ -101,9 +102,9 @@ plugins/ralphharness/
 ├── .claude-plugin/plugin.json   # Plugin manifest
 ├── agents/                      # Sub-agent definitions (markdown)
 ├── commands/                    # Slash command definitions (markdown)
-├── hooks/                       # Stop watcher (controls execution loop continuation)
-├── templates/                   # Spec file templates
-└── schemas/                     # JSON schema for spec validation
+├── hooks/                       # Stop watcher + CI hooks
+├── templates/                   # Spec file templates (including signals.jsonl seed)
+└── schemas/                     # JSON schema (signals, ciCommands, ciSnapshot)
 ```
 
 ### Execution Flow
@@ -111,6 +112,9 @@ plugins/ralphharness/
 1. **Spec Phases**: Each command (`/ralphharness:research`, `:requirements`, `:design`, `:tasks`) invokes a specialized agent to generate corresponding markdown in `./specs/<spec-name>/`
 2. **Execution Loop**: During execution (`/ralphharness:implement`), the stop-hook reads `.ralph-state.json`, delegates tasks to spec-executor via Task tool, and outputs `ALL_TASKS_COMPLETE` when done. The loop is self-contained (no external plugin required).
 3. **Fresh Context**: Each task runs in isolation via Task tool. Progress persists in `.progress.md` and task checkmarks in `tasks.md`
+4. **Signal HOLD Gate**: Before delegation, coordinator checks `signals.jsonl` (not chat.md) for active HOLD/PENDING/DEADLOCK via `jq` — a mechanical check with no LLM interpretation. Control signals (HOLD, PENDING, DEADLOCK, URGENT, ACK, CONTINUE) go to `signals.jsonl`; collaboration content stays in `chat.md`.
+5. **CI Snapshot**: After each quality checkpoint, the coordinator records global CI state (lint/typecheck/test/build/other) per-category as `ciSnapshot` in `.ralph-state.json`. CI commands are auto-detected via `detect-ci-commands.sh` from project markers.
+6. **Legacy Migration**: `migrate-state.sh` one-shot migrator upgrades legacy `ciCommands: string[]` to `{command, category}` tuples.
 
 ### State Files
 
@@ -176,6 +180,11 @@ RalphHarness v3.0.0+ is self-contained with no external plugin dependencies. The
 - `commands/implement.md` - Thin wrapper + coordinator prompt for Ralph Loop
 - `commands/cancel.md` - Dual cleanup (cancel-ralph + state file deletion)
 - `hooks/scripts/stop-watcher.sh` - Execution loop controller (outputs continuation prompts)
+- `hooks/scripts/detect-ci-commands.sh` - Auto-detect CI commands from project markers
+- `hooks/scripts/migrate-state.sh` - One-shot legacy ciCommands migrator (string[] → {command, category})
+- `hooks/scripts/replay-signals.sh` - Incident review helper (deterministic replay of signals.jsonl at iteration N)
+- `hooks/scripts/lib-signals.sh` - Shared signal helpers (append_signal, active_signal_count, dedupe_ci_commands)
+- `templates/signals.jsonl` - Seed file for append-only signal event log
 - `agents/spec-executor.md` - Task execution rules, commit discipline
 - `agents/task-planner.md` - Task format, quality checkpoint rules, POC workflow
 - `templates/*.md` - Spec file templates with structure requirements

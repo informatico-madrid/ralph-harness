@@ -1,0 +1,4 @@
+# signals.jsonl — fixture with malformed line
+{"type":"control","signal":"HOLD","from":"external-reviewer","to":"coordinator","task":"task-1.1","status":"active","timestamp":"2026-05-15T08:00:00Z","iteration":1,"reason":"Valid entry"}
+this is not json at all
+{"type":"control","signal":"ACK","from":"executor","to":"reviewer","task":"task-1.2","status":"active","timestamp":"2026-05-15T08:05:00Z","iteration":1}

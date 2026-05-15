@@ -31,6 +31,12 @@ graph TB
 - {{Responsibility 1}}
 - {{Responsibility 2}}
 
+#### Component C
+**Purpose**: {{What this component does}}
+**Responsibilities**:
+- {{Responsibility 1}}
+- {{Responsibility 2}}
+
 ### Data Flow
 
 ```mermaid
@@ -188,6 +194,16 @@ Tests marked `.skip` / `xit` / `xdescribe` / `test.skip` are FORBIDDEN unless:
 - E2E test pattern: {{e.g. `*.e2e.ts` / Playwright spec files}}
 - Mock cleanup: {{afterEach with mockClear/mockReset / vi.restoreAllMocks}}
 - Fixture/factory location: {{e.g. `src/test/factories/` / co-located `*.factory.ts`}}
+
+### Test types:
+#### Unit Tests
+- {{Component/function to test}}
+- Mock requirements: {{what to mock}}
+
+### Integration Tests
+- {{Integration point to test}}
+#### E2E Tests (if UI)
+- {{User flow to test}}
 
 ## Existing Patterns to Follow
 

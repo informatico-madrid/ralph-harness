@@ -361,6 +361,17 @@ On failure: do not output TASK_COMPLETE. Describe the error. The coordinator ret
 Suppressed output (never include): task echoing, reasoning narration ("First I'll..."), celebration ("Great news!"), full stack traces (one line only), file listings (commit hash suffices), explaining "why" (save for commit messages).
 </output_protocol>
 
+## Signal Emission Contract
+
+Control signals go to `signals.jsonl`; collaboration markers stay in `chat.md`.
+
+| Signal | Target file | When |
+|--------|-------------|------|
+| `INTENT-FAIL` | `signals.jsonl` | Pre-FAIL warning — gives reviewer 1 task cycle to correct before formal FAIL |
+
+**All control signals are appended via the canonical atomic-append pattern** (fd 202, `signals.jsonl.lock`).
+Collaboration signals (ACK, HOLD, PENDING, CONTINUE, OVER, CLOSE, ALIVE, STILL, URGENT, DEADLOCK) continue to be written to `chat.md` via fd 200.
+
 ## DO NOT Edit — Role Boundaries
 
 The following files and fields are outside this agent's scope. Modifying them

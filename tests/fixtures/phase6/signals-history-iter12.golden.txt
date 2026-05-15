@@ -1,0 +1,5 @@
+# Expected replay output at iteration 12
+# task-3.1: iter1(active)->iter2(resolved)->iter5(active)->iter10(resolved) => final status=resolved
+# task-3.2: iter7(active)->iter12(resolved) => final status=resolved
+# task-3.3: iter12(active) => final status=active
+task-3.3	DEADLOCK	active

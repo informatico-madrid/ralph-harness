@@ -1,0 +1,9 @@
+# signals-history — fixture for replay determinism test
+{"type":"control","signal":"HOLD","from":"external-reviewer","to":"coordinator","task":"task-3.1","status":"active","timestamp":"2026-05-15T08:00:00Z","iteration":1,"reason":"First HOLD"}
+{"type":"control","signal":"HOLD","from":"external-reviewer","to":"coordinator","task":"task-3.1","status":"resolved","timestamp":"2026-05-15T09:00:00Z","iteration":2,"reason":"Resolved at iter 2"}
+{"type":"control","signal":"HOLD","from":"external-reviewer","to":"coordinator","task":"task-3.1","status":"active","timestamp":"2026-05-15T10:00:00Z","iteration":5,"reason":"Re-hold at iter 5"}
+{"type":"control","signal":"PENDING","from":"spec-executor","to":"coordinator","task":"task-3.2","status":"active","timestamp":"2026-05-15T10:30:00Z","iteration":7,"reason":"Pending dependency"}
+{"type":"control","signal":"HOLD","from":"external-reviewer","to":"coordinator","task":"task-3.1","status":"resolved","timestamp":"2026-05-15T11:00:00Z","iteration":10,"reason":"Resolved at iter 10"}
+{"type":"control","signal":"DEADLOCK","from":"spec-executor","to":"human","task":"task-3.3","status":"active","timestamp":"2026-05-15T11:30:00Z","iteration":12,"reason":"Deadlock at iter 12"}
+{"type":"control","signal":"PENDING","from":"spec-executor","to":"coordinator","task":"task-3.2","status":"resolved","timestamp":"2026-05-15T11:45:00Z","iteration":12,"reason":"Resolved at iter 12 too"}
+{"type":"control","signal":"HOLD","from":"external-reviewer","to":"coordinator","task":"task-3.1","status":"active","timestamp":"2026-05-15T12:00:00Z","iteration":15,"reason":"Final re-hold at iter 15"}

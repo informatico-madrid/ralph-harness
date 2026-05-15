@@ -11,6 +11,9 @@
 7. [El Chain E2E: Paso a Paso](#7-el-chain-e2e-paso-a-paso)
 8. [Gaps y Limitaciones del Sistema](#8-gaps-y-limitaciones-del-sistema)
 9. [Veredicto: ¿Está Preparado para Testing Autónimo?](#9-veredicto-está-preparado-para-testing-autónomo)
+10. [CI Autodetect Testing](#10-ci-autodetect-testing)
+11. [Signal-Log Testing](#11-signal-log-testing)
+12. [Bats Test Suite](#12-bats-test-suite)
 
 ---
 
@@ -617,4 +620,118 @@ El gap más significativo no es de autonomía sino de **calidad de la Test Strat
 
 ---
 
+## 10. CI Autodetect Testing
+
+### 10.1 detect-ci-commands.sh
+
+Auto-detects CI commands from project markers:
+
+| Marker | Detected Commands |
+|--------|------------------|
+| `pyproject.toml` | ruff, mypy, pytest |
+| `package.json` | pnpm lint, pnpm check-types, pnpm test |
+| `Makefile` | make lint, make test |
+| `Cargo.toml` | cargo clippy, cargo test |
+| `go.mod` | go vet, go test |
+| `pnpm-lock.yaml` | pnpm lint, pnpm test |
+| `yarn.lock` | yarn lint, yarn test |
+| `npm-lock.yaml` | npm run lint, npm test |
+
+**Testing**: `tests/ci-autodetect.bats` — 17 tests covering marker detection, deduplication, legacy migration, command filtering.
+
+### 10.2 Legacy Migration
+
+`detect-ci-commands.sh` migrates legacy `ciCommands: string[]` to `{command, category:"other"}` tuples. The migration is idempotent.
+
+**Test**: `ci-autodetect.bats:3.18` — verifies string[] → {command, category} conversion and idempotency.
+
+---
+
+## 11. Signal-Log Testing
+
+### 11.1 signals.jsonl Format
+
+Append-only JSON-Lines event log for control signals. Each line is a JSON object:
+
+```jsonl
+# signals.jsonl — append-only control event log
+{"type":"signal","signal":"HOLD","from":"external-reviewer","task":"2.3","status":"active","timestamp":"2026-05-15T09:00:00Z","reason":"Missing validation"}
+{"type":"signal","signal":"HOLD","from":"external-reviewer","task":"2.3","status":"resolved","timestamp":"2026-05-15T09:05:00Z","reason":"Fixed"}
+{"type":"collaboration","from":"spec-executor","to":"external-reviewer","message":"Hypothesis: race condition in auth handler"}
+```
+
+**Access control**: `signals.jsonl.lock` uses fd 202 (`flock -x 202`) for atomic appends. `grep -c` fallback is supported when jq is unavailable (logs WARN).
+
+### 11.2 Active Signal Query
+
+Canonical query used by both coordinator and stop-watcher:
+
+```bash
+jq -c 'select(.signal=="HOLD" or .signal=="PENDING" or .signal=="DEADLOCK") | select(.status=="active")' "$SPEC_PATH/signals.jsonl"
+```
+
+If count > 0 → blocks delegation. This is a mechanical check with no LLM interpretation.
+
+### 11.3 Replay
+
+`replay-signals.sh --at-iteration N` deterministically replays signals.jsonl state at iteration N. Used for incident review.
+
+### 11.4 Test Coverage
+
+| Test | File | What It Verifies |
+|------|------|-----------------|
+| Append immutability | `signal-log.bats` | sha256sum stability, edit-in-place mutation detected |
+| Active-signal only | `signal-log.bats` | `active_signal_count` returns correct count |
+| Resolved ignored | `signal-log.bats` | 1 active + 1 resolved → count=1 |
+| Flock fd 202 isolation | `signal-log.bats` | 5 parallel writers, all 5 valid JSON |
+| jq missing grep fallback | `signal-log.bats` | Fallback path executes, WARN logged |
+| Non-control entries | `signal-log.bats` | ACK collab entry filtered, HOLD entry counted |
+| Legacy [HOLD] grep fallback | `signal-log.bats` | WARN logged, blocked active_count=1 |
+| Deterministic replay | `replay-signals.bats` | Same output at iteration N across 3 runs |
+| Malformed detection | `signal-log.bats` | Malformed JSON lines detected and logged |
+
+---
+
+## 12. Bats Test Suite
+
+### 12.1 Suite Overview
+
+| File | Tests | Purpose |
+|------|-------|---------|
+| `signal-log.bats` | 13 | Append immutability, active signals, flock isolation, grep fallback |
+| `ci-autodetect.bats` | 17 | Marker detection, deduplication, legacy migration, command filtering |
+| `fd-202-refactor.bats` | 2 | fd 202→204 baseline lock (serializes 5 concurrent writers) |
+| `replay-signals.bats` | 5 | Deterministic replay at iteration N |
+| **Total** | **37** | |
+
+### 12.2 Path Resolution
+
+All bats files use `$(dirname "$BATS_TEST_DIRNAME")` (not `$(pwd)`) to resolve `REPO_ROOT`. This fixes the CWD change that bats performs when running tests — `$(pwd)` resolves to `tests/` when bats is invoked from a subdirectory.
+
+### 12.3 Fixtures
+
+| Fixture | Location | Purpose |
+|---------|----------|---------|
+| `signals-mixed.jsonl` | `fixtures/phase6/` | Mixed active/resolved/collab signals |
+| `state-legacy-cicmds.json` | `fixtures/phase6/` | Legacy ciCommands string[] for migration |
+| `legacy-hold-chat.md` | `fixtures/phase6/` | Legacy [HOLD] format for grep fallback |
+| `signals-history.jsonl` | `fixtures/phase6/` | Multi-iteration signal history for replay |
+| `signals-history-iter12.golden.txt` | `fixtures/phase6/` | Golden output for iteration 12 replay |
+| `malformed-signals.jsonl` | `fixtures/phase6/` | Malformed JSON lines for detection |
+
+### 12.4 Running Tests
+
+```bash
+# Run all bats tests
+cd tests && bats .
+
+# Run from repo root
+bats tests/
+```
+
+Full suite: 37/37 PASS. Integration with main bats suite: 257/257 PASS.
+
+---
+
 *Generado 2026-04-04 — análisis profundo del sistema de testing de RalphHarness*
+*Actualizado 2026-05-15 — CI autodetect, signal-log testing, bats suite (37 tests), malformed signal detection*
