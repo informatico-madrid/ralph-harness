@@ -64,7 +64,7 @@ Goal: a real test spec runs `/ralphharness:implement`, the engine reads HOLD sig
 
 ### Step 1 — Schema
 
-- [ ] 1.4 Schema: add `signals.lastProcessedLine` field
+- [x] 1.4 Schema: add `signals.lastProcessedLine` field
   - **Phase**: 1 (POC)
   - **Maps to**: FR-4, AC-1.5
   - **Depends on**: 1.3
@@ -272,7 +272,7 @@ Goal: a real test spec runs `/ralphharness:implement`, the engine reads HOLD sig
   - **Commit**: `feat(phase6): implement.md Step 3 composes discover-ci + detect-ci with tuple dedupe`
   - _Requirements: AC-2.3, FR-11_
 
-- [ ] 1.18 One-shot legacy `ciCommands: string[]` migrator (rewrites state once on first read)
+- [x] 1.18 One-shot legacy `ciCommands: string[]` migrator (rewrites state once on first read)
   - **Phase**: 1 (POC)
   - **Maps to**: AC-2.5, D9, schema invariant (single shape post-migration)
   - **Depends on**: 1.17
