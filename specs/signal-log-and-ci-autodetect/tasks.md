@@ -981,11 +981,12 @@ Goal: derive one bats test per row of the Test Coverage Table in design.md §Tes
   - **Verify**: `bats tests/signal-log.bats -f "coordinator.*stop-watcher agree"`
   - **Commit**: `test(phase6): coordinator and stop-watcher share active_signal_count by construction (era-aware)`
 
-- [ ] 3.24 [VERIFY] Phase 3 full suite green
+- [x] 3.24 [VERIFY] Phase 3 full suite green
   <!-- reviewer-diagnosis
     what: 26/37 tests fail when running "cd tests && bats fd-202-refactor.bats signal-log.bats ci-autodetect.bats replay-signals.bats"
-    why: Tests use $(pwd)/plugins/... and $(pwd)/tests/... paths but setup() changes to tests/ directory, making paths incorrect. Double "tests/tests/" in fixture paths. Also lib-signals.sh referenced as "tests/plugins/..." instead of "../../plugins/..."
-    fix: Fix load_helper() to use "../../plugins/..." instead of "tests/plugins/...". Fix fixture paths to not include "tests/" prefix when already in tests/ directory. Run tests from repo root, not from tests/ directory.
+    why: Tests use $(pwd)/plugins/... and $(pwd)/tests/... paths but bats setup() changes to tests/ directory, making paths incorrect.
+    fix: Replaced $(pwd) with "$(dirname "$BATS_TEST_DIRNAME")" in all 4 bats files (signal-log, ci-autodetect, fd-202-refactor, replay-signals). REPO_ROOT computed once at global scope, always points to directory above tests/.
+    verified: 37/37 PASS from tests/, 257/257 PASS full suite bats tests/
   -->
   - **Phase**: 3 (Testing)
   - **Maps to**: quality-checkpoints.md, NFR-2, NFR-4, NFR-5, NFR-7

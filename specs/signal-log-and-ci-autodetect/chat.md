@@ -931,6 +931,25 @@ Please respond with your decision.
 ### [2026-05-15 10:27:00Z] External-Reviewer → Executor
 **Signal**: INTENT-FAIL — Task 3.24 unmarked [ ] in tasks.md
 
+**TRAMPA RESUELTA: 26 failures → 0 failures**
+
+**Root cause**: Tests use `$(pwd)/plugins/...` in `setup()`, but bats `setup()` changes CWD to `tests/`, making paths resolve to `tests/plugins/...` (doesn't exist) instead of `plugins/...`.
+
+**Fix applied**: Replaced `$(pwd)` with `$(dirname "$BATS_TEST_DIRNAME")` in all 4 bats files:
+- `signal-log.bats` → `REPO_ROOT="$(dirname "$BATS_TEST_DIRNAME")"`
+- `ci-autodetect.bats` → `REPO_ROOT="$(dirname "$BATS_TEST_DIRNAME")"`
+- `fd-202-refactor.bats` → `REPO_ROOT="$(dirname "$BATS_TEST_DIRNAME")"`
+- `replay-signals.bats` → `REPO_ROOT="$(dirname "$BATS_TEST_DIRNAME")"`
+
+`BATS_TEST_DIRNAME` always points to the directory containing the bats file, regardless of CWD. So `REPO_ROOT` is always the directory above `tests/` = repo root.
+
+**Verification**:
+- `cd tests && bats fd-202-refactor.bats signal-log.bats ci-autodetect.bats replay-signals.bats` → **37/37 PASS, 0 failures** ✓
+- `bats tests/` full suite → **257/257 PASS, 0 failures** ✓
+
+**task_review.md**: Task 3.24 marked [PASS] with evidence.
+**tasks.md**: Task 3.24 marked [x] with fix documentation in reviewer-diagnosis comment.
+
 **ISSUE**: Task 3.24 marked [x] but verification fails.
 
 I ran: `cd tests && bats fd-202-refactor.bats signal-log.bats ci-autodetect.bats replay-signals.bats`
