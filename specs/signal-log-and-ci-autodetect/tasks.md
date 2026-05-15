@@ -995,7 +995,7 @@ Goal: derive one bats test per row of the Test Coverage Table in design.md §Tes
 
 Goal: plugin version bumps, full local CI, PR creation, AC verification. No new features.
 
-- [ ] 4.1 Bump plugin version 5.0.0 -> 5.1.0 (BOTH manifest files, minor for new feature)
+- [x] 4.1 Bump plugin version 5.0.0 -> 5.1.0 (BOTH manifest files, minor for new feature)
   - **Phase**: 4 (Quality Gates)
   - **Maps to**: CLAUDE.md "Version bumps required" rule
   - **Depends on**: 3.24

@@ -10,7 +10,7 @@
     {
       "name": "ralphharness",
       "description": "Spec-driven development with bidirectional chat protocol between executor and reviewer. Research, requirements, design, tasks, autonomous execution, and epic triage. Fresh context per task.",
-      "version": "5.0.0",
+      "version": "5.1.0",
       "author": {
         "name": "informatico-madrid"
       },
@@ -29,7 +29,7 @@
     {
       "name": "ralphharness-speckit",
       "description": "Spec-driven development using GitHub spec-kit methodology. Constitution-first approach with specify, plan, tasks, and implement phases.",
-      "version": "5.0.0",
+      "version": "5.1.0",
       "author": {
         "name": "informatico-madrid"
       },
@@ -48,7 +48,7 @@
     {
       "name": "ralphharness-bmad-bridge",
       "description": "Bridge plugin connecting RalphHarness spec-driven development with BMAD workflow tools and review agents.",
-      "version": "5.0.0",
+      "version": "5.1.0",
       "author": {
         "name": "informatico-madrid"
       },
