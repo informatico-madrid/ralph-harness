@@ -247,7 +247,7 @@ Cada línea en `signals.jsonl` es un JSON object:
 1. El coordinator necesita check mecánico → JSONL con `jq` es más fiable que grep sobre Markdown
 2. chat.md se mantiene legible para humanos — no contaminado con `[HOLD]` markers
 3. signals.jsonl es auditable — se puede replay el historial completo
-4. Prepara el terreno para Spec 7 (collaboration-resolution) donde chat.md se usa para hipótesis y experimentos
+4. chat.md puede evolucionar independientemente para casos de colaboración rica
 
 ### 5.3 HOLD Check con jq
 
@@ -512,29 +512,15 @@ El script `discover-ci.sh` **ya existe** y hace:
 # Phase 3: Unificar y escribir ciCommands
 ```
 
-### 10.2 stop-watcher.sh También Hace HOLD Detection con grep
-
-**Archivo**: `hooks/scripts/stop-watcher.sh` (líneas 66-69 del diagnóstico)
-
-El stop-watcher también usa `grep` sobre el transcript para detectar HOLD:
-
-```
-**HOLD Detection Dependiente de Transcript**: La detección de `HOLD` usa `grep` sobre el transcript (últimas 500 líneas). Si el transcript no contiene la señal (porque el coordinador no la escribió correctamente), el hook permite continuar.
-```
-
-**Mejora**: Actualizar `stop-watcher.sh` para usar `signals.jsonl` también:
-- Antes de verificar si continuar: `jq` sobre `signals.jsonl` para detectar signals activas
-- Esto asegura consistencia en todo el engine, no solo en implement.md
-
-### 10.3 Schema — ciCommands Ya Existe, Añadir category
+### 10.2 Schema — ciCommands Ya Existe, Añadir category
 
 **Archivo**: [`plugins/ralphharness/schemas/spec.schema.json`](plugins/ralphharness/schemas/spec.schema.json:335)
 
 `ciCommands` ya existe como `string[]`. El `discover-ci.sh` output actual es `[{command, category}]` pero se almacena solo como strings planas.
 
-**Mejora opcional**: Cambiar `ciCommands: string[]` → `ciCommands: [{command: string, category: string}]` para mantener la categoría y permitir CI snapshot diferenciado por tipo (lint vs test vs build).
+**Mejora**: Cambiar `ciCommands: string[]` → `ciCommands: [{command: string, category: string}]` para mantener la categoría y permitir CI snapshot diferenciado por tipo (lint vs test vs build).
 
-### 10.4 Channel Map — Añadir signals.jsonl
+### 10.3 Channel Map — Añadir signals.jsonl
 
 **Archivo**: `plugins/ralphharness/references/channel-map.md`
 
@@ -545,10 +531,3 @@ signals.jsonl necesita su entrada en el channel registry:
 - Lectores: coordinator (antes de cada delegación), todos los agentes para verificar bloqueo
 
 ---
-
-## 11. Próximos Pasos
-
-1. Crear spec `signal-log-and-ci-autodetect` con ralphharness workflow
-2. Seguir Spec 6 brief en ENGINE_ROADMAP.md Section 6
-3. Mostrar tasks.md para revisión antes de implementar
-4. **Durante implementación**: ampliar `discover-ci.sh` → `detect-ci-commands.sh` (no reemplazar)

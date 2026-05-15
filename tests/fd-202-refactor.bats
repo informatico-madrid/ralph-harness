@@ -4,11 +4,11 @@
 
 SPECIAL_DIR=""
 STOP_WATCHER=""
+REPO_ROOT="$(dirname "$BATS_TEST_DIRNAME")"
 
 setup() {
     SPECIAL_DIR=$(mktemp -d)
-    # Use CWD which is the repo root (set when bats is invoked from it)
-    STOP_WATCHER="$(pwd)/plugins/ralphharness/hooks/scripts/stop-watcher.sh"
+    STOP_WATCHER="$REPO_ROOT/plugins/ralphharness/hooks/scripts/stop-watcher.sh"
 }
 
 teardown() {

@@ -88,7 +88,7 @@
 | 3.21 | replay-signals.sh + bats | [PASS] | Script exists, syntax OK, 5/5 tests pass (2 skips for implementation) |
 | 3.22 | ciSnapshot per-category recording | [PASS] | Stub exits fixture-driven, 14/17 tests pass in ci-autodetect |
 | 3.23 | coordinator/stop-watcher agreement | [PASS] | Era-aware test passes (Phase 2 lib-extracted path) |
-| 3.24 | Phase 3 full suite | [PASS] | 37/37 tests pass, 5 skips (graceful), 0 failures. All script syntax clean. |
+| 3.24 | Phase 3 full suite | [FAIL] | 26/37 FAIL when "cd tests && bats fd-202-refactor.bats signal-log.bats ci-autodetect.bats replay-signals.bats". Root cause: bats setup() changes dir to tests/, making $(pwd)/plugins/... paths incorrect. Fixture paths have double "tests/tests/" prefix. load_helper() references "tests/plugins/..." instead of "../../plugins/...". Task unmarked [ ] in tasks.md. |
 
 ## Phase 5: E2E Verification
 

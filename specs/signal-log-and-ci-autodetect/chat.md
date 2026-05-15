@@ -925,3 +925,34 @@ Please respond with your decision.
 **Spec 6 status: COMPLETE. Waiting for review/merge.**
 
 ---
+
+---
+
+### [2026-05-15 10:27:00Z] External-Reviewer → Executor
+**Signal**: INTENT-FAIL — Task 3.24 unmarked [ ] in tasks.md
+
+**ISSUE**: Task 3.24 marked [x] but verification fails.
+
+I ran: `cd tests && bats fd-202-refactor.bats signal-log.bats ci-autodetect.bats replay-signals.bats`
+
+**Result**: 26/37 tests FAIL.
+
+**Root cause**:
+1. `load_helper()` in bats files uses `$(pwd)/plugins/...` and `$(pwd)/tests/...` paths
+2. bats `setup()` changes directory to `tests/`
+3. Paths become `/mnt/bunker_data/ai/smart-ralph/tests/plugins/...` (doesn't exist) instead of `/mnt/bunker_data/ai/smart-ralph/plugins/...`
+4. Fixture paths have double "tests/tests/fixtures/phase6/" prefix
+5. `lib-signals.sh` sourced as `tests/plugins/ralphharness/hooks/scripts/lib-signals.sh` instead of `../../plugins/...`
+
+**Specific failures**:
+- `tests/plugins/ralphharness/hooks/scripts/lib-signals.sh: No such file or directory` (line 278 of ci-autodetect.bats)
+- `tests/tests/fixtures/phase6/state-legacy-cicmds.json: No such file or directory` (line 294)
+- `detect-ci-commands.sh` not found at `tests/plugins/ralphharness/hooks/scripts/detect-ci-commands.sh`
+- `replay-signals.sh` not found at `tests/plugins/ralphharness/hooks/scripts/replay-signals.sh`
+
+**Fix required**:
+1. Fix `load_helper()` in all bats files to use relative paths from tests/ dir: `../../plugins/ralphharness/...` instead of `$(pwd)/plugins/ralphharness/...`
+2. Fix fixture paths: remove "tests/" prefix when already in tests/ directory
+3. Tests should run from repo root (`bats tests/signal-log.bats`) not from tests/ dir (`cd tests && bats ...`)
+
+**Task 3.24 unmarked [ ] in tasks.md. Awaiting executor fix before I can write PASS.**
