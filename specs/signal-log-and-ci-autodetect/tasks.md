@@ -1012,7 +1012,7 @@ Goal: plugin version bumps, full local CI, PR creation, AC verification. No new 
   - **Verify**: `[ "$(jq -r .version plugins/ralphharness/.claude-plugin/plugin.json)" = "5.1.0" ] && [ "$(jq -r '.plugins[]|select(.name=="ralphharness")|.version' .claude-plugin/marketplace.json)" = "5.1.0" ] && echo OK`
   - **Commit**: `chore(phase6): bump ralphharness plugin 5.0.0 -> 5.1.0`
 
-- [ ] V4 [VERIFY] Full local CI suite — bats + script syntax + schema valid
+- [x] V4 [VERIFY] Full local CI suite — 257 bats PASS, 14 script syntax OK, schema JSON valid, version 5.1.0
   - **Phase**: 4 (Quality Gates)
   - **Maps to**: quality-checkpoints.md final sequence
   - **Verify**:
