@@ -15,12 +15,14 @@ Locking Strategy column.
 | Channel | Path | Writer(s) | Reader(s) | Timing | Locking |
 |---------|------|-----------|-----------|--------|---------|
 | **chat.md** | `<basePath>/chat.md` | coordinator, reviewer | coordinator, reviewer | Before/after every delegation (coordinator); each review cycle (reviewer) | `flock -e 200` on `chat.md.lock` — MANDATORY for all writes |
-| **task_review.md** | `<basePath>/task_review.md` | reviewer only | coordinator (Pre-Delegation Check), spec-executor (External Review Protocol step 2b) | Each review cycle (write); before every delegation (read) | Single writer — no locking needed |
 | **tasks.md** | `<basePath>/tasks.md` | spec-executor (marks `[x]`), reviewer (unmarks `[x]` on FAIL) | coordinator (taskIndex advance), reviewer (finds unreviewed tasks) | After each task completion (spec-executor write); on FAIL detection (reviewer write) | ⚠️ TWO WRITERS — `flock -e 201` on `tasks.md.lock` MANDATORY for reviewer unmark writes |
+| **signals.jsonl** | `<basePath>/signals.jsonl` | coordinator, external-reviewer, spec-executor, human | coordinator, stop-watcher | Signal emission (append); pre-delegation gate read (coordinator); HOLD gate read (stop-watcher) | `flock -x 202` on `signals.jsonl.lock` — MANDATORY for all writes |
 | **.progress.md** | `<basePath>/.progress.md` | coordinator, spec-executor, reviewer | coordinator, spec-executor | Continuous | Single logical writer per session (coordinator/executor share a session; reviewer is separate) — append-only reduces collision risk, but review intervention blocks use visible HTML comments as delimiters |
 | **.ralph-state.json** | `<basePath>/.ralph-state.json` | coordinator (all fields), spec-executor (`chat.executor.lastReadLine`), reviewer (`chat.reviewer.lastReadLine`, `external_unmarks`), planning-agents [`architect-reviewer`, `product-manager`, `research-analyst`, `task-planner`] (`awaitingApproval`) | coordinator, reviewer, spec-executor | Every state transition | coordinator owns all fields except `chat.reviewer.*`, `chat.executor.*`, and `external_unmarks` (reviewer-owned) and `awaitingApproval` (planning-agents-owned) — write via `jq` + `mv` atomic pattern |
+| **.ralph-field-baseline.json.lock** | baseline field ownership | coordinator (read baseline) | stop-watcher (read baseline during role-boundary validation) | After state file written (coordinator); each stop-watcher invocation | `flock -x 204` on `.ralph-field-baseline.json.lock` — used exclusively by stop-watcher's field-level validation subshell |
 | **chat.md.lock** | coordinator, reviewer | — | — | Created on first flock | Lock file only — never read for content |
 | **tasks.md.lock** | reviewer | — | — | Created on first reviewer unmark | Lock file only — never read for content |
+| **task_review.md** | `<basePath>/task_review.md` | reviewer only | coordinator (Pre-Delegation Check), spec-executor (External Review Protocol step 2b) | Each review cycle (write); before every delegation (read) | Single writer — no locking needed |
 
 ## Race Condition Risk Register
 
