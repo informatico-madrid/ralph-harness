@@ -22,7 +22,7 @@ Focus: Create the new reference file, make key additive changes that prove the c
   - _Requirements: FR-1, FR-2, AC-1.1, AC-1.2, AC-1.4, AC-6.3_
   - _Design: Component C1_
 
-- [ ] 1.2 Create `references/collaboration-resolution.md` — Experiment-propose-validate workflow block
+- [x] 1.2 Create `references/collaboration-resolution.md` — Experiment-propose-validate workflow block
   - **Do**:
     1. Append the "Experiment-propose-validate" workflow block to the same file
     2. Describe the loop: reviewer emits HYPOTHESIS → executor emits EXPERIMENT → both emit FINDING → converge on ROOT_CAUSE → emit FIX_PROPOSAL
