@@ -178,6 +178,22 @@ ci_cmds=$(discover_ci_commands "$REPO_ROOT")
 jq --argjson cmds "$ci_cmds" '.ciCommands = $cmds' "$STATE_FILE" > "${STATE_FILE}.tmp" && mv "${STATE_FILE}.tmp" "$STATE_FILE"
 ```
 
+# BEGIN ORCHESTRATOR
+# Orchestrate CI command discovery: compose discover-ci.sh + detect-ci-commands.sh,
+# dedupe by (command, category) tuple, write to .ralph-state.json.ciCommands.
+
+# Source detect-ci-commands.sh (marker-based CI auto-detection, FR-3, FR-11)
+source "$CLAUDE_PLUGIN_ROOT/hooks/scripts/detect-ci-commands.sh"
+
+# Discover marker-based CI commands
+detect_cmds=$(detect_ci_commands "$REPO_ROOT")
+
+# Compose: merge discover output + detect output via jq -s 'add', then dedupe by (command, category) tuple
+combined=$(printf '%s\n%s' "$ci_cmds" "$detect_cmds" | jq -s 'add' | jq 'unique_by([.command, .category])')
+jq --argjson cmds "$combined" '.ciCommands = $cmds' "$STATE_FILE" > "${STATE_FILE}.tmp" && mv "${STATE_FILE}.tmp" "$STATE_FILE"
+
+# END ORCHESTRATOR
+
 **Preserved fields** (set by earlier phases, must NOT be removed):
 - `source`, `name`, `basePath`, `commitSpec`, `relatedSpecs`
 
