@@ -338,7 +338,7 @@ Goal: implement the FULL Test Coverage Table from design.md as `tests/pre-exec-c
   - _Requirements: AC-1.2, AC-1.3_
   - _Design: Test Coverage Table (Denylist write)_
 
-- [ ] 3.5 [VERIFY] Quality checkpoint: harness + first tests
+- [x] 3.5 [VERIFY] Quality checkpoint: harness + first tests
   - **Do**: Run the full bats file so far.
   - **Verify**: `cd plugins/ralphharness && bats tests/pre-exec-check.bats && echo CHECKPOINT_OK`
   - **Done when**: All tests so far pass.
@@ -371,7 +371,7 @@ Goal: implement the FULL Test Coverage Table from design.md as `tests/pre-exec-c
   - _Requirements: AC-1.4_
   - _Design: Test Coverage Table (unknown agent)_
 
-- [ ] 3.9 [VERIFY] Quality checkpoint: Layer 1 test coverage
+- [x] 3.9 [VERIFY] Quality checkpoint: Layer 1 test coverage
   - **Do**: Run the full bats file.
   - **Verify**: `cd plugins/ralphharness && bats tests/pre-exec-check.bats && echo CHECKPOINT_OK`
   - **Done when**: All Layer 1 tests pass.
@@ -404,13 +404,13 @@ Goal: implement the FULL Test Coverage Table from design.md as `tests/pre-exec-c
   - _Requirements: AC-3.4_
   - _Design: Test Coverage Table (benign command, no --command)_
 
-- [ ] 3.13 [VERIFY] Quality checkpoint: Layer 2 test coverage
+- [x] 3.13 [VERIFY] Quality checkpoint: Layer 2 test coverage
   - **Do**: Run the full bats file.
   - **Verify**: `cd plugins/ralphharness && bats tests/pre-exec-check.bats && echo CHECKPOINT_OK`
   - **Done when**: All Layer 2 tests pass.
   - **Commit**: none. Log checkpoint timestamp to `.progress.md`.
 
-- [ ] 3.14 Test: Layer 3 task with no `**Files:**` → UNKNOWN/confirm
+- [x] 3.14 Test: Layer 3 task with no `**Files:**` → UNKNOWN/confirm
   - **Do**: Add a bats test — invoke with no `--paths` (the `task-no-files.md` case); assert `risk:"UNKNOWN"`, `decision:"confirm"`, exit `2`.
   - **Files**: plugins/ralphharness/tests/pre-exec-check.bats
   - **Done when**: The test passes.
@@ -419,7 +419,7 @@ Goal: implement the FULL Test Coverage Table from design.md as `tests/pre-exec-c
   - _Requirements: AC-2.1, AC-2.5_
   - _Design: Test Coverage Table (task with no Files)_
 
-- [ ] 3.15 Test: combiner — Denylist + `rm -rf` together, Layer 1 wins
+- [x] 3.15 Test: combiner — Denylist + `rm -rf` together, Layer 1 wins
   - **Do**: Add a bats test — `--paths` matching `Denylist` AND `--command 'rm -rf x'`; assert Layer 1 hard-block wins → `decision:"block"`, exit `2`.
   - **Files**: plugins/ralphharness/tests/pre-exec-check.bats
   - **Done when**: The test passes and confirms the Layer 1 short-circuit.
@@ -428,7 +428,7 @@ Goal: implement the FULL Test Coverage Table from design.md as `tests/pre-exec-c
   - _Requirements: AC-2.1, AC-1.3_
   - _Design: Test Coverage Table (combiner — Denylist + rm -rf)_
 
-- [ ] 3.16 Test: ConfirmRisky LOW/MEDIUM allow, HIGH/UNKNOWN confirm
+- [x] 3.16 Test: ConfirmRisky LOW/MEDIUM allow, HIGH/UNKNOWN confirm
   - **Do**: Add bats tests — a LOW and a MEDIUM input each exit `0` with `decision:"allow"`; a HIGH and an UNKNOWN input each exit `2` with `decision:"confirm"`.
   - **Files**: plugins/ralphharness/tests/pre-exec-check.bats
   - **Done when**: All four ConfirmRisky tests pass.

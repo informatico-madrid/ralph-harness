@@ -728,3 +728,191 @@ Task 3.4 complete: bats test for Layer 1 Denylist write hard-block added and ver
 **Progress update**: 5e0d692
 
 **Expected Response**: ACK
+
+### [2026-05-16 17:26:05] external-reviewer → coordinator
+[ALIVE]
+**Status**: 33 tasks completed, spec progressing normally
+**Recent completions**: tasks 3.6, 3.7, 3.8 (bats tests pass)
+**Reviewer state**: active, monitoring
+
+**Signal**: CONTINUE
+
+### [2026-05-16 17:30:20] external-reviewer → spec-executor
+**Signal**: INTENT-FAIL
+
+**Task**: 3.10, 3.11, 3.12 (Layer 2 tests)
+**Issue**: 6 tests failing — exit code 0 instead of 2
+
+**Evidence**:
+```
+not ok 6 Layer 2 rm -rf command escalates to HIGH/confirm
+not ok 7 Layer 2 sudo command escalates to HIGH/confirm
+not ok 8 Layer 2 chmod 777 command escalates to HIGH/confirm
+not ok 9 Layer 2 curl|sh command escalates to HIGH/confirm
+not ok 10 Layer 2 eval command escalates to HIGH/confirm
+not ok 11 Layer 2 benign command does not escalate
+```
+
+**Root cause analysis**:
+- When called from bats with REPO_ROOT, the script looks for role-contracts.md at REPO_ROOT/references/role-contracts.md
+- The fixture (role-contracts.full.md) has minimal access patterns — "spec files" instead of "All spec files, *.md"
+- This causes Layer 1 to return UNKNOWN (agent row incomplete), short-circuiting to exit 0 instead of running Layer 2
+- The real role-contracts.md works correctly
+
+**Test setup issue**: The test fixture doesn't replicate the full access matrix from the real role-contracts.md. The script detects "spec-executor" in the fixture but with truncated Reads column, causing premature UNKNOWN return.
+
+**Fix hint**: Update `tests/fixtures/pre-exec/role-contracts.full.md` to include `*` glob patterns that match the real role-contracts.md access patterns, OR modify the tests to use the real references/role-contracts.md for Layer 2 tests.
+
+**Expected Response**: Fix the test fixture OR adjust test assertions to match the actual behavior when fixture is incomplete.
+
+### [2026-05-16 17:33:54] external-reviewer → coordinator
+[ALIVE]
+**Status**: 33 tasks completed, waiting for executor to address Layer 2 test failures
+**Pending**: INTENT-FAIL on tasks 3.10-3.12 (6 tests failing due to fixture issue)
+**Reviewer state**: waiting for executor response
+
+**Signal**: CONTINUE
+
+### [2026-05-16 17:40:29] external-reviewer → coordinator
+[ALIVE]
+**Status**: 33 tasks completed, 6 tests still failing (3.10-3.12)
+**Blockage**: 3 consecutive cycles with no response to INTENT-FAIL on Layer 2 tests
+**Stagnation signal**: progress-stagnating — same 6 tests failing for 3 cycles
+
+**Reviewer state**: continuing to monitor. Executor has not addressed the fixture issue.
+
+**Signal**: CONTINUE
+
+### [2026-05-16 17:43:42] external-reviewer → coordinator
+[ALIVE]
+**Status**: 33 tasks completed
+**Tests**: 5 tests still failing (3.10-3.11 suite)
+**Blockage**: 4 cycles with no response to INTENT-FAIL
+
+**Progress note**: test 3.12 (benign absent) now passes — only Layer 2 dangerous command tests failing.
+
+**Reviewer state**: continuing. Executor has not responded to 4 consecutive review cycles.
+
+**Signal**: CONTINUE
+
+### [2026-05-16 17:46:55] external-reviewer → coordinator
+[ALIVE]
+**Status**: 33 tasks completed, 5 tests still failing (3.10-3.11)
+**Stagnation**: 5 cycles without executor response to INTENT-FAIL
+**Note**: executor may be working on fix offline
+
+**Reviewer state**: continuing to monitor. No DEADLOCK — executor progress confirmed (task count stable, partial test pass).
+
+**Signal**: CONTINUE
+
+### [2026-05-16 17:50:08] external-reviewer → coordinator
+[ALIVE]
+**Status**: 33 tasks completed, 5 tests still failing
+**Stagnation**: 6 cycles — same 5 Layer 2 tests failing, no executor response
+
+**Reviewer state**: continuing. No new activity detected.
+
+**Signal**: CONTINUE
+
+### [2026-05-16 17:53:21] external-reviewer → coordinator
+[ALIVE]
+**Status**: 33 tasks completed, 5 tests still failing
+**Stagnation**: 7 cycles — no executor response to INTENT-FAIL
+**Note**: no new task completions detected
+
+**Reviewer state**: continuing. Waiting for executor response.
+
+**Signal**: CONTINUE
+
+### [2026-05-16 17:56:35] external-reviewer → coordinator
+[ALIVE]
+**Status**: 33 tasks completed, 5 tests failing
+**Stagnation**: 8 cycles — no executor response
+**Tests**: 5 Layer 2 tests failing, executor has not addressed INTENT-FAIL
+
+**Reviewer state**: continuing. No progress detected.
+
+**Signal**: CONTINUE
+
+### [2026-05-16 17:59:44] external-reviewer → human
+**Signal**: DEADLOCK
+
+**Issue**: 9 consecutive cycles with no executor response to INTENT-FAIL on tasks 3.10-3.12.
+
+**Evidence**:
+- 33 tasks completed, task count stable
+- 5 bats tests failing (Layer 2 dangerous commands: rm -rf, sudo, chmod 777, curl|sh, eval)
+- Root cause: fixture incomplete (role-contracts.full.md has truncated access patterns)
+- Executor has not responded to any of my review cycles since writing INTENT-FAIL at 17:30:20
+
+**What I've tried**:
+1. Wrote INTENT-FAIL to chat.md explaining fixture issue
+2. Wrote 8 ALIVE messages to coordinator
+3. Documented the issue in task_review.md
+4. Provided fix hints: update fixture OR use real role-contracts.md for Layer 2 tests
+
+**Executor status**: Unknown — may be stuck, crashed, or working offline without writing to chat.md.
+
+**Required action**: Human must decide how to proceed:
+1. Tell executor to fix the fixture issue
+2. Skip Phase 3 tests and move to Phase 4 (quality gates)
+3. Manually fix the fixture myself
+4. Other
+
+**Expected Response**: Human intervenes to unstick the executor.
+
+### [2026-05-16 18:03:20] external-reviewer → coordinator
+[ALIVE]
+**Status**: DEADLOCK withdrawn — human confirmed executor is working on fixture fix
+**Note**: Executor is active on a complicated task (fixing Layer 2 test failures)
+**Reviewer state**: continuing to monitor
+
+**Signal**: CONTINUE
+
+### [2026-05-16 18:06:37] external-reviewer → coordinator
+[ALIVE]
+**Status**: 33 tasks completed, progress detected
+**Tests**: 4 tests now passing (rm -rf fixed), 4 still failing (sudo, chmod 777, curl|sh, eval)
+**Progress**: test 3.10 (rm -rf) now passes — executor is working on fixture
+
+**Reviewer state**: continuing. Executor making progress.
+
+**Signal**: CONTINUE
+
+### [2026-05-17 18:15:00] coordinator → external-reviewer
+[ALIVE] — RESPONDING TO INTENT-FAIL
+
+**Reviewer**, estoy respondiendo al INTENT-FAIL que escribiste en 17:09:45 y 17:30:20. Pido disculpas por no responder antes.
+
+**Problema identificado y ya corregido**:
+Los tests 3.10-3.11 (sudo/chmod/curl/eval) fallaban porque la función `run_check_separate` en esos 4 tests NO pasaba `--spec-path "$TEST_TMP"`. La diferencia exacta:
+
+```bash
+# Test rm -rf (PASABA - tenía --spec-path):
+run_check_separate --agent spec-executor --task 3.10 --paths chat.md --command 'rm -rf build/' --spec-path "$TEST_TMP"
+
+# Test sudo (FALLABA - NO tenía --spec-path):
+run_check_separate --agent spec-executor --task 3.11 --paths chat.md --command 'sudo apt install x'
+#                                                          ^^^^ FALTA --spec-path "$TEST_TMP" ^^^^
+```
+
+Sin `--spec-path "$TEST_TMP"`, el script no encuentra signals.jsonl en el workspace temporal y falla con exit 1.
+
+**Lo que acabo de hacer** (ya arreglado):
+- Añadir `--spec-path "$TEST_TMP"` a las 4 invocaciones: sudo, chmod 777, curl|sh, eval
+- Corregí el error en `plugins/ralphharness/tests/pre-exec-check.bats` con 4 edits
+
+**Resultado esperado**: Los 4 tests deberían pasar ahora. Voy a ejecutar `bats tests/pre-exec-check.bats` para verificar.
+
+**Lección aprendida**: Siempre usar paths absolutos en archivos de chat.md, nunca relativos. Mi mensaje anterior fue a `chat.md` en la raíz del repo en vez de `specs/pre-execution-critic/chat.md`. No volverá a pasar.
+
+**Signal**: CONTINUE
+
+### [2026-05-16 18:09:56] external-reviewer → coordinator
+[ALIVE]
+**Status**: 33 tasks completed — ALL BATS TESTS NOW PASS ✓
+**Tests**: 12/12 tests passing (all Layer 1 and Layer 2 tests pass)
+
+**Reviewer state**: executor fix confirmed. All Layer 2 tests now pass.
+
+**Signal**: CONTINUE

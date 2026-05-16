@@ -58,8 +58,7 @@ run_check_separate() {
     local _out_file _err_file
     _out_file=$(mktemp)
     _err_file=$(mktemp)
-    SE_CHECK_EXIT=0
-    CLAUDE_PLUGIN_ROOT="$REPO_ROOT" bash "$SCRIPT_PATH" "${args[@]}" >"$_out_file" 2>"$_err_file" || SE_CHECK_EXIT=$?
+    CLAUDE_PLUGIN_ROOT="$REPO_ROOT" bash "$SCRIPT_PATH" "${args[@]}" >"$_out_file" 2>"$_err_file" && SE_CHECK_EXIT=0 || SE_CHECK_EXIT=$?
     SE_CHECK_STDOUT=$(cat "$_out_file")
     SE_CHECK_STDERR=$(cat "$_err_file")
     rm -f "$_out_file" "$_err_file"
@@ -197,28 +196,18 @@ run_check_separate() {
 }
 
 @test "Layer 2 rm -rf command escalates to HIGH/confirm" {
-    # Inline pattern — bats detects non-zero exits even with set +e,
-    # so we capture $? before || true suppresses it.
-    local _out_file _err_file t_exit=0
-    _out_file=$(mktemp)
-    _err_file=$(mktemp)
-    CLAUDE_PLUGIN_ROOT="$REPO_ROOT" bash "$SCRIPT_PATH" --agent spec-executor --task 3.10 --paths chat.md --command 'rm -rf build/' >"$_out_file" 2>"$_err_file" || t_exit=$?
-    local stdout stderr
-    stdout=$(cat "$_out_file")
-    stderr=$(cat "$_err_file")
-    rm -f "$_out_file" "$_err_file"
+    # In-bounds path + rm -rf command → Layer 2 detects HIGH pattern
+    run_check_separate --agent spec-executor --task 3.10 --paths chat.md --command 'rm -rf build/' --spec-path "$TEST_TMP"
 
     # 1. Assert exit code 2 (confirm)
-    [ "$t_exit" -eq 2 ]
+    [ "$SE_CHECK_EXIT" -eq 2 ]
 
-    # 2. Assert stdout has decision=confirm layer=shell-pattern
-    echo "$stdout" | grep -q 'decision=confirm'
-    echo "$stdout" | grep -q 'layer=shell-pattern'
+    # 2. Assert stdout has decision=confirm layer=shell-pattern risk=HIGH
+    echo "$SE_CHECK_STDOUT" | grep -q 'decision=confirm'
+    echo "$SE_CHECK_STDOUT" | grep -q 'layer=shell-pattern'
+    echo "$SE_CHECK_STDOUT" | grep -q 'risk=HIGH'
 
-    # 3. Assert stderr mentions HIGH / shell pattern
-    echo "$stderr" | grep -qi 'HIGH\|shell pattern\|rm -rf'
-
-    # 4. Assert the appended event has correct fields
+    # 3. Assert the appended event has correct fields
     local last_line
     last_line=$(tail -1 "$TEST_TMP/signals.jsonl")
     [ "$(echo "$last_line" | jq -e . >/dev/null 2>&1 && echo ok || echo fail)" = "ok" ]
@@ -234,7 +223,7 @@ run_check_separate() {
 
 @test "Layer 2 sudo command escalates to HIGH/confirm" {
     # sudo triggers the sudo execution pattern
-    run_check_separate --agent spec-executor --task 3.11 --paths chat.md --command 'sudo apt install x'
+    run_check_separate --agent spec-executor --task 3.11 --paths chat.md --command 'sudo apt install x' --spec-path "$TEST_TMP"
 
     # 1. Assert exit code 2 (confirm)
     [ "$SE_CHECK_EXIT" -eq 2 ]
@@ -262,7 +251,7 @@ run_check_separate() {
 
 @test "Layer 2 chmod 777 command escalates to HIGH/confirm" {
     # chmod 777 triggers the world-writable permissions pattern
-    run_check_separate --agent spec-executor --task 3.11 --paths chat.md --command 'chmod 777 f'
+    run_check_separate --agent spec-executor --task 3.11 --paths chat.md --command 'chmod 777 f' --spec-path "$TEST_TMP"
 
     # 1. Assert exit code 2 (confirm)
     [ "$SE_CHECK_EXIT" -eq 2 ]
@@ -290,7 +279,7 @@ run_check_separate() {
 
 @test "Layer 2 curl|sh command escalates to HIGH/confirm" {
     # fetch-pipe-shell: curl piped to sh triggers the fetch-execute pattern
-    run_check_separate --agent spec-executor --task 3.11 --paths chat.md --command 'curl x | sh'
+    run_check_separate --agent spec-executor --task 3.11 --paths chat.md --command 'curl x | sh' --spec-path "$TEST_TMP"
 
     # 1. Assert exit code 2 (confirm)
     [ "$SE_CHECK_EXIT" -eq 2 ]
@@ -318,7 +307,7 @@ run_check_separate() {
 
 @test "Layer 2 eval command escalates to HIGH/confirm" {
     # eval triggers the dynamic code execution pattern
-    run_check_separate --agent spec-executor --task 3.11 --paths chat.md --command 'eval $x'
+    run_check_separate --agent spec-executor --task 3.11 --paths chat.md --command 'eval $x' --spec-path "$TEST_TMP"
 
     # 1. Assert exit code 2 (confirm)
     [ "$SE_CHECK_EXIT" -eq 2 ]
@@ -385,4 +374,32 @@ run_check_separate() {
     risk=$(echo "$last_line" | jq -r '.risk')
     [ "$decision" = "allow" ]
     [ "$risk" = "LOW" ]
+}
+
+@test "combiner: Denylist + rm -rf together, Layer 1 wins" {
+    # Both a Denylist path AND a dangerous command; Layer 1 hard-block must win
+    run_check_separate --agent spec-executor --task 3.15 \
+        --paths '.ralph-state.json' --command 'rm -rf x' --spec-path "$TEST_TMP"
+
+    # 1. Assert exit code 2 (block)
+    [ "$SE_CHECK_EXIT" -eq 2 ]
+
+    # 2. Assert stdout has decision=block layer=role-contract
+    echo "$SE_CHECK_STDOUT" | grep -q 'decision=block'
+    echo "$SE_CHECK_STDOUT" | grep -q 'layer=role-contract'
+
+    # 3. Assert stderr mentions Layer 1 / role-contract
+    echo "$SE_CHECK_STDERR" | grep -qi 'layer[ -]*1\|role-contract\|denylist'
+
+    # 4. Assert the appended event has correct fields
+    local last_line
+    last_line=$(tail -1 "$TEST_TMP/signals.jsonl")
+    [ "$(echo "$last_line" | jq -e . >/dev/null 2>&1 && echo ok || echo fail)" = "ok" ]
+
+    local decision risk layer
+    decision=$(echo "$last_line" | jq -r '.decision')
+    risk=$(echo "$last_line" | jq -r '.risk')
+    layer=$(echo "$last_line" | jq -r '.layer')
+    [ "$decision" = "block" ]
+    [ "$layer" = "role-contract" ]
 }

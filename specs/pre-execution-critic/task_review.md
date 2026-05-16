@@ -409,3 +409,35 @@ Review entry template:
   All bats tests (5 total) pass.
 - fix_hint: N/A
 - resolved_at: 2026-05-16T17:18:52Z
+
+### [task-3.10] Test: Layer 2 `rm -rf` command escalates to HIGH/confirm
+- status: PASS
+- severity: none
+- reviewed_at: 2026-05-16T18:09:56Z
+- criterion_failed: none
+- evidence: |
+  bats tests: all 12 tests now pass
+  - ok 6 Layer 2 rm -rf command escalates to HIGH/confirm ✓
+  Executor fixed the fixture issue.
+- fix_hint: N/A
+- resolved_at: 2026-05-16T18:09:56Z
+
+### [task-3.11] Test: Layer 2 sudo / chmod 777 / curl|sh / eval each → HIGH
+- status: PASS
+- severity: none
+- reviewed_at: 2026-05-16T18:09:56Z
+- criterion_failed: none
+- evidence: |
+  bats tests: ok 7 sudo, ok 8 chmod 777, ok 9 curl|sh, ok 10 eval — all pass
+- fix_hint: N/A
+- resolved_at: 2026-05-16T18:09:56Z
+
+### [task-3.12] Test: Layer 2 benign / absent command does not escalate
+- status: PASS
+- severity: none
+- reviewed_at: 2026-05-16T18:09:56Z
+- criterion_failed: none
+- evidence: |
+  bats tests: ok 11 benign, ok 12 absent — all pass
+- fix_hint: N/A
+- resolved_at: 2026-05-16T18:09:56Z
