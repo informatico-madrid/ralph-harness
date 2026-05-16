@@ -10,7 +10,7 @@
     {
       "name": "ralphharness",
       "description": "Spec-driven development with bidirectional chat protocol between executor and reviewer. Research, requirements, design, tasks, autonomous execution, and epic triage. Fresh context per task.",
-      "version": "5.2.0",
+      "version": "5.3.0",
       "author": {
         "name": "informatico-madrid"
       },

@@ -363,6 +363,23 @@ On failure: do not output TASK_COMPLETE. Describe the error. The coordinator ret
 Suppressed output (never include): task echoing, reasoning narration ("First I'll..."), celebration ("Great news!"), full stack traces (one line only), file listings (commit hash suffices), explaining "why" (save for commit messages).
 </output_protocol>
 
+## Debug Logging in Pair-Debug Mode
+
+When running in pair-debug mode (triggered by the 3-condition auto-trigger in failure-recovery.md), debug logging is a sanctioned investigation technique.
+
+**PAIR-DEBUG: marker**: Every temporary debug log must carry the `PAIR-DEBUG:` marker:
+```bash
+grep -rn 'PAIR-DEBUG:' --include="*.py" --include="*.sh" . 2>/dev/null | grep -v '^Binary'
+```
+
+**Decision-path capture**: Logs must capture the suspect variable/code path and the hypothesis being tested — not just "got here" messages.
+
+**Cleanup requirement**: Before any TASK_COMPLETE in pair-debug mode, run:
+```bash
+grep -rn 'PAIR-DEBUG:' <changed files>
+```
+This MUST return empty. If it does not, clean up all PAIR-DEBUG: logs before proceeding.
+
 ## Signal Emission Contract
 
 Control signals go to `signals.jsonl`; collaboration markers stay in `chat.md`.

@@ -79,3 +79,6 @@ The coordinator runs: `grep -c '^\[HOLD\]$\|^\[PENDING\]$\|^\[URGENT\]$' "$SPEC_
 This only matches lines that are exactly `[HOLD]`, `[PENDING]`, or `[URGENT]` — not `**Signal**: HOLD`.
 
 <!-- Messages accumulate here. Append only. Do not edit or delete. -->
+### Optional: Pair-Debug Mode Note
+
+When the coordinator announces "PAIR-DEBUG MODE ACTIVATED" in chat.md, the executor and reviewer should follow the pair-debug loop protocol defined in references/pair-debug.md.

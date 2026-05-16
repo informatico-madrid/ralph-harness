@@ -50,7 +50,7 @@ reviewer   emits  FIX_PROPOSAL →  "The fix is to do A because B"
 #### Termination
 
 - **Success**: `FIX_PROPOSAL` is implemented and verified (test green).
-- **Loop bound**: If the hypothesis-experiment-finding cycle repeats more than 3 times without converging on a `ROOT_CAUSE`, escalate (same exit condition as the cross-branch workflow).
+- **Loop bound**: If the hypothesis-experiment-finding cycle repeats more than 10 times without converging on a `ROOT_CAUSE`, escalate (same exit condition as the cross-branch workflow).
 
 ### Ambiguous Baseline Cross-Reference
 

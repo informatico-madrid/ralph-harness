@@ -1,0 +1,2 @@
+normal log line
+no special markers here

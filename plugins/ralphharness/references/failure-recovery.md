@@ -83,6 +83,33 @@ If no completion signal from spec-executor:
    - Do NOT output ALL_TASKS_COMPLETE
 3. Otherwise: Retry the same task
 
+## Pair-Debug Mode Entry Point
+
+Before outputting the "Max retries reached" error and stopping execution, evaluate the 3-condition pair-debug auto-trigger. If ALL THREE conditions hold, activate pair-debug mode instead of stopping:
+
+**Condition (a)**: Pre-existing test failing + test file unchanged since TASK_START_SHA
+- Check: `git diff $TASK_START_SHA..HEAD -- tests/` — must return empty (no test file changes)
+- Check: There is at least one failing pre-existing test (this is why taskIteration was incremented)
+
+**Condition (b)**: taskIteration >= 2
+- Check: `jq '.taskIteration' .ralph-state.json >= 2`
+- This means the task has already been retried at least once (first fix attempt failed)
+
+**Condition (c)**: No reviewer FAIL row in task_review.md
+- Check: `grep -q "task-<taskIndex>" task_review.md` and if found, the status column is NOT "FAIL"
+- If task_review.md does not exist: condition (c) is satisfied (no FAIL to block)
+
+**ALL THREE conditions must hold** for pair-debug to trigger. The roadmap states 3 conditions; plan.md listed 4 by splitting condition (a) into two parts. The canonical count is 3: (a) pre-existing test failing + test file unchanged, (b) taskIteration >= 2, (c) no reviewer FAIL row. ALL THREE must hold.
+
+If pair-debug triggers:
+1. Announce to chat.md: `### PAIR-DEBUG MODE ACTIVATED`
+2. Set the Driver/Navigator roles: spec-executor becomes Driver, external-reviewer becomes Navigator
+3. Begin pair-debug loop: Driver instruments, Navigator hypothesizes, both coordinate via chat.md
+4. Pair-debug exits on ROOT_CAUSE (success), >10 cycles (escalation), or taskIteration >= maxTaskIterations (hard limit)
+5. After pair-debug exit, resume normal execution
+
+If pair-debug does NOT trigger: proceed with normal Max Retries behavior (stop execution).
+
 ## Recovery Mode Entry Point
 
 When spec-executor does NOT output TASK_COMPLETE:

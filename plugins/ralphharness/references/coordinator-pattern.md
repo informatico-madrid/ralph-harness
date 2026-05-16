@@ -1062,3 +1062,43 @@ When all Step 4 criteria met:
 - If CI fails after 5 retry attempts: STOP with error
 - If review comments cannot be addressed: STOP with error
 - Document all failures in .progress.md Learnings
+
+---
+
+## Pair-Debug Mode Announcement
+
+When the pair-debug auto-trigger fires (3 conditions met in failure-recovery.md §Pair-Debug Mode Entry Point), the coordinator announces activation to chat.md:
+
+```
+### PAIR-DEBUG MODE ACTIVATED
+**Trigger**: task=$taskIndex, conditions(a/b/c) ALL HOLD
+**Driver**: spec-executor (instruments code, runs experiments, implements fixes)
+**Navigator**: external-reviewer (proposes hypotheses, validates experiments, approves ROOT_CAUSE)
+**Coordination**: filesystem-only (chat.md, signals.jsonl, .ralph-state.json). No Task-tool handoff.
+**Loop bound**: >10 hypothesis-experiment cycles → DEADLOCK escalation.
+**Hard limit**: taskIteration >= maxTaskIterations → human escalation.
+```
+
+This announcement is appended to `$SPEC_PATH/chat.md` using the atomic-append pattern (fd 200 flock):
+
+```bash
+(
+  exec 200>"$SPEC_PATH/chat.md.lock"
+  flock -x -w 5 200 || exit 1
+  cat >> "$SPEC_PATH/chat.md" << 'MSGEOF'
+### PAIR-DEBUG MODE ACTIVATED
+**Trigger**: task=$taskIndex, conditions(a/b/c) ALL HOLD
+**Driver**: spec-executor (instruments code, runs experiments, implements fixes)
+**Navigator**: external-reviewer (proposes hypotheses, validates experiments, approves ROOT_CAUSE)
+**Coordination**: filesystem-only (chat.md, signals.jsonl, .ralph-state.json). No Task-tool handoff.
+**Loop bound**: >10 hypothesis-experiment cycles → DEADLOCK escalation.
+**Hard limit**: taskIteration >= maxTaskIterations → human escalation.
+MSGEOF
+) 200>"$SPEC_PATH/chat.md.lock"
+```
+
+After the announcement, the coordinator delegates both the Driver and Navigator roles:
+- **Driver**: spec-executor role — instruments code, runs experiments, implements fixes
+- **Navigator**: external-reviewer role — proposes hypotheses, validates experiments, approves ROOT_CAUSE
+
+Both roles use their respective role files (`pair-debug-driver.md`, `pair-debug-navigator.md`) as system prompts. They communicate through chat.md and signals.jsonl. The coordinator does NOT delegate tasks during pair-debug — it monitors progress via chat.md.

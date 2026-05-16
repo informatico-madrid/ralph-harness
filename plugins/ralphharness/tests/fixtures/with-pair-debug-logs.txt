@@ -1,0 +1,2 @@
+PAIR-DEBUG: suspect variable x=5
+PAIR-DEBUG: hypothesis under test: x causes failure

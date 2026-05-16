@@ -328,6 +328,38 @@ If yes:
 
 ---
 
+### Pair-Debug Placement Step
+
+Where should the pair-debug Driver/Navigator roles run if pair-debug mode triggers?
+(a) This same instance — roles run in-session [DEFAULT]
+(b) A second Claude Code instance
+(c) A foreign agent runtime (Roo Code, Qwen, Cursor, other)
+
+**(a) chosen** → no files copied, no further questions; pair-debug runs in-session. Export step skipped silently. Behavior byte-identical to pre-spec.
+
+**(b) chosen** → manual print: absolute paths of `pair-debug-driver.md` and `pair-debug-navigator.md`, plus the activation step "open a second Claude Code session in this repo and paste the file contents as the session prompt."
+
+**(c) chosen** → **which-runtime sub-question** (Roo Code / Qwen / Cursor / other), then **export-mode question** (automatic copy / manual print).
+- **Automatic copy**: resolve destination path from the runtime→path map (per `references/pair-debug.md` §Section 5). If destination already exists, prompt overwrite/skip per file. Copy both role files. Print the report.
+- **Manual print**: print the absolute source path of each role file AND the copy-paste-ready activation text. Print the report.
+- **Unknown runtime**: fall back to manual print with reason ("no known destination path for <runtime>").
+
+**Export report** (printed in BOTH modes):
+```
+Pair-debug roles exported.
+Driver role file:
+  source:      <abs>/plugins/ralphharness/agents/pair-debug-driver.md
+  destination: <abs dest> # automatic mode only
+Navigator role file:
+  source:      <abs>/plugins/ralphharness/agents/pair-debug-navigator.md
+  destination: <abs dest> # automatic mode only
+To activate:
+  <runtime-specific concrete step>
+```
+- **Idempotency**: if re-running and destination files already exist, prompt overwrite/skip rather than failing or silently clobbering.
+
+---
+
 After writing the state file (and optionally setting up external reviewer), output the coordinator prompt below. This starts the execution loop.
 The stop-hook will continue the loop by blocking stops and prompting the coordinator to check state.
 
