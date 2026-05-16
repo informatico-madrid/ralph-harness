@@ -199,7 +199,7 @@ Fix Task Format:
 | errorSummary         | First 50 chars of failure.error     | "task $taskId failure"         |
 | failure.error        | Parsed from Error: line             | "Task execution failed"        |
 | failure.attemptedFix | Parsed from Attempted fix: line     | "No previous fix attempted"    |
-| fixType              | Failure classification (impl_bug / test_quality / env_issue / spec_ambiguity / flaky) | "impl_bug" |
+| fixType              | Failure classification (impl_bug / test_quality / env_issue / spec_ambiguity / flaky / bug_discovery) | "impl_bug" |
 | originalTask.files   | Files field from original task      | Same directory as original     |
 | originalTask.verify  | Verify field from original task     | "echo 'Verify manually'"      |
 | $scope               | Derived from spec name or task area | "recovery"                     |
@@ -580,7 +580,7 @@ The BUG_DISCOVERY trigger reuses all existing fix-task infrastructure verbatim:
 
 ### Dedup Rule
 
-Before generating a fix task from a BUG_DISCOVERY row, the coordinator performs a dedup check: it reads `fixTaskMap[task_id]` for an existing fix task matching the same `criterion_failed` + `evidence`:
+Before generating a fix task from a BUG_DISCOVERY row, the coordinator performs a dedup check: it reads `fixTaskMap[task_id]` for an existing fix task matching the same `task_id` + `evidence`:
 
 - **Match found**: Skip fix-task generation. Mark the `task_review.md` row `resolved_at` = `already-handled`.
 - **No match**: Proceed to generate fix task normally.

@@ -279,6 +279,6 @@ TReview
 # Regression: existing bats tests still pass (signal-log.bats)
 @test "Regression: signal-log.bats smoke test" {
   if [ -f "$REPO_ROOT/tests/signal-log.bats" ]; then
-    bats "$REPO_ROOT/tests/signal-log.bats" --filter "setup" >/dev/null 2>&1
+    bats "$REPO_ROOT/tests/signal-log.bats" >/dev/null 2>&1
   fi
 }
