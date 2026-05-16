@@ -344,7 +344,7 @@ Goal: implement the FULL Test Coverage Table from design.md as `tests/pre-exec-c
   - **Done when**: All tests so far pass.
   - **Commit**: none. Log checkpoint timestamp to `.progress.md`.
 
-- [ ] 3.6 Test: Layer 1 write outside the Writes set
+- [x] 3.6 Test: Layer 1 write outside the Writes set
   - **Do**: Add a bats test — `--paths` for a path not covered by any `Writes` pattern; assert exit `2`, event `decision:"block"`, `layer:"role-contract"`.
   - **Files**: plugins/ralphharness/tests/pre-exec-check.bats
   - **Done when**: The test passes.
@@ -353,7 +353,7 @@ Goal: implement the FULL Test Coverage Table from design.md as `tests/pre-exec-c
   - _Requirements: AC-1.2_
   - _Design: Test Coverage Table (write outside Writes set)_
 
-- [ ] 3.7 Test: Layer 1 missing `role-contracts.md` → UNKNOWN/confirm
+- [x] 3.7 Test: Layer 1 missing `role-contracts.md` → UNKNOWN/confirm
   - **Do**: Add a bats test — `CLAUDE_PLUGIN_ROOT` at an empty dir; assert exit `2`, event `risk:"UNKNOWN"`, `decision:"confirm"` (never block, never allow).
   - **Files**: plugins/ralphharness/tests/pre-exec-check.bats
   - **Done when**: The test passes.
@@ -362,7 +362,7 @@ Goal: implement the FULL Test Coverage Table from design.md as `tests/pre-exec-c
   - _Requirements: AC-1.4, NFR-4_
   - _Design: Test Coverage Table (missing role-contracts.md)_
 
-- [ ] 3.8 Test: Layer 1 unknown agent → UNKNOWN/confirm
+- [x] 3.8 Test: Layer 1 unknown agent → UNKNOWN/confirm
   - **Do**: Add a bats test — `--agent nonexistent-agent` against the fixture contract; assert exit `2`, `risk:"UNKNOWN"`, `decision:"confirm"`.
   - **Files**: plugins/ralphharness/tests/pre-exec-check.bats
   - **Done when**: The test passes.

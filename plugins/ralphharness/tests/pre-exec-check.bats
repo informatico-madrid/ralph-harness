@@ -121,3 +121,50 @@ run_check_separate() {
     [ "$decision" = "block" ]
     [ "$layer" = "role-contract" ]
 }
+
+@test "Layer 1 missing role-contracts.md → UNKNOWN/confirm" {
+    # Use a temp empty dir where references/role-contracts.md does not exist.
+    # This forces Layer 1 to return UNKNOWN via emit_unknown.
+    local empty_dir
+    empty_dir=$(mktemp -d)
+
+    # Copy the signals.jsonl template into the workspace
+    cp "$REPO_ROOT/templates/signals.jsonl" "$empty_dir/signals.jsonl"
+
+    # Run the check with CLAUDE_PLUGIN_ROOT pointing to the empty dir
+    local _out_file _err_file
+    _out_file=$(mktemp)
+    _err_file=$(mktemp)
+    set +e
+    CLAUDE_PLUGIN_ROOT="$empty_dir" bash "$SCRIPT_PATH" \
+        --agent spec-executor --task 9.9 --paths chat.md --spec-path "$empty_dir" \
+        >"$_out_file" 2>"$_err_file"
+    local exit_code=$?
+    set -e
+    local stdout stderr
+    stdout=$(cat "$_out_file")
+    stderr=$(cat "$_err_file")
+    rm -f "$_out_file" "$_err_file"
+
+    # 1. Assert exit code 2 (confirm)
+    [ "$exit_code" -eq 2 ]
+
+    # 2. Assert stdout has decision=confirm (NEVER block, NEVER allow)
+    echo "$stdout" | grep -q 'decision=confirm'
+
+    # 3. Assert stderr mentions UNKNOWN / role-contracts.md
+    echo "$stderr" | grep -qi 'UNKNOWN\|role-contracts'
+
+    # 4. Assert the appended event has risk:"UNKNOWN" and decision:"confirm"
+    local last_line
+    last_line=$(tail -1 "$empty_dir/signals.jsonl")
+    [ "$(echo "$last_line" | jq -e . >/dev/null 2>&1 && echo ok || echo fail)" = "ok" ]
+
+    local decision risk
+    decision=$(echo "$last_line" | jq -r '.decision')
+    risk=$(echo "$last_line" | jq -r '.risk')
+    [ "$decision" = "confirm" ]
+    [ "$risk" = "UNKNOWN" ]
+
+    rm -rf "$empty_dir"
+}
