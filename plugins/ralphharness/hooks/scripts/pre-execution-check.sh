@@ -267,5 +267,59 @@ layer1_role_contract() {
   return 0
 }
 
+# ── Layer 2 — Dangerous shell pattern detection ─────────────────
+
+# layer2_shell_pattern <command>
+#   Scans a shell command for known-dangerous patterns using ERE.
+#   Returns:
+#     RISK:HIGH|REASON:shell pattern <name> found
+#     RISK:LOW|REASON:none
+layer2_shell_pattern() {
+  local cmd="${1:-}"
+
+  # Absent command -> no risk
+  if [[ -z "$cmd" || "$cmd" =~ ^[[:space:]]*$ ]]; then
+    printf 'RISK:LOW|REASON:none'
+    return 0
+  fi
+
+  # Pattern 1: rm -rf / rm -fr / rm -r -f
+  if [[ "$cmd" =~ rm[[:space:]]+-[a-zA-Z]*r[a-zA-Z]*f[a-zA-Z]* || "$cmd" =~ rm[[:space:]]+-[a-zA-Z]*f[a-zA-Z]*r[a-zA-Z]* || "$cmd" =~ rm[[:space:]]+-r[[:space:]]+-[[:space:]]*f ]]; then
+    printf 'RISK:HIGH|REASON:shell pattern rm -rf found'
+    return 0
+  fi
+
+  # Pattern 2: sudo
+  if [[ "$cmd" =~ (^|[[:space:];|])sudo([[:space:]]|$) ]]; then
+    printf 'RISK:HIGH|REASON:shell pattern sudo found'
+    return 0
+  fi
+
+  # Pattern 3: chmod 777
+  if [[ "$cmd" =~ chmod[[:space:]]+777 ]]; then
+    printf 'RISK:HIGH|REASON:shell pattern chmod 777 found'
+    return 0
+  fi
+
+  # Pattern 4: curl|wget piped to sh|bash
+  # Note: bash ERE does not support matching literal pipe via regex,
+  # so we check for the keyword combo with a pipe separator using
+  # bash string matching instead of ERE.
+  local fetch_shell_pattern='(curl|wget).*(sh|bash)'
+  if [[ "$cmd" =~ $fetch_shell_pattern && "$cmd" == *"|"* ]]; then
+    printf 'RISK:HIGH|REASON:shell pattern fetch-pipe-shell found'
+    return 0
+  fi
+
+  # Pattern 5: eval
+  if [[ "$cmd" =~ (^|[[:space:];|])eval([[:space:]]|$) ]]; then
+    printf 'RISK:HIGH|REASON:shell pattern eval found'
+    return 0
+  fi
+
+  printf 'RISK:LOW|REASON:none'
+  return 0
+}
+
 # ── Placeholder ──────────────────────────────────────────────────
 exit 0

@@ -88,13 +88,13 @@ Goal: build `pre-execution-check.sh` end-to-end (arg parsing, 3 layers, max-seve
   - _Requirements: FR-2, AC-1.2, AC-1.3_
   - _Design: Layer 1 — role-contract matrix parser; Technical Decisions (glob matching)_
 
-- [ ] 1.7 [VERIFY] Quality checkpoint: Layer 1 logic
+- [x] 1.7 [VERIFY] Quality checkpoint: Layer 1 logic
   - **Do**: Run `bash -n`; invoke the script directly against the real `role-contracts.md` for in-bounds, Denylist, and unknown-agent paths to confirm Layer 1 behaviour via exit codes.
   - **Verify**: `bash -n plugins/ralphharness/hooks/scripts/pre-execution-check.sh && echo CHECKPOINT_OK`
   - **Done when**: No syntax errors; Layer 1 yields `clear` / `block` / `UNKNOWN` for the three cases.
   - **Commit**: none. Log checkpoint timestamp to `.progress.md`.
 
-- [ ] 1.8 Implement Layer 2 — dangerous shell pattern regex set
+- [x] 1.8 Implement Layer 2 — dangerous shell pattern regex set
   - **Do**:
     1. In `pre-execution-check.sh`, add `layer2_shell_pattern()` operating on `--command`.
     2. Define the ERE pattern set from the design (case-sensitive): `rm -rf` / `rm -fr` / `rm -r -f`; `sudo`; `chmod 777`; fetch-piped-to-shell (`curl|wget` piped to `sh|bash`); `eval`.
