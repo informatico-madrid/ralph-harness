@@ -1,7 +1,25 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# ── Usage ─────────────────────────────────────────────────────────
+# ── Argument parsing ───────────────────────────────────────────────
+AGENT=""
+TASK=""
+PATHS=""
+COMMAND=""
+SPEC_PATH=""
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --agent)    AGENT="$2";     shift 2 ;;
+    --task)     TASK="$2";      shift 2 ;;
+    --paths)    PATHS="$2";     shift 2 ;;
+    --command)  COMMAND="$2";   shift 2 ;;
+    --spec-path) SPEC_PATH="$2"; shift 2 ;;
+    -h|--help)  usage ;;
+    *) echo "Unknown option: $1" >&2; usage ;;
+  esac
+done
+
 usage() {
   cat >&2 <<EOF
 Usage: $0 --agent AGENT --task TASK [--paths PATHS] [--command CMD] --spec-path PATH
@@ -18,21 +36,7 @@ EOF
   exit 1
 }
 
-# ── Argument parsing ──────────────────────────────────────────────
-AGENTS=()
-while [[ $# -gt 0 ]]; do
-  case "$1" in
-    --agent)    AGENT="$2";     shift 2 ;;
-    --task)     TASK="$2";      shift 2 ;;
-    --paths)    PATHS="$2";     shift 2 ;;
-    --command)  COMMAND="$2";   shift 2 ;;
-    --spec-path) SPEC_PATH="$2"; shift 2 ;;
-    -h|--help)  usage ;;
-    *) echo "Unknown option: $1" >&2; usage ;;
-  esac
-done
-
-# ── Required-flag validation ─────────────────────────────────────
+# Required-flag validation
 missing=""
 [[ -z "${AGENT:-}" ]]     && missing+="--agent "
 [[ -z "${TASK:-}" ]]      && missing+="--task "
@@ -47,22 +51,25 @@ fi
 PATHS="${PATHS:-}"
 COMMAND="${COMMAND:-}"
 
-# ── Severity-rank helpers ─────────────────────────────────────────
+# ═══════════════════════════════════════════════════════════════════
+# SECTION: Constants — Severity rank, exit codes, shell patterns
+# ═══════════════════════════════════════════════════════════════════
 
-# rank() — numeric rank for a risk severity string.
-# Mapping: LOW=0, MEDIUM=1, HIGH=2, UNKNOWN=3
-# UNKNOWN ranks above HIGH per design (unknown risk should not be downgraded).
+# ── Severity rank ─────────────────────────────────────────────────
+# rank() maps risk severity to numeric value for comparison.
+# Order: LOW(0) < MEDIUM(1) < HIGH(2) < UNKNOWN(3)
+# UNKNOWN ranks above HIGH — indeterminacy must never be downgraded.
 rank() {
   case "${1^^}" in
     LOW)      echo 0 ;;
     MEDIUM)   echo 1 ;;
     HIGH)     echo 2 ;;
     UNKNOWN)  echo 3 ;;
-    *)        echo 3 ;;   # anything unrecognized defaults to UNKNOWN rank
+    *)        echo 3 ;;
   esac
 }
 
-# max_risk() — returns the higher-ranked risk string from two inputs.
+# max_risk() returns the higher-ranked risk string from two inputs.
 max_risk() {
   local a_r=$(rank "$1")
   local b_r=$(rank "$2")
@@ -73,40 +80,86 @@ max_risk() {
   fi
 }
 
-# ── Exit-code constants ──────────────────────────────────────────
+# ── Exit-code contract ────────────────────────────────────────────
 # 0   — allow (pre-execution check passed)
 # 2   — block/confirm (risky operation, awaiting security-decision)
 # N   — other non-zero = error (generic failure)
 
-# ── Layer 1 — Role-contract Access Matrix parser ─────────────────
+# ── Dangerous shell pattern ERE set ───────────────────────────────
+# Patterns detected by Layer 2, in priority order.
+# Each pattern maps to risk level HIGH.
+SHELL_PATTERNS=(
+  # Pattern 1: rm with force flag in any order (rm -rf, rm -fr, rm -r -f)
+  'rm[[:space:]]+-[a-zA-Z]*r[a-zA-Z]*f[a-zA-Z]*'
+  'rm[[:space:]]+-[a-zA-Z]*f[a-zA-Z]*r[a-zA-Z]*'
+  'rm[[:space:]]+-r[[:space:]]+-[[:space:]]*f'
+  # Pattern 2: sudo execution
+  '(^|[[:space:];|])sudo([[:space:]]|$)'
+  # Pattern 3: world-writable permissions
+  'chmod[[:space:]]+777'
+  # Pattern 4: fetch-then-execute (curl/wget piped to sh/bash)
+  '(curl|wget).*(sh|bash)'
+  # Pattern 5: eval (dynamic code execution)
+  '(^|[[:space:];|])eval([[:space:]]|$)'
+)
 
-# layer1_role_contract <agent> <paths>
-#   Resolves references/role-contracts.md, extracts the Access Matrix
-#   table, looks up the agent row, and classifies the given comma-
-#   separated paths as clear / violation / UNKNOWN.
-#   Prints: RISK:<severity>|REASON:<reason>
-layer1_role_contract() {
-  local role="$1"
-  local paths="$2"
+# ═══════════════════════════════════════════════════════════════════
+# SECTION: Helpers
+# ═══════════════════════════════════════════════════════════════════
 
-  # Enable extglob for advanced glob patterns
-  shopt -s extglob
-
-  # ── 1. Resolve role-contracts.md location ──────────────────────
+# resolve_role_contracts_path
+#   Resolves the path to references/role-contracts.md.
+#   Inputs:   (none — uses CLAUDE_PLUGIN_ROOT env var and SCRIPT_DIR)
+#   Outputs:  Prints the resolved path to stdout.
+#   Returns:  0 always (caller must check file existence).
+resolve_role_contracts_path() {
   local rc_path=""
   if [[ -n "${CLAUDE_PLUGIN_ROOT:-}" ]]; then
     rc_path="${CLAUDE_PLUGIN_ROOT}/references/role-contracts.md"
   else
-    rc_path="$(cd "$(dirname "$0")/.." && pwd)/references/role-contracts.md"
+    local script_dir
+    script_dir="$(cd "$(dirname "$0")" && pwd)"
+    rc_path="${script_dir}/references/role-contracts.md"
   fi
+  printf '%s' "$rc_path"
+}
 
-  # ── 2. Existence check ─────────────────────────────────────────
+# ═══════════════════════════════════════════════════════════════════
+# SECTION: Layer Functions
+# ═══════════════════════════════════════════════════════════════════
+
+# layer1_role_contract — Role-contract Access Matrix parser
+#
+#   Inputs:
+#     $1 — Agent name (e.g. "spec-executor")
+#     $2 — Comma-separated list of intended write paths
+#
+#   Outputs (stdout): RISK:<severity>|REASON:<reason>
+#   Return: 0 always (caller inspects RISK value)
+#
+#   Risk values:
+#     clear   — all paths within agent's Writes, none in Denylist
+#     violation — Denylist match or Writes miss (maps to HIGH in combiner)
+#     UNKNOWN — role-contracts.md missing, agent not found, or no paths given
+#
+#   Contract: Never outputs "block" directly. The combiner maps
+#   "violation" → "block". Never outputs anything other than
+#   RISK:<clear|violation|UNKNOWN>|REASON:<string>.
+layer1_role_contract() {
+  local role="$1"
+  local paths="$2"
+
+  # 1. Resolve role-contracts.md
+  local rc_path
+  rc_path=$(resolve_role_contracts_path)
+
+  # 2. Existence check
   if [[ ! -f "$rc_path" ]]; then
     printf 'RISK:UNKNOWN|REASON:role-contracts.md not found at %s' "$rc_path"
     return 0
   fi
 
-  # ── 3. Extract Access Matrix table via awk ──────────────────────
+  # 3. Extract Access Matrix table via awk
   local matrix
   matrix=$(awk '
     /^## Access Matrix/ { capture=1; print; next }
@@ -119,17 +172,17 @@ layer1_role_contract() {
     return 0
   fi
 
-  # ── 4. Look up the agent row ───────────────────────────────────
-  #    The table row format: | agent | reads | writes | denylist |
-  local agent_col="" reads_col="" writes_col="" denylist_col=""
+  # Enable extglob for glob matching
+  shopt -s extglob
+
+  # 4. Look up the agent row
+  local agent_col="" writes_col="" denylist_col=""
   local found=0
 
   while IFS= read -r row; do
-    # Skip header/separator lines and the section heading
     [[ "$row" =~ ^\|?--- ]] && continue
     [[ "$row" =~ ^##\ Access\ Matrix ]] && continue
 
-    # Split on pipe and trim whitespace
     local cols=()
     local tmp="$row"
     while [[ -n "$tmp" ]]; do
@@ -138,23 +191,16 @@ layer1_role_contract() {
       tmp="${tmp#*|}"
     done
 
-    # We expect at least 4 columns
     [[ ${#cols[@]} -lt 4 ]] && continue
 
-    local c_role c_reads c_writes c_deny
-    # Trim leading/trailing whitespace
-    # cols[0] is empty (leading pipe), actual data starts at cols[1]
+    local c_role c_writes c_deny
     c_role=$(echo "${cols[1]}" | xargs)
-    c_reads=$(echo "${cols[2]}" | xargs)
     c_writes=$(echo "${cols[3]}" | xargs)
     c_deny=$(echo "${cols[4]}" | xargs)
 
-    # Substring match for agent names (e.g. "coordinator" matches "coordinator (human)")
-    local c_role_lower="${c_role,,}"
-    local role_lower="${role,,}"
-    if [[ "$c_role_lower" == *"$role_lower"* ]]; then
+    # Substring match for agent names
+    if [[ "${c_role,,}" == *"${role,,}"* ]]; then
       agent_col="$c_role"
-      reads_col="$c_reads"
       writes_col="$c_writes"
       denylist_col="$c_deny"
       found=1
@@ -162,16 +208,12 @@ layer1_role_contract() {
     fi
   done <<< "$matrix"
 
-  # ── 5. Agent not found ─────────────────────────────────────────
   if (( ! found )); then
     printf 'RISK:UNKNOWN|REASON:agent %q not found in Access Matrix' "$role"
     return 0
   fi
 
-  # ── 6. Classify each provided path ─────────────────────────────
-  #    Returns the highest severity risk across all paths.
-
-  # --paths absent → UNKNOWN (cannot prove writes are in-bounds)
+  # --paths absent → UNKNOWN
   if [[ -z "$paths" || "$paths" =~ ^[[:space:]]*$ ]]; then
     printf 'RISK:UNKNOWN|REASON:no paths provided'
     return 0
@@ -183,32 +225,26 @@ layer1_role_contract() {
   IFS=',' read -ra path_arr <<< "$paths"
 
   for p in "${path_arr[@]}"; do
-    p=$(echo "$p" | xargs)          # trim whitespace
+    p=$(echo "$p" | xargs)
     [[ -z "$p" ]] && continue
 
     # --- Check denylist first ---
-    # Normalize denylist: strip backticks, handle N/A and None
     local denylist_norm="${denylist_col//\`/}"
     if [[ "${denylist_norm,,}" != *"na"* && "${denylist_norm,,}" != *"none"* && "${denylist_norm,,}" != *"(read-only)"* ]]; then
-      # Split on comma, check each entry
       IFS=',' read -ra deny_arr <<< "$denylist_norm"
       for d in "${deny_arr[@]}"; do
         d=$(echo "$d" | xargs)
         [[ -z "$d" ]] && continue
-        # Strip parenthetical exceptions: "file (except foo)"
         local deny_base="${d%% (*}"
         deny_base=$(echo "$deny_base" | xargs)
         if [[ -z "$deny_base" || "$deny_base" == "n/a" || "$deny_base" == "none" ]]; then
           continue
         fi
-        # Check if there's an exception that covers this path
         local exception="${d##* (}"
         exception="${exception%%)}"
         if [[ -n "$exception" && "$exception" != "$d" ]]; then
-          # Path is excepted — not a violation
           continue
         fi
-        # extglob glob match (pattern can contain * wildcards)
         if [[ "$p" == $deny_base ]]; then
           worst_risk="violation"
           reasons+=("path $p is in denylist for $agent_col")
@@ -217,11 +253,9 @@ layer1_role_contract() {
       done
     fi
 
-    # --- Check writes permission (only for agents with explicit writes) ---
-    # Normalize writes_col: strip backticks and check read-only patterns
+    # --- Check writes permission ---
     local writes_norm="${writes_col//\`/}"
     if [[ "$writes_norm" == "*_\(read-only\)*" || "$writes_norm" == "*(read-only)*" ]]; then
-      # Agent is read-only; any write attempt is a violation.
       if [[ -n "$p" ]]; then
         if [[ "$worst_risk" != "violation" ]]; then
           worst_risk="violation"
@@ -229,19 +263,16 @@ layer1_role_contract() {
         reasons+=("agent $agent_col is read-only")
       fi
     elif [[ "${writes_norm}" != *"All"* && -n "$writes_col" ]]; then
-      # Check if path is in the writes column using extglob
       local writes_for_split="${writes_col//\`/}"
       IFS=',' read -ra write_arr <<< "$writes_for_split"
       local in_writes=0
       for w in "${write_arr[@]}"; do
         w=$(echo "$w" | xargs)
-        # Strip parenthetical exceptions: e.g. ".ralph-state.json (awaitingApproval)"
         local w_base="${w%% (*}"
         w_base=$(echo "$w_base" | xargs)
         if [[ -z "$w_base" || "$w_base" == "n/a" ]]; then
           continue
         fi
-        # extglob glob match — pattern can contain * wildcards
         if [[ "$p" == $w_base ]]; then
           in_writes=1
           break
@@ -249,16 +280,13 @@ layer1_role_contract() {
       done
 
       if (( ! in_writes )); then
-        # Path not in writes — report as violation since the agent
-        # is attempting to write to a file it is not authorized for.
         worst_risk="violation"
         reasons+=("path $p not in writes for $agent_col")
       fi
     fi
-    # "All" writes = no check needed
   done
 
-  # ── 7. Output result ───────────────────────────────────────────
+  # Output result
   local reason_str=""
   if (( ${#reasons[@]} > 0 )); then
     reason_str=$(printf '%s; ' "${reasons[@]}")
@@ -271,108 +299,114 @@ layer1_role_contract() {
   return 0
 }
 
-# ── Layer 2 — Dangerous shell pattern detection ─────────────────
-
-# layer2_shell_pattern <command>
-#   Scans a shell command for known-dangerous patterns using ERE.
-#   Returns:
-#     RISK:HIGH|REASON:shell pattern <name> found
-#     RISK:LOW|REASON:none
+# layer2_shell_pattern — Dangerous shell pattern detection
+#
+#   Inputs:
+#     $1 — Shell command to inspect (from task's Verify field)
+#
+#   Outputs (stdout): RISK:<severity>|REASON:<reason>
+#   Return: 0 always (caller inspects RISK value)
+#
+#   Risk values:
+#     HIGH — dangerous pattern detected (rm -rf, sudo, chmod 777,
+#            curl/wget piped to sh/bash, eval)
+#     LOW  — no dangerous pattern or command absent
+#
+#   Contract: Never outputs "block". Only outputs RISK:HIGH|REASON:...
+#   or RISK:LOW|REASON:none.
 layer2_shell_pattern() {
   local cmd="${1:-}"
 
-  # Absent command -> no risk
   if [[ -z "$cmd" || "$cmd" =~ ^[[:space:]]*$ ]]; then
     printf 'RISK:LOW|REASON:none'
     return 0
   fi
 
-  # Pattern 1: rm -rf / rm -fr / rm -r -f
-  if [[ "$cmd" =~ rm[[:space:]]+-[a-zA-Z]*r[a-zA-Z]*f[a-zA-Z]* || "$cmd" =~ rm[[:space:]]+-[a-zA-Z]*f[a-zA-Z]*r[a-zA-Z]* || "$cmd" =~ rm[[:space:]]+-r[[:space:]]+-[[:space:]]*f ]]; then
-    printf 'RISK:HIGH|REASON:shell pattern rm -rf found'
-    return 0
-  fi
+  # Pattern 4 (curl/wget pipe) requires both the keyword combo AND
+  # a literal pipe character — bash ERE doesn't match |, so we
+  # check separately.
+  local has_pipe=0
+  [[ "$cmd" == *"|"* ]] && has_pipe=1
 
-  # Pattern 2: sudo
-  if [[ "$cmd" =~ (^|[[:space:];|])sudo([[:space:]]|$) ]]; then
-    printf 'RISK:HIGH|REASON:shell pattern sudo found'
-    return 0
-  fi
-
-  # Pattern 3: chmod 777
-  if [[ "$cmd" =~ chmod[[:space:]]+777 ]]; then
-    printf 'RISK:HIGH|REASON:shell pattern chmod 777 found'
-    return 0
-  fi
-
-  # Pattern 4: curl|wget piped to sh|bash
-  # Note: bash ERE does not support matching literal pipe via regex,
-  # so we check for the keyword combo with a pipe separator using
-  # bash string matching instead of ERE.
-  local fetch_shell_pattern='(curl|wget).*(sh|bash)'
-  if [[ "$cmd" =~ $fetch_shell_pattern && "$cmd" == *"|"* ]]; then
-    printf 'RISK:HIGH|REASON:shell pattern fetch-pipe-shell found'
-    return 0
-  fi
-
-  # Pattern 5: eval
-  if [[ "$cmd" =~ (^|[[:space:];|])eval([[:space:]]|$) ]]; then
-    printf 'RISK:HIGH|REASON:shell pattern eval found'
-    return 0
-  fi
+  for pattern in "${SHELL_PATTERNS[@]}"; do
+    # Fetch-pipe needs extra pipe check
+    if [[ "$pattern" == *"curl"* ]] && (( ! has_pipe )); then
+      continue
+    fi
+    if [[ "$cmd" =~ $pattern ]]; then
+      local pattern_name=""
+      case "$pattern" in
+        *"rm"*)       pattern_name="rm -rf" ;;
+        *"sudo"*)     pattern_name="sudo" ;;
+        *"chmod"*)    pattern_name="chmod 777" ;;
+        *curl*|*wget*) pattern_name="fetch-pipe-shell" ;;
+        *"eval"*)     pattern_name="eval" ;;
+      esac
+      printf 'RISK:HIGH|REASON:shell pattern %s found' "$pattern_name"
+      return 0
+    fi
+  done
 
   printf 'RISK:LOW|REASON:none'
   return 0
 }
 
-# ── Layer 3 — Baseline risk classifier ──────────────────────────
-
-# layer3_risk
-#   Provides a baseline risk classification based on task structure.
-#   Does NOT re-derive Layer 1 or Layer 2 outcomes — those are
-#   merged by the combiner.
+# layer3_risk — Baseline risk classifier
 #
-#   Returns:
-#     RISK:UNKNOWN|REASON:no paths provided          — no --paths
-#     RISK:LOW|REASON:read-only task                  — --paths present, no command
-#     RISK:MEDIUM|REASON:task modifies files           — --paths present, command present
+#   Inputs: (reads global PATHS and COMMAND variables)
+#
+#   Outputs (stdout): RISK:<severity>|REASON:<reason>
+#   Return: 0 always
+#
+#   Risk values:
+#     UNKNOWN — no --paths provided (cannot classify task)
+#     LOW     — --paths present, no command (read-only file task)
+#     MEDIUM  — --paths present with command (file modification + execution)
+#
+#   Contract: Does NOT re-derive Layer 1 or Layer 2 outcomes.
+#   Only examines task structure (paths + command presence).
 layer3_risk() {
-  # --paths absent → UNKNOWN (cannot classify a task with no file targets)
   if [[ -z "${PATHS:-}" || "$PATHS" =~ ^[[:space:]]*$ ]]; then
     printf 'RISK:UNKNOWN|REASON:no paths provided'
     return 0
   fi
 
-  # --paths present, no command → task touches files but does nothing risky
   if [[ -z "${COMMAND:-}" || "$COMMAND" =~ ^[[:space:]]*$ ]]; then
     printf 'RISK:LOW|REASON:read-only task'
     return 0
   fi
 
-  # --paths present with a command → task modifies files + executes something
   printf 'RISK:MEDIUM|REASON:task modifies files'
   return 0
 }
 
-# ── Max-severity combiner ────────────────────────────────────────
+# ═══════════════════════════════════════════════════════════════════
+# SECTION: Combiner + Policy
+# ═══════════════════════════════════════════════════════════════════
 
-# combine_risk <l1_verdict> <l2_verdict> <l3_verdict>
-#   Combines the three layer verdicts using max-severity policy.
-#   Layer 1 violations SHORT-CIRCUIT: they produce a hard-block before
-#   the combiner considers other layers (hard-block, layer role-contract).
-#   Otherwise: max_risk() across layers (UNKNOWN > HIGH > MEDIUM > LOW).
+# combine_risk — Max-severity risk combiner with Layer 1 short-circuit
 #
-#   Prints:
-#     VERDICT:block|LAYER:role-contract|DRIVING_LAYER:role-contract   — Layer 1 short-circuit
-#     VERDICT:confirm|LAYER:<layer>|DRIVING_LAYER:<layer>             — combined risk
-#     VERDICT:allow|LAYER:none|DRIVING_LAYER:none                     — clean result
+#   Inputs:
+#     $1 — Layer 1 verdict (RISK:<clear|violation|UNKNOWN>|REASON:...)
+#     $2 — Layer 2 verdict (RISK:<HIGH|LOW>|REASON:...)
+#     $3 — Layer 3 verdict (RISK:<UNKNOWN|LOW|MEDIUM>|REASON:...)
+#
+#   Outputs (stdout): VERDICT:<v>|LAYER:<l>|DRIVING_LAYER:<dl>|RISK:<r>
+#   Return: 2 for Layer 1 violation (caller ignores return value), 0 otherwise
+#
+#   Verdict values:
+#     block    — Layer 1 violation (hard-block, short-circuits)
+#     confirm  — HIGH or UNKNOWN combined risk
+#     allow    — LOW or MEDIUM combined risk
+#
+#   Contract: Layer 1 "violation" short-circuits to block with exit 2.
+#   Otherwise combines all layers via max_risk. Returns 0 on allow/confirm.
 combine_risk() {
   local l1_verdict="${1:-}"
   local l2_verdict="${2:-}"
   local l3_verdict="${3:-}"
 
   # Extract risk value from each layer verdict
-  # Format: RISK:<value>|REASON:<reason> → extract <value> only
   local l1_risk="${l1_verdict#RISK:}"
   l1_risk="${l1_risk%%|*}"
   local l2_risk="${l2_verdict#RISK:}"
@@ -380,23 +414,20 @@ combine_risk() {
   local l3_risk="${l3_verdict#RISK:}"
   l3_risk="${l3_risk%%|*}"
 
-  # Default missing risks to LOW
   l2_risk="${l2_risk:-LOW}"
   l3_risk="${l3_risk:-LOW}"
 
-  # ── Short-circuit: Layer 1 violation → hard-block ─────────────
+  # Short-circuit: Layer 1 violation → hard-block
   if [[ "$l1_risk" == "violation" ]]; then
     printf 'VERDICT:block|LAYER:role-contract|DRIVING_LAYER:role-contract|RISK:HIGH'
     return 2
   fi
 
-  # ── Max-severity: combine remaining layers ─────────────────────
-  # Map layer-internal "clear" to LOW for ranking; normalize UNKNOWN
+  # Map layer-internal "clear" to LOW for ranking
   [[ "$l1_risk" == "clear" ]] && l1_risk="LOW"
   local best_risk="${l1_risk:-LOW}"
   local best_layer="role-contract"
 
-  # Layer 1 clear/UNKNOWN → contributes to comparison
   if (( $(rank "$best_risk") < $(rank "$l2_risk") )); then
     best_risk="$l2_risk"
     best_layer="shell-pattern"
@@ -407,10 +438,7 @@ combine_risk() {
     best_layer="task-baseline"
   fi
 
-  # Map risk to verdict + driving layer
-  local verdict
-  local driving_layer
-
+  local verdict driving_layer
   case "$best_risk" in
     LOW|MEDIUM)
       verdict="allow"
@@ -431,19 +459,25 @@ combine_risk() {
   return 0
 }
 
-# ── ConfirmRisky policy ─────────────────────────────────────────
-
-# confirm_risky <combined_risk> <driving_layer>
-#   Maps the combined risk to a final verdict:
-#     LOW/MEDIUM  → allow, exit 0
-#     HIGH/UNKNOWN → confirm, exit 2
-#     block       → hard-block (bypasses confirm), exit 2
+# confirm_risky — ConfirmRisky policy: map combined risk to final verdict
+#
+#   Inputs:
+#     $1 — Combined risk string (block, HIGH, UNKNOWN, LOW, MEDIUM)
+#     $2 — Driving layer (role-contract, shell-pattern, none)
+#     $3 — Human-readable reason (optional)
 #
 #   Outputs:
-#     - Human-readable reason to stderr
-#     - Structured verdict line (decision=... layer=... risk=...) to stdout
-#     - Sets exit code per verdict
-
+#     stderr: decision:reason (layer=l, risk=r)
+#     stdout: "decision=d\nlayer=l\nrisk=r"
+#   Return: 0 always (main flow sets exit code)
+#
+#   Decision mapping:
+#     block -> decision=block, exit 2 (hard-block, bypasses ConfirmRisky)
+#     HIGH/UNKNOWN -> decision=confirm, exit 2 (pause for human review)
+#     LOW/MEDIUM -> decision=allow, exit 0 (proceed)
+#
+#   Contract: Does NOT call exit. Main flow handles exit codes.
+#   Always outputs structured verdict to stdout and reason to stderr.
 confirm_risky() {
   local risk="${1:-LOW}"
   local layer="${2:-none}"
@@ -462,18 +496,16 @@ confirm_risky() {
       ;;
   esac
 
-  # Human-readable reason to stderr
   printf '%s: %s (layer=%s, risk=%s)\n' \
     "$decision" "${reason:-no reason}" "$layer" "$risk" >&2
 
-  # Structured verdict to stdout (one key=value per line for reliable extraction)
   printf 'decision=%s\nlayer=%s\nrisk=%s\n' \
     "$decision" "$layer" "$risk"
-
-  # Do NOT exit here — the main flow handles exit codes.
 }
 
-# ── Main flow ────────────────────────────────────────────────────
+# ═══════════════════════════════════════════════════════════════════
+# SECTION: Main flow
+# ═══════════════════════════════════════════════════════════════════
 
 # Source signal helpers early (needed by both block and non-block paths)
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -487,8 +519,7 @@ L3_OUTPUT=$(layer3_risk) || true
 # Combine risks using max-severity policy
 COMBINED=$(combine_risk "$L1_OUTPUT" "$L2_OUTPUT" "$L3_OUTPUT") || true
 
-# Extract verdict, risk, layer, and reason from combined output
-# Format: VERDICT:<v>|LAYER:<l>|DRIVING_LAYER:<dl>|RISK:<r>
+# Extract verdict, risk, layer from combined output
 COMBINED_VERDICT="${COMBINED%%|*}"
 COMBINED_VERDICT="${COMBINED_VERDICT#VERDICT:}"
 COMBINED_RISK="${COMBINED##*RISK:}"
@@ -502,14 +533,13 @@ if [[ -f "${SPEC_PATH}/.ralph-state.json" ]]; then
   [[ -n "${_iter:-}" && "${_iter}" != "null" ]] && iteration=$_iter
 fi
 
-# Layer 1 block bypasses confirm_risky — hard-stop immediately
+# ── Layer 1 block bypass — hard-stop ──────────────────────────────
 if [[ "$COMBINED_VERDICT" == "block" ]]; then
   printf 'block: role-contract violation (layer=%s, risk=%s)\n' \
     "$COMBINED_LAYER" "$COMBINED_RISK" >&2
   printf 'decision=block layer=%s risk=%s\n' \
     "$COMBINED_LAYER" "$COMBINED_RISK"
 
-  # Emit security-decision event before block exit
   decision="${COMBINED_VERDICT:-block}"
   [[ -z "$decision" ]] && decision="block"
   payload=$(jq -c -n \
@@ -541,7 +571,7 @@ if [[ "$COMBINED_VERDICT" == "block" ]]; then
     {
       echo ""
       echo "## $(date -u +%Y-%m-%d)"
-      echo "- WARN: security-decision append_signal failed for block — audit trail incomplete"
+      echo "- WARN: security-decision append_signal failed for block - audit trail incomplete"
     } >> "${SPEC_PATH}/.progress.md"
     exit 3
   fi
@@ -549,18 +579,15 @@ if [[ "$COMBINED_VERDICT" == "block" ]]; then
   exit 2
 fi
 
-# ── Emit security-decision event ─────────────────────────────────
-# Capture confirm_risky output and exit code without aborting (set -e).
+# ── Emit security-decision event ──────────────────────────────────
 CR_OUTPUT=$(confirm_risky "$COMBINED_RISK" "$COMBINED_LAYER" "") || true
 
-# Parse the structured verdict line: decision=X layer=Y risk=Z
 decision_line=$(echo "$CR_OUTPUT" | grep '^decision=')
 decision=""
 if [[ -n "$decision_line" ]]; then
   decision=$(echo "$decision_line" | cut -d= -f2)
 fi
 
-# Build and emit the security-decision event
 payload=$(jq -c -n \
   --arg type "security-decision" \
   --arg decision "${decision}" \
@@ -596,10 +623,8 @@ if ! append_signal "$SPEC_PATH" "$payload"; then
   exit 3
 fi
 
-# Print structured verdict to stdout (block path does this too)
 printf 'decision=%s layer=%s risk=%s\n' "$decision" "$COMBINED_LAYER" "$COMBINED_RISK"
 
-# ── Exit code per verdict ─────────────────────────────────────────
 case "$decision" in
   allow) exit 0 ;;
   block|confirm) exit 2 ;;

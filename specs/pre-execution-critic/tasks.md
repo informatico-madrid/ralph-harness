@@ -220,7 +220,7 @@ Goal: build `pre-execution-check.sh` end-to-end (arg parsing, 3 layers, max-seve
 
 Goal: clean up the script, extend the schema, update the signals template and the role-contracts Access Matrix. No behaviour changes — verified by re-running the POC checkpoint command.
 
-- [ ] 2.1 Refactor `pre-execution-check.sh` — extract layer functions cleanly
+- [x] 2.1 Refactor `pre-execution-check.sh` — extract layer functions cleanly
   - **Do**:
     1. Review the script; ensure each of `layer1_role_contract`, `layer2_shell_pattern`, `layer3_risk`, `combine_risk`, `confirm_risky` is a self-contained function with a documented contract comment (inputs, return convention).
     2. Hoist the pattern set, severity map, and path resolution into clearly-labelled sections at the top.
