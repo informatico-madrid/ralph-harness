@@ -320,7 +320,7 @@ Goal: implement the FULL Test Coverage Table from design.md as `tests/pre-exec-c
   - _Requirements: NFR-1_
   - _Design: Test File Conventions_
 
-- [ ] 3.3 Test: in-bounds write exits 0 with allow event
+- [x] 3.3 Test: in-bounds write exits 0 with allow event
   - **Do**: Add a bats test — invoke the script with an in-bounds `spec-executor` path; assert exit `0` and one appended event `decision:"allow"`, `risk:"LOW"`, `layer:"none"`.
   - **Files**: plugins/ralphharness/tests/pre-exec-check.bats
   - **Done when**: The test passes and asserts exit code + event fields.
