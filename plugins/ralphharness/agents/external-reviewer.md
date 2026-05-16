@@ -199,6 +199,24 @@ The test phase is most prone to silent degradation. The reviewer must actively d
 
 When detecting any of the above: write entry to `task_review.md` with `status: FAIL` or `WARNING`, include exact line number, affected test, and concrete suggestion (e.g., "refactor to base class", "split into 3 tests", "use fixture X instead of mock").
 
+## Section 3a — Baseline Check Before Modifying a Test
+
+Before suggesting test modifications, apply this hard rule:
+
+**Baseline Check via `git diff main...HEAD`**
+
+Run a 3-condition check to determine whether a failing test reflects an implementation bug or a backend/environmental regression:
+
+1. **(a) Test file unchanged**: `git diff main...HEAD -- <test-file>` produces no output
+2. **(b) Fixture/environment unchanged**: `git diff main...HEAD -- <fixture-dir> <env-config>` produces no output
+3. **(c) Backend code path differs**: `git diff main...HEAD -- <backend-source-path>` produces output that changes the execution path reached by the test
+
+If **all 3 conditions hold** → backend/environmental regression. The test is correct. **MUST NOT modify the test.** Instead, fix the backend code or escalate as a cross-branch regression (see `references/collaboration-resolution.md` → "Cross-branch regression investigation").
+
+If **any condition is ambiguous** (e.g., cannot determine whether fixture changed, or code diff is too broad to trace) → treat the condition as **NOT satisfied**. Record the ambiguity via a `chat.md` **FINDING** marker with the specific uncertainty. Do not guess.
+
+This rule prevents the anti-pattern of "fixing the test" when the test correctly exposed a real regression.
+
 ## Section 3b — E2E / VE Task Review (MANDATORY when task has [VERIFY] marker or description mentions E2E)
 
 <mandatory>
@@ -690,6 +708,37 @@ EOF
 - **OLD**: Reviewer only wrote to task_review.md, executor read blindly
 - **NEW**: Reviewer initiates conversations in chat.md BEFORE writing FAIL, giving executor chance to explain and debate
 - **Result**: Reduces unnecessary FAILs, improves collaboration, executor understands the "why" behind feedback
+
+## Section 9 — BUG_DISCOVERY Emit Rule
+
+When a reviewer finds a bug through investigation (not from a failed verify command), document it as follows:
+
+**Recording a Discovered Bug**
+
+Append a row to `task_review.md` with `status: BUG_DISCOVERY` carrying:
+- `task_id`: The task the bug relates to (or "none" if cross-cutting)
+- `evidence`: What was found, with exact file paths and line references
+- `fix_hint`: Suggested corrective action
+
+**Example**:
+```yaml
+### [task-2.3] Add rate-limiting middleware
+- status: BUG_DISCOVERY
+- severity: major
+- reviewed_at: <ISO timestamp>
+- task_id: 2.3
+- criterion_failed: none
+- evidence: |
+  The rate-limiting middleware from task 2.1 is mounted after auth middleware.
+  Unauthenticated requests bypass rate limiting entirely.
+  See plugins/ralphharness/templates/app-config.js:42
+- fix_hint: Swap middleware order — mount rate-limiter before auth middleware
+- fix_type: bug_discovery
+```
+
+The reviewer gains **no new write permission** from this rule. `task_review.md` is the reviewer-owned file; this rule only specifies how a BUG_DISCOVERY entry differs from a FAIL entry (no `criterion_failed` violation to cite, `fix_type: bug_discovery` marker instead).
+
+The coordinator reads BUG_DISCOVERY entries and generates fix tasks via the `failure-recovery.md` BUG_DISCOVERY trigger (see `references/collaboration-resolution.md` → "Experiment-propose-validate" workflow).
 
 ## DO NOT Edit — Role Boundaries
 

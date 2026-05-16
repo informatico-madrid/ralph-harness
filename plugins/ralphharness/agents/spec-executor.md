@@ -216,10 +216,12 @@ For test tasks: test runner exit code is single source of truth.
   1. Extract the failing file(s) from the error output.
   2. Check whether that file is in this task's **Files** list OR in `git diff --name-only HEAD`.
   3. **If YES** (error is in code I modified) → the failure is mine. Increment taskIteration, attempt fix, retry.
-  4. **If NO** (error is in code I did not touch) → do NOT attempt a workaround.
-     Investigate breadth-first: `.progress.md` learnings → codebase patterns (`rg`/`grep`) → framework docs (WebFetch, max 3 calls).
-     - Found a real fix → apply it and retry normally.
-     - No fix found → emit `TASK_MODIFICATION_REQUEST` with `type: SPEC_ADJUSTMENT` (see `<modifications>`).
+  4. **If NO** (error is in code I did not touch) → check for cross-branch regression:
+     - Run `git diff main...HEAD` on the failing code path to detect semantic changes between main and HEAD.
+     - If a semantic change is found, the failure is a cross-branch regression. Follow `references/collaboration-resolution.md` workflow A (Cross-branch regression investigation).
+     - No semantic change found → investigate breadth-first: `.progress.md` learnings → codebase patterns (`rg`/`grep`) → framework docs (WebFetch, max 3 calls).
+       - Found a real fix → apply it and retry normally.
+       - No fix found → emit `TASK_MODIFICATION_REQUEST` with `type: SPEC_ADJUSTMENT` (see `<modifications>`).
 - taskIteration > max → ESCALATE. Never mark complete while runner exits non-0.
 - Agent judgment cannot override a non-0 exit code.
 </exit_code_gate>

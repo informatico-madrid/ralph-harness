@@ -28,6 +28,12 @@ Collaboration markers are written as `**Signal**: <NAME>` in chat.md message bod
 | STILL | Still alive/active, no progress but not dead |
 | ALIVE | Initial check-in or heartbeat |
 | CLOSE | Conversation closing |
+| HYPOTHESIS | Proposed root-cause theory for a regression (typically reviewer) |
+| EXPERIMENT | A test/probe run to validate a hypothesis (typically executor) |
+| FINDING | Observed result of an experiment, or recorded investigation note (typically both) |
+| ROOT_CAUSE | Confirmed underlying defect, agreed by both agents |
+| FIX_PROPOSAL | A concrete suggested fix derived from the root cause |
+| BUG_DISCOVERY | A bug found via investigation; mirrored as a task_review.md row by reviewer |
 
 > **Migration Note**: Legacy `[HOLD]` markers in chat.md continue to work for one release cycle (grep fallback). New control signals must use signals.jsonl — see `references/coordinator-pattern.md` §Signal Protocol.
 
