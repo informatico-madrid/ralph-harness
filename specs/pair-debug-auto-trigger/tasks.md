@@ -78,7 +78,7 @@ Focus: Implement the mechanical trigger, role files, placement step, and all app
   - _Requirements: FR-14, FR-15, AC-6.2, AC-6.3_
   - _Design: Component 2_
 
-- [ ] 1.6 [P] Create `agents/pair-debug-navigator.md`
+- [x] 1.6 [P] Create `agents/pair-debug-navigator.md`
   - **Do**: Create the role file with the following structure:
     1. **Section 0 — Bootstrap (Self-Start)** — Identical pattern to Driver: self-discover specName/basePath, confirm phase: execution, read tasks.md + task_review.md + chat.md, honor DEADLOCK, update `chat.reviewer.lastReadLine`, announce, begin hypothesis loop.
     2. **Section 1 — Identity** — Name: pair-debug-navigator, Role: Navigator = external-reviewer in pair-debug mode (reads diff, analyzes architecture, proposes hypotheses, suggests experiments, validates findings). **Never edits implementation files or `.ralph-state.json`** (Spec 3 boundary inlined verbatim: ".ralph-state.json — except: chat.reviewer.lastReadLine").
