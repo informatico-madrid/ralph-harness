@@ -3,15 +3,15 @@
 Auto-generated summary of all specs across configured directories.
 See [index-state.json](./index-state.json) for machine-readable data.
 
-**Last updated:** 2026-05-16T09:11:12Z
+**Last updated:** 2026-05-16T13:03:53Z
 
 ## Directories (1)
 
 | Directory | Specs | Default |
 |-----------|-------|---------|
-| ./specs | 51 | Yes |
+| ./specs | 52 | Yes |
 
-## All Specs (51)
+## All Specs (52)
 
 | Spec | Directory | Phase | Status |
 |------|-----------|-------|--------|
@@ -66,6 +66,7 @@ See [index-state.json](./index-state.json) for machine-readable data.
 | ralphharness-rename | ./specs | execution | 96/122 tasks |
 | code-review-fixes | ./specs | new |  |
 | signal-log-and-ci-autodetect | ./specs | completed | done |
+| pre-execution-critic | ./specs | research |  |
 
 ---
 

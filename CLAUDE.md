@@ -71,7 +71,7 @@ Fine is the default. Coarse reduces token consumption ~3-5x for sequential execu
 > 1. **ALWAYS bump the version** in BOTH files for the modified plugin:
 >    - `plugins/<plugin-name>/.claude-plugin/plugin.json` (the plugin you're modifying)
 >    - `.claude-plugin/marketplace.json` (update the corresponding plugin entry)
-    - Current version: 5.1.0 (signal-log-and-ci-autodetect spec)
+    - Current version: 5.4.0 (pre-execution-critic spec)
 > 2. Use semantic versioning: patch (fixes), minor (features), major (breaking)
 > 3. Bump once per set of related changes (not per commit)
 > 4. Only update the version for plugins you actually modified

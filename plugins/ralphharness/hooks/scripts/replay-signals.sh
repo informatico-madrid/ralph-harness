@@ -54,14 +54,16 @@ fi
 # We use jq to process the JSONL and keep the latest entry per task+signal.
 # Then filter to status=="active" at iteration <= AT_ITERATION.
 
-jq -s '
+# Parse the JSONL, skipping comment lines (starting with #),
+# then apply the stateful fold to find active signals at AT_ITERATION.
+grep -v '^#' "$SIGNALS_FILE" 2>/dev/null | grep -v '^$' | jq -s '
   # Filter to entries up to AT_ITERATION
   [ .[] | select(.iteration <= '"$AT_ITERATION"') |
     # Add line number for tie-breaking
     . + {line_num: (. as $e | range(0; input_line_number))}
   ] |
   # Group by task+signal
-  group_by(.task + "|" + .signal) |
+  group_by(.task + "|" + (.signal // "NONE")) |
   # For each group, pick the entry with the highest iteration (tie-break: highest line_num)
   map(
     sort_by(.iteration, .line_num) | last |
@@ -69,4 +71,4 @@ jq -s '
     "\(.task)\t\(.signal)\t\(.status)"
   ) |
   join("\n")
-' "$SIGNALS_FILE" 2>/dev/null || true
+' 2>/dev/null || true

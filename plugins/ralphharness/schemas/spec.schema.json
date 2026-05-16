@@ -661,6 +661,63 @@
           "description": "The command that was executed"
         }
       }
+    },
+
+    "securityDecisionEvent": {
+      "type": "object",
+      "description": "Security decision event appended to signals.jsonl by pre-execution-check.sh",
+      "required": ["type", "decision", "layer", "risk", "agent", "task", "reason", "timestamp", "iteration"],
+      "properties": {
+        "type": {
+          "const": "security-decision",
+          "description": "Event type: security decision from pre-execution check"
+        },
+        "decision": {
+          "type": "string",
+          "enum": ["allow", "block", "confirm"],
+          "description": "Verdict: allow (exit 0), block (hard-block role-contract), confirm (risky operation)"
+        },
+        "layer": {
+          "type": "string",
+          "enum": ["role-contract", "shell-pattern", "risk", "none"],
+          "description": "Layer that drove the verdict; none = clean LOW/MEDIUM allow"
+        },
+        "risk": {
+          "type": "string",
+          "enum": ["LOW", "MEDIUM", "HIGH", "UNKNOWN"],
+          "description": "Combined max-severity risk"
+        },
+        "agent": {
+          "type": "string",
+          "description": "Target agent role (e.g. spec-executor, qa-engineer)"
+        },
+        "task": {
+          "type": "string",
+          "description": "Task ID (e.g. 1.3)"
+        },
+        "path": {
+          "type": ["string", "null"],
+          "description": "Offending or relevant write path; null when not path-driven"
+        },
+        "command": {
+          "type": ["string", "null"],
+          "description": "Offending or relevant shell command; null when not command-driven"
+        },
+        "reason": {
+          "type": "string",
+          "description": "Human-readable reason (mirrors stderr)"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO-8601 UTC timestamp of decision"
+        },
+        "iteration": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "globalIteration from .ralph-state.json at decision time"
+        }
+      }
     }
   }
 }

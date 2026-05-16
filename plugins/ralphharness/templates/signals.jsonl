@@ -1,6 +1,9 @@
 # signals.jsonl — append-only control event log (Phase 6, signal-log-and-ci-autodetect)
 # Schema: type=control, signal, from, to, task, status, timestamp, iteration, reason
+# The `security-decision` event type co-exists with `control` events in the same file.
+# Both use the same append-only log and flock fd 202 — no new lock, no new file.
 # DO NOT EDIT existing lines. Resolve a signal by appending a new line with status=resolved.
 # Examples (commented out — lines starting with # are not valid JSONL; remove the # to use):
+# {"type":"security-decision","decision":"block","layer":"role-contract","risk":"HIGH","agent":"spec-executor","task":"1.3","path":"specs/demo/.ralph-state.json","command":null,"reason":"Layer 1: write to '.ralph-state.json' matches spec-executor Denylist","timestamp":"2026-05-16T22:04:11Z","iteration":7}
 # {"type":"control","signal":"HOLD","from":"external-reviewer","to":"coordinator","task":"task-1.1","status":"active","timestamp":"2026-01-01T00:00:00Z","iteration":1,"reason":"<why>"}
 # {"type":"control","signal":"HOLD","from":"external-reviewer","to":"coordinator","task":"task-1.1","status":"resolved","timestamp":"2026-01-01T00:05:00Z","iteration":2,"reason":"<resolution>"}

@@ -24,7 +24,7 @@ and what each agent is explicitly forbidden from modifying. It complements the c
 
 | Agent | Reads | Writes | Denylist |
 |-------|-------|--------|----------|
-| spec-executor | All spec files, `.ralph-state.json`, channels | `.progress-task-*.md`, `chat.md`, `chat.executor.lastReadLine` | `.ralph-state.json` (except `chat.executor.lastReadLine`), `.epic-state.json`, spec meta files |
+| spec-executor | All spec files, `.ralph-state.json`, channels | `.progress-task-*.md`, `chat.md`, `chat.executor.lastReadLine`, `src/*.ts` | `.ralph-state.json` (except `chat.executor.lastReadLine`), `.epic-state.json`, spec meta files |
 | external-reviewer | `task_review.md`, `tasks.md`, `.ralph-state.json`, spec files | `task_review.md`, `tasks.md`, `chat.md`, `chat.reviewer.lastReadLine`, `external_unmarks` | `.ralph-state.json` (except `chat.reviewer.lastReadLine`, `external_unmarks`) |
 | qa-engineer | .ralph-state.json (taskIndex), spec files | _(read-only)_ | N/A |
 | spec-reviewer | Spec content via delegation | _(read-only)_ | N/A |
@@ -36,6 +36,9 @@ and what each agent is explicitly forbidden from modifying. It complements the c
 | triage-analyst | .progress.md, spec files | _(read-only)_ | N/A |
 | coordinator (human) | All | All | None |
 | stop-watcher.sh | `.ralph-state.json`, `.ralph-field-baseline.json` | _(read-only — does NOT modify files)_ | N/A |
+| pre-execution-check.sh | `role-contracts.md`, `.ralph-state.json` | `signals.jsonl` (via `append_signal`) | N/A |
+
+The `pre-execution-check.sh` script mechanically enforces the Access Matrix above — it parses the table, checks paths against Writes/Denylist columns, and hard-blocks violations before tasks are dispatched.
 
 ## State Field Ownership
 

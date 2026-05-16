@@ -428,6 +428,85 @@ Then Read and follow these references in order. They contain the complete coordi
   fi
   # END MALFORMED-CHECK
 
+  # BEGIN PRE-EXEC-GATE
+  # Pre-execution safety gate (FR-8, AC-1.3, AC-5.1, AC-5.2).
+  # Runs before task delegation: parses task metadata, invokes
+  # pre-execution-check.sh, and routes based on exit code.
+  # Extract **Files:** and **Verify:** from the current task block.
+  paths=""
+  verify_cmd=""
+  if [ -f "$SPEC_PATH/tasks.md" ]; then
+    # Extract Files line from current task block (between task header and next header/---)
+    paths=$(sed -n "/^## [0-9]/,/^## [0-9]\|^-\s*\[.*\]\s*--\|^---\|^$\|^\`\`\`/p" "$SPEC_PATH/tasks.md" 2>/dev/null \
+      | sed -n "/^  - \*\*Files:\*\*/s/.*\*\*Files:\*\*//p" | head -1 \
+      | tr -d ' ' || echo "")
+    # Extract Verify line
+    verify_cmd=$(sed -n "/^## [0-9]/,/^## [0-9]\|^-\s*\[.*\]\s*--\|^---\|^$\|^\`\`\`/p" "$SPEC_PATH/tasks.md" 2>/dev/null \
+      | sed -n "/^  - \*\*Verify:\*\*/s/.*\*\*Verify:\*\*//p" | head -1 \
+      | sed 's/^`//;s/`$//' || echo "")
+  fi
+  # If Files missing → empty --paths (script handles no-fileset)
+  if [ -z "$paths" ]; then
+    paths=""
+  fi
+  # Capture stdout (verdict line: decision=... layer=... risk=...) and stderr (reason) separately
+  VERDICT_FILE="$SPEC_PATH/.pre-exec-verdict"
+  REASON_FILE="$SPEC_PATH/.pre-exec-reason"
+  > "$VERDICT_FILE"
+  > "$REASON_FILE"
+  # Invoke pre-execution check — stdout → verdict file, stderr → reason file
+  CLAUDE_PLUGIN_ROOT="$(git rev-parse --show-toplevel 2>/dev/null)/plugins/ralphharness"
+  bash "$CLAUDE_PLUGIN_ROOT/hooks/scripts/pre-execution-check.sh" \
+    --agent "$agent" --task "$taskId" --paths "$paths" --command "$verify_cmd" --spec-path "$SPEC_PATH" \
+    > "$VERDICT_FILE" 2>"$REASON_FILE"
+  pre_rc=$?
+  # Branch on exit code:
+  #  0 → clean, fall through to HOLD-GATE then dispatch
+  #  2 → gate triggered: check layer for hard-stop vs confirm path
+  #     layer=role-contract → HARD-STOP (Layer 1 violation bypasses ConfirmRisky)
+  #     any other layer → PAUSE → human confirm → follow-up event or hard-stop
+  # * (other non-zero) → WARN → UNKNOWN → confirmable path
+  case $pre_rc in
+    0)
+      # EXIT 0: Allow — fall through to HOLD-GATE then dispatch
+      echo "[pre-exec] clean: dispatching task $taskId" >> "$SPEC_PATH/.progress.md"
+      ;;
+    2)
+      # EXIT 2: Gate triggered — route based on layer field on stdout verdict line
+      exit_2_reason=$(cat "$REASON_FILE" 2>/dev/null)
+      exit_2_verdict=$(head -1 "$VERDICT_FILE" 2>/dev/null)
+      if echo "$exit_2_verdict" | grep -q "layer=role-contract"; then
+        # HARD-STOP: Layer 1 role-contract violation — do NOT dispatch, do NOT advance taskIndex
+        echo "[pre-exec] HARD-STOP: $exit_2_reason" >> "$SPEC_PATH/.progress.md"
+        echo "[ralphharness] PRE-EXEC HARD-STOP: $exit_2_reason — do NOT dispatch, do NOT advance taskIndex"
+        exit 1
+      else
+        # CONFIRMABLE: any other layer (e.g. layer=shell-pattern)
+        # PAUSE — surface reason to human inline; await approval or refusal
+        echo "[pre-exec] PAUSE: $exit_2_reason — request human confirmation" >> "$SPEC_PATH/.progress.md"
+        echo "[ralphharness] PRE-EXEC PAUSE: $exit_2_reason — confirm before dispatching task $taskId"
+        exit 0
+      fi
+      ;;
+    *)
+      # OTHER NON-ZERO: WARN, treat as UNKNOWN, follow confirmable path
+      exit_star_reason=$(cat "$REASON_FILE" 2>/dev/null)
+      echo "[pre-exec] WARN: script exited $pre_rc — $exit_star_reason" >> "$SPEC_PATH/.progress.md"
+      echo "[ralphharness] PRE-EXEC WARN: exit $pre_rc — route to UNKNOWN, confirm before dispatch"
+      exit 0
+      ;;
+  esac
+  # Follow-up event (emitted ONLY on human approval in CONFIRMABLE path above):
+  # Append a security-decision event recording the allow decision.
+  # jq -n --argjson pre_rc "$pre_rc" \
+  #   --arg reason "human approved: $exit_2_reason" \
+  #   '{type:"security-decision",decision:"allow",reason:$reason,exitCode:$pre_rc,
+  #     agent:$agent,task:$taskId,path:$paths,command:$verify_cmd,
+  #     timestamp:"'"$(date -u +%FT%TZ)"'",iteration:"'"$(jq -r '.globalIteration // 1' "$STATE_FILE" 2>/dev/null || echo 1)"'"}' |
+  #   append_signal "$SPEC_PATH"
+  # Then proceed with dispatch.
+  # END PRE-EXEC-GATE
+
   # BEGIN HOLD-GATE
   # Mechanical active-signal gate (Layer 2). Source of truth: signals.jsonl.
   # Legacy chat.md [HOLD] markers are honoured for one release cycle (NFR-6, AC-3.6)
