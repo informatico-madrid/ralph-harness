@@ -308,7 +308,7 @@ Goal: implement the FULL Test Coverage Table from design.md as `tests/pre-exec-c
   - _Requirements: NFR-1_
   - _Design: Fixtures & Test Data; Test File Conventions_
 
-- [ ] 3.2 Create `tests/pre-exec-check.bats` with setup/teardown harness
+- [x] 3.2 Create `tests/pre-exec-check.bats` with setup/teardown harness
   - **Do**:
     1. Create `plugins/ralphharness/tests/pre-exec-check.bats`.
     2. `setup()` creates a `mktemp -d` workspace and copies `templates/signals.jsonl` into it; `teardown()` `rm -rf`s it; set `REPO_ROOT="$(dirname "$BATS_TEST_DIRNAME")"`.
