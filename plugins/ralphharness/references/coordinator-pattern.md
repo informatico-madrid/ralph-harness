@@ -1079,14 +1079,22 @@ When the pair-debug auto-trigger fires (3 conditions met in failure-recovery.md 
 **Hard limit**: taskIteration >= maxTaskIterations → human escalation.
 ```
 
-This announcement is appended to `<basePath>/chat.md` using the atomic-append pattern (fd 200 flock):
+This announcement is appended to `$SPEC_PATH/chat.md` using the atomic-append pattern (fd 200 flock):
 
 ```bash
 (
-  exec 200>"${basePath}/chat.md.lock"
+  exec 200>"$SPEC_PATH/chat.md.lock"
   flock -x -w 5 200 || exit 1
-  printf '%s\n' "$announcement" >> "${basePath}/chat.md"
-) 200>"${basePath}/chat.md.lock"
+  cat >> "$SPEC_PATH/chat.md" << 'MSGEOF'
+### PAIR-DEBUG MODE ACTIVATED
+**Trigger**: task=$taskIndex, conditions(a/b/c) ALL HOLD
+**Driver**: spec-executor (instruments code, runs experiments, implements fixes)
+**Navigator**: external-reviewer (proposes hypotheses, validates experiments, approves ROOT_CAUSE)
+**Coordination**: filesystem-only (chat.md, signals.jsonl, .ralph-state.json). No Task-tool handoff.
+**Loop bound**: >10 hypothesis-experiment cycles → DEADLOCK escalation.
+**Hard limit**: taskIteration >= maxTaskIterations → human escalation.
+MSGEOF
+) 200>"$SPEC_PATH/chat.md.lock"
 ```
 
 After the announcement, the coordinator delegates both the Driver and Navigator roles:

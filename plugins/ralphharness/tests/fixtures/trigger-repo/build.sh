@@ -6,7 +6,6 @@ cd "$TMP_DIR"
 git init -q
 git config user.email "test@test.com"
 git config user.name "Test"
-echo "def test_existing(): pass" > tests/test_existing.py
 mkdir -p tests
 echo "def test_existing(): pass" > tests/test_existing.py
 git add .
