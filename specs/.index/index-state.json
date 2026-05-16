@@ -1,10 +1,10 @@
 {
   "version": "1.0",
-  "updated": "2026-05-16T09:11:12Z",
+  "updated": "2026-05-16T13:03:53Z",
   "directories": [
     {
       "path": "./specs",
-      "specsCount": 51,
+      "specsCount": 52,
       "isDefault": true
     }
   ],
@@ -335,8 +335,8 @@
     {
       "name": "pair-debug-auto-trigger",
       "path": "./specs/pair-debug-auto-trigger",
-      "phase": "execution",
-      "taskIndex": 5,
+      "phase": "completed",
+      "taskIndex": 55,
       "totalTasks": 55
     },
     {
@@ -357,6 +357,11 @@
       "phase": "completed",
       "taskIndex": 65,
       "totalTasks": 65
+    },
+    {
+      "name": "pre-execution-critic",
+      "path": "./specs/pre-execution-critic",
+      "phase": "research"
     }
   ]
 }
