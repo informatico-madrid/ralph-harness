@@ -504,6 +504,60 @@ if [[ "$COMBINED_VERDICT" == "block" ]]; then
   exit 2
 fi
 
-# Apply ConfirmRisky policy for non-block cases — outputs verdict to stdout,
-# human-readable reason to stderr, and exits with appropriate code.
-confirm_risky "$COMBINED_RISK" "$COMBINED_LAYER" ""
+# ── Emit security-decision event ─────────────────────────────────
+# Capture confirm_risky output and exit code without aborting (set -e).
+CR_OUTPUT=$(confirm_risky "$COMBINED_RISK" "$COMBINED_LAYER" "") || true
+
+# Parse the structured verdict line: decision=X layer=Y risk=Z
+decision_line=$(echo "$CR_OUTPUT" | grep '^decision=')
+decision=""
+if [[ -n "$decision_line" ]]; then
+  decision=$(echo "$decision_line" | cut -d= -f2)
+fi
+
+# Resolve iteration from .ralph-state.json globalIteration, default 1
+iteration=1
+if [[ -f "${SPEC_PATH}/.ralph-state.json" ]]; then
+  _iter=$(jq -r '.globalIteration // 1' "${SPEC_PATH}/.ralph-state.json" 2>/dev/null) || true
+  [[ -n "${_iter:-}" && "${_iter}" != "null" ]] && iteration=$_iter
+fi
+
+# Source signal helpers (resolved relative to script directory)
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+source "${SCRIPT_DIR}/lib-signals.sh"
+
+# Build and emit the security-decision event
+payload=$(jq -n \
+  --arg type "security-decision" \
+  --arg decision "${decision}" \
+  --arg layer "$COMBINED_LAYER" \
+  --arg risk "$COMBINED_RISK" \
+  --arg agent "${AGENT:-unknown}" \
+  --arg task "${TASK:-unknown}" \
+  --arg paths "${PATHS:-}" \
+  --arg command "${COMMAND:-}" \
+  --arg reason "automated security decision" \
+  --arg timestamp "$(date -u +%FT%TZ)" \
+  --argjson iteration "$iteration" \
+  '{
+    type: $type,
+    decision: (if $decision == "" then "allow" else $decision end),
+    layer: $layer,
+    risk: $risk,
+    agent: $agent,
+    task: $task,
+    path: (if $paths == "" then null else $paths end),
+    command: (if $command == "" then null else $command end),
+    reason: $reason,
+    timestamp: $timestamp,
+    iteration: $iteration
+  }')
+
+if ! append_signal "$SPEC_PATH" "$payload"; then
+  {
+    echo ""
+    echo "## $(date -u +%Y-%m-%d)"
+    echo "- WARN: security-decision append_signal failed — audit trail incomplete"
+  } >> "${SPEC_PATH}/.progress.md"
+  exit 3
+fi

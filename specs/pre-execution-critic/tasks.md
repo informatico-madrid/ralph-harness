@@ -151,13 +151,13 @@ Goal: build `pre-execution-check.sh` end-to-end (arg parsing, 3 layers, max-seve
   - _Requirements: FR-5, AC-2.2, AC-5.1, AC-5.2, AC-5.4_
   - _Design: ConfirmRisky policy function; Implementation Step 5_
 
-- [ ] 1.13 [VERIFY] Quality checkpoint: combiner + ConfirmRisky
+- [x] 1.13 [VERIFY] Quality checkpoint: combiner + ConfirmRisky
   - **Do**: Run `bash -n`; invoke the script end-to-end against the real `role-contracts.md` for an in-bounds write and confirm exit `0` + a stdout verdict line.
   - **Verify**: `bash -n plugins/ralphharness/hooks/scripts/pre-execution-check.sh && echo CHECKPOINT_OK`
   - **Done when**: No syntax errors; an in-bounds write exits `0`.
   - **Commit**: none. Log checkpoint timestamp to `.progress.md`.
 
-- [ ] 1.14 Wire the `security-decision` event emitter
+- [x] 1.14 Wire the `security-decision` event emitter
   - **Do**:
     1. In `pre-execution-check.sh`, build the `security-decision` JSON payload with all design fields (`type`, `decision`, `layer`, `risk`, `agent`, `task`, `path`, `command`, `reason`, `timestamp` via `date -u +%FT%TZ`, `iteration` from `globalIteration` in `<spec-path>/.ralph-state.json`, default `1`).
     2. `source` `lib-signals.sh` (resolved relative to the script dir) and call `append_signal "$spec_path" "$payload"`.
