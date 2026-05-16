@@ -7,4 +7,4 @@ description: Minimal role-contracts fixture for pre-execution critic tests
 
 | Agent | Reads | Writes | Denylist |
 |-------|-------|--------|----------|
-| spec-executor | spec files, .ralph-state.json | .progress-task-*.md, chat.md, chat.executor.lastReadLine | .ralph-state.json (except chat.executor.lastReadLine), .epic-state.json |
+| spec-executor | spec files, .ralph-state.json | .progress-task-*.md, chat.md, chat.executor.lastReadLine, src/*.ts | .ralph-state.json (except chat.executor.lastReadLine), .epic-state.json |

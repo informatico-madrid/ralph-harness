@@ -935,3 +935,266 @@ Sin `--spec-path "$TEST_TMP"`, el script no encuentra signals.jsonl en el worksp
 **Reviewer state**: continuing to monitor.
 
 **Signal**: CONTINUE
+
+### [2026-05-16 18:19:45] external-reviewer → coordinator
+[ALIVE]
+**Status**: 39 tasks completed (1 new)
+**Progress**: executor continuing Phase 3
+
+**Signal**: CONTINUE
+
+### [2026-05-16 18:22:59] external-reviewer → coordinator
+[ALIVE]
+**Status**: 39 tasks completed, task count stable (no new completions this cycle)
+**Reviewer state**: continuing to monitor
+
+**Signal**: CONTINUE
+
+### [2026-05-16 18:26:08] external-reviewer → coordinator
+[ALIVE]
+**Status**: 39 tasks completed, stable
+**Reviewer state**: continuing to monitor
+
+**Signal**: CONTINUE
+
+### [2026-05-16 18:29:19] external-reviewer → coordinator
+[ALIVE]
+**Status**: 40 tasks completed (1 new)
+**Progress**: executor making slow but steady progress
+
+**Signal**: CONTINUE
+
+### [2026-05-16 18:32:27] external-reviewer → coordinator
+[ALIVE]
+**Status**: 41 tasks completed (1 new)
+**Progress**: continuing
+
+**Signal**: CONTINUE
+
+### [2026-05-16 18:35:39] external-reviewer → coordinator
+[ALIVE]
+**Status**: 42 tasks completed (1 new)
+**Progress**: steady
+
+**Signal**: CONTINUE
+
+### [2026-05-16 18:38:48] external-reviewer → coordinator
+[ALIVE]
+**Status**: 42 tasks completed, stable
+**Reviewer state**: continuing
+
+**Signal**: CONTINUE
+
+### [2026-05-16 18:41:56] external-reviewer → coordinator
+[ALIVE]
+**Status**: 42 tasks completed, stable
+**Reviewer state**: continuing
+
+**Signal**: CONTINUE
+### [2026-05-17 18:42:00] spec-executor → coordinator
+**Task**: T3.20
+**Signal**: OVER
+
+Task 3.20 complete: Added 2 bats tests for determinism and speed NFR-2.
+
+**Tests added**:
+1. `determinism` — runs script twice with identical inputs (spec-executor, chat.md, pnpm test), asserts matching exit code, matching stdout, and event payload identity modulo `timestamp` (removed via jq `del(.timestamp)`).
+2. `speed` — times a single invocation using `date +%s%N` nanosecond resolution, asserts completion under 100ms.
+
+**Results**: Both tests pass. Verify command: `bats --filter 'determinism|speed'` → 2/2 ok.
+
+**Commit**: 42a0b0a
+
+**Expected Response**: ACK
+
+### [2026-05-16 18:45:05] external-reviewer → coordinator
+[ALIVE]
+**Status**: 42 tasks completed, stable
+**Reviewer state**: continuing
+
+**Signal**: CONTINUE
+
+### [2026-05-16 18:48:13] external-reviewer → coordinator
+[ALIVE]
+**Status**: 42 tasks completed, stable
+**Reviewer state**: continuing
+
+**Signal**: CONTINUE
+
+### [2026-05-16 18:51:25] external-reviewer → coordinator
+[ALIVE]
+**Status**: 42 tasks completed, stable
+**Reviewer state**: continuing
+
+**Signal**: CONTINUE
+
+### [2026-05-16 18:54:33] external-reviewer → coordinator
+[ALIVE]
+**Status**: 42 tasks completed, stable
+**Files modified**: role-contracts.md and role-contracts.full.md (fixture updates)
+**Reviewer state**: continuing
+
+**Signal**: CONTINUE
+
+### [2026-05-16 18:57:42] external-reviewer → coordinator
+[ALIVE]
+**Status**: 42 tasks completed, stable
+**Reviewer state**: continuing
+
+**Signal**: CONTINUE
+
+### [2026-05-16 19:01:00] external-reviewer → coordinator
+[ALIVE]
+**Status**: 42 tasks completed, stable
+**Reviewer state**: continuing
+
+**Signal**: CONTINUE
+
+### [2026-05-16 19:04:21] external-reviewer → coordinator
+[ALIVE]
+**Status**: 42 tasks completed, stable
+**Reviewer state**: continuing
+
+**Signal**: CONTINUE
+
+### [2026-05-16 19:07:31] external-reviewer → coordinator
+[ALIVE]
+**Status**: 42 tasks completed, stable
+**Recent**: replay-signals.sh modified (Phase 4 work starting)
+**Reviewer state**: continuing
+
+**Signal**: CONTINUE
+### [2026-05-17 18:50:00] coordinator → external-reviewer
+**Signal**: CONTINUE
+
+**Spec**: pre-execution-critic
+
+Fixed 2 failing bats tests:
+1. "Layer 1 write outside the Writes set" — the fixture had `src/*.ts` in Writes so `src/index.ts` was in-bounds. Changed test path to `docs/guide.md` (truly outside Writes set).
+2. "replay-signals.sh over security-decision events" — the replay script used `jq -s` on a file with comment lines, which silently failed. Added `grep -v '^#'` to strip comments before jq parsing.
+
+Result: All 22 bats tests now pass (was 20/22 + 2 failures).
+
+Next: Phase 3 VERIFY tasks (3.17, 3.21), then Phase 2 VERIFY (2.3, 2.7), Phase 4 quality gates, Phase 5 PR.
+
+**Signal**: CONTINUE
+
+### [2026-05-17 19:00:00] coordinator → external-reviewer
+**Signal**: CONTINUE
+
+**Fixes applied**:
+1. **"outside Writes" test (test 4)**: The test used path `src/index.ts` but the fixture was updated to include `src/*.ts` in the Writes set, making the path in-bounds. Changed test to use `docs/guide.md` which is truly outside the Writes set.
+
+2. **replay test (test 22)**: The `replay-signals.sh` script's jq command failed to parse comment lines from the signals.jsonl template. Added `grep -v '^#'` pre-filter to strip comment lines before jq processing.
+
+**Result**: All 22 bats tests now pass (previously 2 failing).
+
+**Next**: Delegating task 2.3 [VERIFY] (re-run POC checkpoint to prove refactor preserves behavior) and task 2.7 [VERIFY] (schema + template + matrix quality checkpoint) to qa-engineer.
+
+Compulsively writing per user instruction.
+
+### [2026-05-17 19:01:00] coordinator → qa-engineer
+**Task**: 2.3 [VERIFY] Quality checkpoint: refactor preserves POC behaviour
+Re-run the POC checkpoint command from task 1.18:
+```
+d=$(mktemp -d); R=plugins/ralphharness; CLAUDE_PLUGIN_ROOT=$R bash $R/hooks/scripts/pre-execution-check.sh --agent spec-executor --task 1.1 --paths chat.md --spec-path "$d"; a=$?; CLAUDE_PLUGIN_ROOT=$R bash $R/hooks/scripts/pre-execution-check.sh --agent spec-executor --task 1.2 --paths .ralph-state.json --spec-path "$d" 1>/tmp/o2; b=$?; CLAUDE_PLUGIN_ROOT=$R bash $R/hooks/scripts/pre-execution-check.sh --agent spec-executor --task 1.3 --paths chat.md --command 'rm -rf build/' --spec-path "$d" 1>/tmp/o3; c=$?; test $a -eq 0 && test $b -eq 2 && grep -q role-contract /tmp/o2 && test $c -eq 2 && grep -q confirm /tmp/o3 && test "$(wc -l < "$d/signals.jsonl")" -eq 3 && echo POC_PASS; rm -rf "$d"
+```
+
+### [2026-05-17 19:02:00] coordinator → qa-engineer
+**Task**: 2.7 [VERIFY] Quality checkpoint: schema + template + matrix
+- Validate schema JSON is well-formed
+- Confirm template has security-decision note
+- Confirm matrix has pre-execution-check.sh row
+```
+jq -e . plugins/ralphharness/schemas/spec.schema.json >/dev/null && grep -q security-decision plugins/ralphharness/templates/signals.jsonl && grep -q pre-execution-check.sh plugins/ralphharness/references/role-contracts.md && echo CHECKPOINT_OK
+```
+
+### [2026-05-16 19:10:44] external-reviewer → coordinator
+[ALIVE]
+**Status**: 42 tasks completed, stable
+**Reviewer state**: continuing
+
+**Signal**: CONTINUE
+
+### [2026-05-17 19:04:00] coordinator → external-reviewer
+**Signal**: CONTINUE
+
+**Phase 2 complete**: Tasks 2.3 and 2.7 [VERIFY] both passed:
+- POC checkpoint: allow/0, block/2, confirm/2 — POC_PASS confirmed
+- Schema + template + matrix checkpoint: CHECKPOINT_OK
+
+Phase 2 is fully done. Moving to Phase 3 remaining VERIFY tasks: 3.17 and 3.21.
+
+### [2026-05-17 19:05:00] coordinator → qa-engineer
+**Task**: 3.17 [VERIFY] Quality checkpoint: Layer 3 + combiner + ConfirmRisky
+Run the full bats file and confirm all tests pass (this validates through ConfirmRisky):
+```bash
+cd /mnt/bunker_data/ai/smart-ralph/plugins/ralphharness && bats tests/pre-exec-check.bats && echo CHECKPOINT_OK
+```
+
+### [2026-05-17 19:06:00] coordinator → qa-engineer
+**Task**: 3.21 VE [VERIFY] E2E: real pre-execution-check.sh against fixture contracts
+Run the VE E2E check against the test fixtures:
+```bash
+d=$(mktemp -d); R=plugins/ralphharness; F=$R/tests/fixtures/pre-exec; CLAUDE_PLUGIN_ROOT=$R bash $R/hooks/scripts/pre-execution-check.sh --agent spec-executor --task ve.1 --paths chat.md --spec-path "$d"; e1=$?; CLAUDE_PLUGIN_ROOT=$R bash $R/hooks/scripts/pre-execution-check.sh --agent spec-executor --task ve.2 --paths .ralph-state.json --spec-path "$d" 1>/tmp/ve2; e2=$?; CLAUDE_PLUGIN_ROOT=$R bash $R/hooks/scripts/pre-execution-check.sh --agent spec-executor --task ve.3 --paths src/x.ts --command 'rm -rf b' --spec-path "$d" 1>/tmp/ve3; e3=$?; CLAUDE_PLUGIN_ROOT=$R bash $R/hooks/scripts/pre-execution-check.sh --agent spec-executor --task ve.4 --spec-path "$d" 1>/tmp/ve4; e4=$?; test $e1 -eq 0 && test $e2 -eq 2 && grep -q role-contract /tmp/ve2 && test $e3 -eq 2 && grep -q confirm /tmp/ve3 && test $e4 -eq 2 && grep -q UNKNOWN /tmp/ve4 && test "$(wc -l < "$d/signals.jsonl")" -eq 4 && while read -r l; do echo "$l" | jq -e . >/dev/null || exit 1; done < "$d/signals.jsonl" && echo VE_PASS; rm -rf "$d"
+```
+
+### [2026-05-17 19:08:00] coordinator → external-reviewer
+**Signal**: CONTINUE
+
+**Phase 3 fully complete**: 21/21 test tasks done. All 22 bats tests pass (including 2 I fixed: "outside Writes" and "replay-signals.sh"). VE E2E: VE_PASS confirmed (allow/0, block/2, confirm/2, UNKNOWN/2, 4 signals.jsonl lines, all valid JSON).
+
+**Progress summary**: 46/54 tasks done. 8 remaining: Phase 4 Quality Gates (4.1-4.5) + Phase 5 PR Lifecycle (5.1-5.3).
+
+### [2026-05-17 19:09:00] coordinator → spec-executor
+**Task**: 4.1-4.5 (Phase 4 Quality Gates)
+
+Execute these 5 quality gate tasks in order:
+
+4.1: Run `shellcheck` on the script; fix any issues. If shellcheck not available, fall back to `bash -n`.
+4.2: Run the full bats suite: `cd plugins/ralphharness && bats tests/pre-exec-check.bats tests/signal-log.bats`
+4.3: Version bump 5.3.0 → 5.4.0 in `plugins/ralphharness/.claude-plugin/plugin.json` AND `.claude-plugin/marketplace.json`
+4.4: Update `CLAUDE.md` current-version note to `5.4.0 (pre-execution-critic spec)`
+4.5: [VERIFY] Run shellcheck/bash -n, schema JSON, and full bats suite — confirm all pass.
+
+Start with 4.1 and report results.
+
+### [2026-05-16 19:13:53] external-reviewer → coordinator
+[ALIVE]
+**Status**: 46 tasks completed (4 new since last cycle)
+**Progress**: executor making good progress on Phase 4
+
+**Signal**: CONTINUE
+
+### [2026-05-17 19:12:00] coordinator → external-reviewer
+**Signal**: CONTINUE
+
+**Phase 4 complete**:
+- 4.1: shellcheck unavailable; bash -n passes
+- 4.2: Full bats suite — 35/35 tests pass (22 pre-exec + 13 signal-log, no regressions)
+- 4.3: Version bumped to 5.4.0 in plugin.json + marketplace.json
+- 4.4: CLAUDE.md version note updated
+- 4.5: LOCAL_CI_OK (script syntax, schema valid, all bats tests pass)
+
+Moving to Phase 5 PR Lifecycle.
+
+### [2026-05-17 19:13:00] coordinator → qa-engineer
+**Task**: 5.1 [VERIFY] Acceptance-criteria check against the Verification Contract
+Run the VE E2E check one more time and confirm all hard invariants:
+```bash
+d=$(mktemp -d); R=plugins/ralphharness; F=$R/tests/fixtures/pre-exec; CLAUDE_PLUGIN_ROOT=$R bash $R/hooks/scripts/pre-execution-check.sh --agent spec-executor --task ve.1 --paths chat.md --spec-path "$d"; e1=$?; CLAUDE_PLUGIN_ROOT=$R bash $R/hooks/scripts/pre-execution-check.sh --agent spec-executor --task ve.2 --paths .ralph-state.json --spec-path "$d" 1>/tmp/ve2; e2=$?; CLAUDE_PLUGIN_ROOT=$R bash $R/hooks/scripts/pre-execution-check.sh --agent spec-executor --task ve.3 --paths src/x.ts --command 'rm -rf b' --spec-path "$d" 1>/tmp/ve3; e3=$?; CLAUDE_PLUGIN_ROOT=$R bash $R/hooks/scripts/pre-execution-check.sh --agent spec-executor --task ve.4 --spec-path "$d" 1>/tmp/ve4; e4=$?; test $e1 -eq 0 && test $e2 -eq 2 && grep -q role-contract /tmp/ve2 && test $e3 -eq 2 && grep -q confirm /tmp/ve3 && test $e4 -eq 2 && grep -q UNKNOWN /tmp/ve4 && test "$(wc -l < "$d/signals.jsonl")" -eq 4 && while read -r l; do echo "$l" | jq -e . >/dev/null || exit 1; done < "$d/signals.jsonl" && echo VE_PASS; rm -rf "$d"
+```
+Also run: `cd /mnt/bunker_data/ai/smart-ralph/plugins/ralphharness && bats tests/pre-exec-check.bats && echo AC_CHECK_OK`
+
+### [2026-05-17 19:14:00] coordinator → spec-executor
+**Task**: 5.2 Create the PR
+
+Create a PR for the pre-execution-critic spec:
+1. Confirm current branch: `git branch --show-current`
+2. Push: `git push -u origin spec/pre-execution-critic`
+3. Create PR via `gh pr create` with title: "feat(pre-exec): add 3-layer security critic with role-contract, shell-pattern, and risk layers"
+   Body should summarize: 3-layer pre-execution critic based on OpenHands SecurityAnalyzer pattern, 7 files changed (1 create, 6 modify), 22 bats tests + 13 signal-log tests passing, VE E2E verified.
+
+### [2026-05-17 19:15:00] coordinator → spec-executor
+**Task**: 5.3 [VERIFY] CI pipeline passes
+After PR is created, verify CI checks pass via `gh pr checks`.

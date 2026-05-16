@@ -243,7 +243,7 @@ Goal: clean up the script, extend the schema, update the signals template and th
   - _Requirements: NFR-3, NFR-4, FR-10_
   - _Design: Error Handling & Failure Modes_
 
-- [ ] 2.3 [VERIFY] Quality checkpoint: refactor preserves POC behaviour
+- [x] 2.3 [VERIFY] Quality checkpoint: refactor preserves POC behaviour
   - **Do**: Re-run the POC checkpoint command (task 1.18 Verify) and confirm `POC_PASS`.
   - **Verify**: re-run task 1.18 Verify command; expect `POC_PASS`.
   - **Done when**: The three core verdicts still behave identically after the refactor.
@@ -284,7 +284,7 @@ Goal: clean up the script, extend the schema, update the signals template and th
   - _Requirements: FR-11_
   - _Design: role-contracts.md update; Implementation Step 9_
 
-- [ ] 2.7 [VERIFY] Quality checkpoint: schema + template + matrix
+- [x] 2.7 [VERIFY] Quality checkpoint: schema + template + matrix
   - **Do**: Validate the schema is well-formed JSON; confirm the template and matrix changes are present.
   - **Verify**: `jq -e . plugins/ralphharness/schemas/spec.schema.json >/dev/null && grep -q security-decision plugins/ralphharness/templates/signals.jsonl && grep -q pre-execution-check.sh plugins/ralphharness/references/role-contracts.md && echo CHECKPOINT_OK`
   - **Done when**: Schema valid; template and matrix updated.
@@ -437,7 +437,7 @@ Goal: implement the FULL Test Coverage Table from design.md as `tests/pre-exec-c
   - _Requirements: AC-2.2_
   - _Design: Test Coverage Table (ConfirmRisky)_
 
-- [ ] 3.17 [VERIFY] Quality checkpoint: Layer 3 + combiner + ConfirmRisky
+- [x] 3.17 [VERIFY] Quality checkpoint: Layer 3 + combiner + ConfirmRisky
   - **Do**: Run the full bats file.
   - **Verify**: `cd plugins/ralphharness && bats tests/pre-exec-check.bats && echo CHECKPOINT_OK`
   - **Done when**: All tests through ConfirmRisky pass.
@@ -470,7 +470,7 @@ Goal: implement the FULL Test Coverage Table from design.md as `tests/pre-exec-c
   - _Requirements: NFR-1, NFR-2_
   - _Design: Test Coverage Table (Determinism, Speed)_
 
-- [ ] 3.21 VE [VERIFY] E2E: real `pre-execution-check.sh` against fixture contracts and task blocks
+- [x] 3.21 VE [VERIFY] E2E: real `pre-execution-check.sh` against fixture contracts and task blocks
   - **Do**:
     1. Run the REAL `pre-execution-check.sh` end-to-end (no bats wrapper) against the `tests/fixtures/pre-exec/` contracts in a `mktemp -d` spec dir.
     2. Exercise the full exit-code contract: an in-bounds write (`0`), a Denylist write (`2`, `layer=role-contract`), a `rm -rf` verify (`2`, `decision=confirm`), and a no-`--paths` task (`2`, `risk=UNKNOWN`).
@@ -491,7 +491,7 @@ Goal: implement the FULL Test Coverage Table from design.md as `tests/pre-exec-c
 NEVER push directly to the default branch. Branch management is handled at startup — you should already be on `spec/pre-execution-critic`.
 </mandatory>
 
-- [ ] 4.1 Shellcheck and lint `pre-execution-check.sh`
+- [x] 4.1 Shellcheck and lint `pre-execution-check.sh`
   - **Do**: Run `shellcheck` on the script; fix any reported issues without changing behaviour. If `shellcheck` is unavailable, fall back to `bash -n`.
   - **Files**: plugins/ralphharness/hooks/scripts/pre-execution-check.sh
   - **Done when**: `shellcheck` reports no errors (or `bash -n` passes if shellcheck absent).
@@ -499,7 +499,7 @@ NEVER push directly to the default branch. Branch management is handled at start
   - **Commit**: `fix(pre-exec): resolve shellcheck findings in pre-execution-check.sh` (only if fixes needed)
   - _Requirements: NFR-1_
 
-- [ ] 4.2 Run the full bats suite
+- [x] 4.2 Run the full bats suite
   - **Do**: Run the new test file plus the existing suite to confirm no regressions.
   - **Files**: _(verification only)_
   - **Done when**: `bats tests/pre-exec-check.bats` passes and existing bats tests still pass.
@@ -507,7 +507,7 @@ NEVER push directly to the default branch. Branch management is handled at start
   - **Commit**: `fix(pre-exec): address test failures` (only if fixes needed)
   - _Requirements: NFR-1, NFR-5_
 
-- [ ] 4.3 Version bump `5.3.0` → `5.4.0`
+- [x] 4.3 Version bump `5.3.0` → `5.4.0`
   - **Do**: Bump the `ralphharness` version to `5.4.0` in BOTH `plugins/ralphharness/.claude-plugin/plugin.json` AND the corresponding `ralphharness` entry in `.claude-plugin/marketplace.json` (minor — new feature).
   - **Files**: plugins/ralphharness/.claude-plugin/plugin.json, .claude-plugin/marketplace.json
   - **Done when**: Both files show `5.4.0` for `ralphharness`.
@@ -515,7 +515,7 @@ NEVER push directly to the default branch. Branch management is handled at start
   - **Commit**: `chore(pre-exec): bump ralphharness to 5.4.0`
   - _Requirements: (CLAUDE.md version-bump mandate)_
 
-- [ ] 4.4 Update CLAUDE.md current-version note
+- [x] 4.4 Update CLAUDE.md current-version note
   - **Do**: Update the "Current version:" note in `CLAUDE.md` from the prior value to `5.4.0 (pre-execution-critic spec)`. If no such note exists, skip.
   - **Files**: CLAUDE.md
   - **Done when**: The CLAUDE.md current-version note reads `5.4.0 (pre-execution-critic spec)`, or the note does not exist.
@@ -523,7 +523,7 @@ NEVER push directly to the default branch. Branch management is handled at start
   - **Commit**: `docs(pre-exec): update CLAUDE.md current-version note to 5.4.0`
   - _Requirements: (CLAUDE.md version-bump mandate)_
 
-- [ ] 4.5 [VERIFY] Full local CI gate
+- [x] 4.5 [VERIFY] Full local CI gate
   - **Do**: Run shellcheck/`bash -n` on the script, the full bats suite, and the schema JSON validation; confirm all pass.
   - **Verify**: `bash -n plugins/ralphharness/hooks/scripts/pre-execution-check.sh && jq -e . plugins/ralphharness/schemas/spec.schema.json >/dev/null && cd plugins/ralphharness && bats tests/pre-exec-check.bats tests/signal-log.bats && echo LOCAL_CI_OK`
   - **Done when**: Script lints clean, schema valid, all bats tests pass.

@@ -120,10 +120,10 @@ run_check_separate() {
 }
 
 @test "Layer 1 write outside the Writes set hard-blocks (exit 2)" {
-    # src/index.ts is NOT covered by any spec-executor Writes pattern
-    # (Writes: .progress-task-*.md, chat.md, chat.executor.lastReadLine)
+    # docs/guide.md is NOT covered by any spec-executor Writes pattern
+    # (Writes: .progress-task-*.md, chat.md, chat.executor.lastReadLine, src/*.ts)
     # and is NOT in the Denylist either — Writes miss = violation
-    run_check_separate --agent spec-executor --task 3.6 --paths 'src/index.ts' --spec-path "$TEST_TMP"
+    run_check_separate --agent spec-executor --task 3.6 --paths 'docs/guide.md' --spec-path "$TEST_TMP"
 
     # 1. Assert exit code 2 (hard-block)
     [ "$SE_CHECK_EXIT" -eq 2 ]
