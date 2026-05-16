@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "updated": "2026-05-16T05:14:53Z",
+  "updated": "2026-05-16T09:11:12Z",
   "directories": [
     {
       "path": "./specs",
@@ -321,8 +321,8 @@
     {
       "name": "collaboration-resolution",
       "path": "./specs/collaboration-resolution",
-      "phase": "done",
-      "taskIndex": 0,
+      "phase": "completed",
+      "taskIndex": 52,
       "totalTasks": 52
     },
     {
@@ -335,7 +335,9 @@
     {
       "name": "pair-debug-auto-trigger",
       "path": "./specs/pair-debug-auto-trigger",
-      "phase": "new"
+      "phase": "execution",
+      "taskIndex": 5,
+      "totalTasks": 55
     },
     {
       "name": "ralphharness-rename",

@@ -1,6 +1,6 @@
 ---
 spec: pair-debug-auto-trigger
-phase: tasks
+phase: complete
 created: 2026-05-16T21:00:00Z
 ---
 
