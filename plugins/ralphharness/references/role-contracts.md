@@ -36,6 +36,9 @@ and what each agent is explicitly forbidden from modifying. It complements the c
 | triage-analyst | .progress.md, spec files | _(read-only)_ | N/A |
 | coordinator (human) | All | All | None |
 | stop-watcher.sh | `.ralph-state.json`, `.ralph-field-baseline.json` | _(read-only — does NOT modify files)_ | N/A |
+| pre-execution-check.sh | `role-contracts.md`, `.ralph-state.json` | `signals.jsonl` (via `append_signal`) | N/A |
+
+The `pre-execution-check.sh` script mechanically enforces the Access Matrix above — it parses the table, checks paths against Writes/Denylist columns, and hard-blocks violations before tasks are dispatched.
 
 ## State Field Ownership
 

@@ -249,7 +249,7 @@ Goal: clean up the script, extend the schema, update the signals template and th
   - **Done when**: The three core verdicts still behave identically after the refactor.
   - **Commit**: none. Log checkpoint timestamp to `.progress.md`.
 
-- [ ] 2.4 Extend `spec.schema.json` with the `securityDecisionEvent` definition
+- [x] 2.4 Extend `spec.schema.json` with the `securityDecisionEvent` definition
   - **Do**:
     1. Open `plugins/ralphharness/schemas/spec.schema.json`; under `definitions` add the `securityDecisionEvent` object exactly per the design (required fields, `decision`/`layer`/`risk` enums, `path`/`command` nullable, `iteration` integer ≥ 1).
     2. Do not modify any other definition.
@@ -260,7 +260,7 @@ Goal: clean up the script, extend the schema, update the signals template and th
   - _Requirements: FR-7, AC-4.2_
   - _Design: spec.schema.json extension; Data Design_
 
-- [ ] 2.5 Add header note + commented example to `templates/signals.jsonl`
+- [x] 2.5 Add header note + commented example to `templates/signals.jsonl`
   - **Do**:
     1. Open `plugins/ralphharness/templates/signals.jsonl`; add a header comment line noting the `security-decision` event type co-exists with `control` events.
     2. Add one commented example `security-decision` JSONL line matching the design's Data Design shape.
@@ -272,7 +272,7 @@ Goal: clean up the script, extend the schema, update the signals template and th
   - _Requirements: FR-9_
   - _Design: templates/signals.jsonl; Implementation Step 8_
 
-- [ ] 2.6 Add the `pre-execution-check.sh` row to the role-contracts Access Matrix
+- [x] 2.6 Add the `pre-execution-check.sh` row to the role-contracts Access Matrix
   - **Do**:
     1. Open `plugins/ralphharness/references/role-contracts.md`; add an Access Matrix row for `pre-execution-check.sh` as a read-only consumer (Reads: `role-contracts.md`, `.ralph-state.json`; Writes: `signals.jsonl` via `append_signal`; Denylist: N/A).
     2. Add a short note that the script mechanically enforces the matrix.
