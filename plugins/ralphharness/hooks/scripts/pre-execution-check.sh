@@ -321,5 +321,34 @@ layer2_shell_pattern() {
   return 0
 }
 
+# ── Layer 3 — Baseline risk classifier ──────────────────────────
+
+# layer3_risk
+#   Provides a baseline risk classification based on task structure.
+#   Does NOT re-derive Layer 1 or Layer 2 outcomes — those are
+#   merged by the combiner.
+#
+#   Returns:
+#     RISK:UNKNOWN|REASON:no paths provided          — no --paths
+#     RISK:LOW|REASON:read-only task                  — --paths present, no command
+#     RISK:MEDIUM|REASON:task modifies files           — --paths present, command present
+layer3_risk() {
+  # --paths absent → UNKNOWN (cannot classify a task with no file targets)
+  if [[ -z "${PATHS:-}" || "$PATHS" =~ ^[[:space:]]*$ ]]; then
+    printf 'RISK:UNKNOWN|REASON:no paths provided'
+    return 0
+  fi
+
+  # --paths present, no command → task touches files but does nothing risky
+  if [[ -z "${COMMAND:-}" || "$COMMAND" =~ ^[[:space:]]*$ ]]; then
+    printf 'RISK:LOW|REASON:read-only task'
+    return 0
+  fi
+
+  # --paths present with a command → task modifies files + executes something
+  printf 'RISK:MEDIUM|REASON:task modifies files'
+  return 0
+}
+
 # ── Placeholder ──────────────────────────────────────────────────
 exit 0

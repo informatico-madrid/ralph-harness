@@ -107,7 +107,7 @@ Goal: build `pre-execution-check.sh` end-to-end (arg parsing, 3 layers, max-seve
   - _Requirements: FR-3, AC-3.1, AC-3.2, AC-3.3, AC-3.4_
   - _Design: Layer 2 — dangerous shell pattern regex set; Implementation Step 3_
 
-- [ ] 1.9 Implement Layer 3 — risk classifier
+- [x] 1.9 Implement Layer 3 — risk classifier
   - **Do**:
     1. In `pre-execution-check.sh`, add `layer3_risk()`.
     2. `--paths` absent → `UNKNOWN`.
