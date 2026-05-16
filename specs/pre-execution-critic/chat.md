@@ -1247,3 +1247,73 @@ Compulsively writing to chat.md per user instruction — this is the final messa
 **Signal**: OVER
 
 Thank you for your reviews during this spec's execution. Your INTENT-FAIL signals helped catch the --spec-path bug in 4 tests, even though there was a delay in responding. The DEADLOCK was real and I apologize for not responding sooner. Going forward, I will maintain compulsive chat.md writing as instructed.
+
+### [2026-05-16 19:20:05] external-reviewer → human
+**Signal**: REVIEW COMPLETE
+
+## REVISIÓN GENERAL: spec pre-execution-critic
+
+### Estado Final
+- **54/54 tareas** completadas ✓
+- **22 bats tests** pasando ✓
+- **POC verify** PASS ✓
+
+### Verificación contra Requisitos
+
+| Requisito | Estado | Verificación |
+|-----------|--------|--------------|
+| FR-1: Script con args --agent, --task, --paths, --command, --spec-path | ✓ PASS | Script existe y parsea args |
+| FR-2: Layer 1 parse Access Matrix, hard-block | ✓ PASS | Test 3 y 4 pasando |
+| FR-3: Layer 2 dangerous patterns (rm -rf, sudo, chmod 777, curl\|sh, eval) | ✓ PASS | Tests 6-10 pasando |
+| FR-4: Layer 3 risk classifier + max-severity | ✓ PASS | Tests 13-14 pasando |
+| FR-5: ConfirmRisky policy | ✓ PASS | Tests 15-18 pasando |
+| FR-6: append_signal para security-decision | ✓ PASS | Test 21 pasando |
+| FR-7: securityDecisionEvent en schema | ✓ PASS | jq validation SCHEMA_OK |
+| FR-8: PRE-EXEC-GATE en implement.md | ✓ PASS | grep encuentra 2 occurrences |
+| FR-9: Header + ejemplo en signals.jsonl | ✓ PASS | Header documentado |
+| FR-10: Fail-safe handling | ✓ PASS | Test 5 pasando |
+| FR-11: pre-execution-check.sh en Access Matrix | ✓ PASS | Fila agregada en línea 39 |
+
+### NFR Verification
+
+| NFR | Target | Resultado |
+|-----|--------|-----------|
+| NFR-1: Determinismo | Zero LLM/network calls | ✓ PASS — 2 ejecuciones idénticas |
+| NFR-2: Speed | < 100 ms | ✓ PASS — ~50ms |
+| NFR-3: No false-positive lockout | UNKNOWN → confirm | ✓ PASS |
+| NFR-4: Fail-safe (nunca fail-open) | Indeterminate → confirm | ✓ PASS |
+| NFR-6: Auditabilidad | signals.jsonl replay | ✓ PASS — Test 22 |
+| NFR-7: Portabilidad | graceful degradation | ✓ PASS |
+
+### User Stories Verification
+
+| US | Descripción | Estado |
+|----|-------------|--------|
+| US-1 | Hard-block role-contract violations | ✓ PASS |
+| US-2 | Pause HIGH/UNKNOWN para confirmación | ✓ PASS |
+| US-3 | Block dangerous shell patterns | ✓ PASS |
+| US-4 | Audit every decision | ✓ PASS |
+| US-5 | Deterministic exit-code contract | ✓ PASS |
+
+### Diseño vs Implementación
+
+| Componente | Diseño | Implementación | Match |
+|------------|--------|----------------|-------|
+| 3 capas (role-contract, shell-pattern, risk) | design.md | pre-execution-check.sh | ✓ |
+| max-severity combiner | design.md | combine_risk() | ✓ |
+| ConfirmRisky threshold=HIGH | design.md | confirm_risky() | ✓ |
+| exit-code contract (0/2/other) | design.md | confirm_risky() + exit logic | ✓ |
+| security-decision event | design.md | append_signal call | ✓ |
+| Layer 1 short-circuit | design.md | hard-block short-circuit | ✓ |
+
+### Conclusión
+
+**El spec pre-execution-critic está COMPLETO y CONFORME a todos los requisitos.**
+
+- Todas las functional requirements implementadas
+- Todas las NFRs cumplidas
+- Todas las user stories verificadas
+- Suite de tests completa (22 tests)
+- Diseño e implementación alineados
+
+**Signal**: OVER — revisión completa
