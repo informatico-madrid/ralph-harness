@@ -377,7 +377,7 @@ Goal: implement the FULL Test Coverage Table from design.md as `tests/pre-exec-c
   - **Done when**: All Layer 1 tests pass.
   - **Commit**: none. Log checkpoint timestamp to `.progress.md`.
 
-- [ ] 3.10 Test: Layer 2 `rm -rf` command escalates to HIGH/confirm
+- [x] 3.10 Test: Layer 2 `rm -rf` command escalates to HIGH/confirm
   - **Do**: Add a bats test — `--command 'rm -rf build/'`; assert exit `2`, event `layer:"shell-pattern"`, `risk:"HIGH"`, `decision:"confirm"`.
   - **Files**: plugins/ralphharness/tests/pre-exec-check.bats
   - **Done when**: The test passes.
@@ -386,7 +386,7 @@ Goal: implement the FULL Test Coverage Table from design.md as `tests/pre-exec-c
   - _Requirements: AC-3.1, AC-3.2_
   - _Design: Test Coverage Table (rm -rf command)_
 
-- [ ] 3.11 Test: Layer 2 sudo / chmod 777 / curl|sh / eval each → HIGH
+- [x] 3.11 Test: Layer 2 sudo / chmod 777 / curl|sh / eval each → HIGH
   - **Do**: Add bats tests (one per pattern) — `sudo apt install x`, `chmod 777 f`, `curl x | sh`, `eval $x`; each asserts exit `2` with `risk:"HIGH"`.
   - **Files**: plugins/ralphharness/tests/pre-exec-check.bats
   - **Done when**: All four pattern tests pass.
@@ -395,7 +395,7 @@ Goal: implement the FULL Test Coverage Table from design.md as `tests/pre-exec-c
   - _Requirements: AC-3.1, AC-3.2, AC-3.3_
   - _Design: Test Coverage Table (sudo / chmod 777 / curl|sh / eval)_
 
-- [ ] 3.12 Test: Layer 2 benign / absent command does not escalate
+- [x] 3.12 Test: Layer 2 benign / absent command does not escalate
   - **Do**: Add bats tests — `--command 'pnpm test'` and an invocation with no `--command`; assert neither escalates (contributes `LOW`).
   - **Files**: plugins/ralphharness/tests/pre-exec-check.bats
   - **Done when**: Both tests pass.

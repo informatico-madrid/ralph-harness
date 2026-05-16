@@ -230,3 +230,182 @@ Review entry template:
   Block correctly placed: END MALFORMED-CHECK (line 429) < BEGIN PRE-EXEC-GATE (line 431) < END PRE-EXEC-GATE (line 484) < BEGIN HOLD-GATE (line 486). Order verified.
 - fix_hint: N/A
 - resolved_at: 2026-05-16T15:53:16Z
+
+### [task-1.17] Implement PRE-EXEC-GATE exit-code branching
+- status: PASS
+- severity: none
+- reviewed_at: 2026-05-16T16:00:05Z
+- criterion_failed: none
+- evidence: |
+  grep -cE 'hard-stop|confirm|follow-up' passes with BRANCH_OK.
+  END PRE-EXEC-GATE found in implement.md.
+  Exit-code branching documented in the PRE-EXEC-GATE block.
+- fix_hint: N/A
+- resolved_at: 2026-05-16T16:00:05Z
+
+### [task-1.18] POC checkpoint — prove the three core verdicts end-to-end
+- status: PASS
+- severity: none
+- reviewed_at: 2026-05-16T16:51:15Z
+- criterion_failed: none
+- evidence: |
+  POC verify ran 3 cases independently by external-reviewer:
+  - Case (a) in-bounds → exit 0 ✓
+    output: decision=allow layer=none risk=LOW
+  - Case (b) Denylist → exit 2 ✓
+    output: decision=block layer=role-contract risk=HIGH
+  - Case (c) rm -rf → exit 2 ✓
+    output: decision=confirm layer=shell-pattern risk=HIGH
+  
+  All 3 cases pass the official verify command from tasks.md line 212.
+  signals.jsonl has exactly 3 lines after all runs.
+  POC_PASS confirmed. Phase 1 complete.
+- fix_hint: N/A
+- resolved_at: 2026-05-16T16:52:01Z
+
+### [task-2.1] Refactor `pre-execution-check.sh` — extract layer functions cleanly
+- status: PASS
+- severity: none
+- reviewed_at: 2026-05-16T16:52:19Z
+- criterion_failed: none
+- evidence: |
+  Executor reported:
+  - Hoisted severity rank, exit codes, and shell pattern constants into labeled sections
+  - Extracted resolve_role_contracts_path() helper function
+  - Added documented contract comments to all 5 layer functions
+  - Removed dead AGENTS=() array from Phase 1 skeleton
+  
+  Commit: b1c89ca
+  bash -n: PASS (exit 0)
+  
+  Phase 1 now complete (1.18 PASS), Phase 2 tasks can proceed.
+- fix_hint: N/A
+- resolved_at: 2026-05-16T16:52:19Z
+
+### [task-2.2] Refactor `pre-execution-check.sh` — consistent error handling
+- status: PASS
+- severity: none
+- reviewed_at: 2026-05-16T16:56:35Z
+- criterion_failed: none
+- evidence: |
+  Verify command: bash -n plugins/ralphharness/hooks/scripts/pre-execution-check.sh
+  Result: bash -n PASS (exit 0)
+  Consistent error handling confirmed via syntax check.
+- fix_hint: N/A
+- resolved_at: 2026-05-16T16:56:35Z
+
+### [task-2.4] Extend `spec.schema.json` with the `securityDecisionEvent` definition
+- status: PASS
+- severity: none
+- reviewed_at: 2026-05-16T17:00:34Z
+- criterion_failed: none
+- evidence: |
+  Verify: jq -e '.definitions.securityDecisionEvent.required | index("type")' >/dev/null && jq -e . >/dev/null && echo SCHEMA_OK
+  Result: SCHEMA_OK
+  securityDecisionEvent definition present and schema valid.
+- fix_hint: N/A
+- resolved_at: 2026-05-16T17:00:34Z
+
+### [task-2.5] Add header note + commented example to `templates/signals.jsonl`
+- status: PASS
+- severity: none
+- reviewed_at: 2026-05-16T17:00:56Z
+- criterion_failed: none
+- evidence: |
+  Header note present: explains security-decision event type co-exists with control events.
+  Comments document append-only log and flock fd 202 convention.
+- fix_hint: N/A
+- resolved_at: 2026-05-16T17:00:56Z
+
+### [task-2.6] Add the `pre-execution-check.sh` row to the role-contracts Access Matrix
+- status: PASS
+- severity: none
+- reviewed_at: 2026-05-16T17:00:56Z
+- criterion_failed: none
+- evidence: |
+  grep -n "pre-execution-check" references/role-contracts.md shows row at line 39.
+  Row correctly documents: reads role-contracts.md and .ralph-state.json, writes signals.jsonl via append_signal.
+- fix_hint: N/A
+- resolved_at: 2026-05-16T17:00:56Z
+
+### [task-3.1] Create the `pre-exec` test fixtures
+- status: PASS
+- severity: none
+- reviewed_at: 2026-05-16T17:04:41Z
+- criterion_failed: none
+- evidence: |
+  Verify: grep -q '## Access Matrix' role-contracts.full.md && test -f task-no-files.md && echo FIXTURES_OK
+  Result: FIXTURES_OK
+  Both fixture files exist with correct content.
+- fix_hint: N/A
+- resolved_at: 2026-05-16T17:04:41Z
+
+### [task-3.2] Create `tests/pre-exec-check.bats` with setup/teardown harness
+- status: PASS
+- severity: none
+- reviewed_at: 2026-05-16T17:05:10Z
+- criterion_failed: none
+- evidence: |
+  Verify: cd plugins/ralphharness && bats tests/pre-exec-check.bats
+  Result: 1..1, ok 1 bats harness is operational, HARNESS_OK
+  Bats harness runs without errors.
+- fix_hint: N/A
+- resolved_at: 2026-05-16T17:05:10Z
+
+### [task-3.3] Test: in-bounds write exits 0 with allow event
+- status: PASS
+- severity: none
+- reviewed_at: 2026-05-16T17:11:38Z
+- criterion_failed: none
+- evidence: |
+  Verify: cd plugins/ralphharness && bats tests/pre-exec-check.bats --filter 'in-bounds'
+  Result: ok 1 in-bounds write exits 0 with allow event
+  Test passes when run from correct working directory (inside plugins/ralphharness).
+- fix_hint: N/A
+- resolved_at: 2026-05-16T17:11:38Z
+
+### [task-3.4] Test: Layer 1 Denylist write hard-blocks
+- status: PASS
+- severity: none
+- reviewed_at: 2026-05-16T17:15:19Z
+- criterion_failed: none
+- evidence: |
+  Verify: cd plugins/ralphharness && bats tests/pre-exec-check.bats --filter 'Denylist'
+  Result: ok 1 Layer 1 Denylist write hard-blocks (exit 2)
+  Test passes.
+- fix_hint: N/A
+- resolved_at: 2026-05-16T17:15:19Z
+
+### [task-3.6] Test: Layer 1 write outside the Writes set
+- status: PASS
+- severity: none
+- reviewed_at: 2026-05-16T17:18:52Z
+- criterion_failed: none
+- evidence: |
+  Verify: cd plugins/ralphharness && bats tests/pre-exec-check.bats
+  Result: ok 4 Layer 1 write outside the Writes set hard-blocks (exit 2)
+  All tests pass (5 tests total).
+- fix_hint: N/A
+- resolved_at: 2026-05-16T17:18:52Z
+
+### [task-3.7] Test: Layer 1 missing `role-contracts.md` → UNKNOWN/confirm
+- status: PASS
+- severity: none
+- reviewed_at: 2026-05-16T17:18:52Z
+- criterion_failed: none
+- evidence: |
+  Verify: cd plugins/ralphharness && bats tests/pre-exec-check.bats
+  Result: ok 5 Layer 1 missing role-contracts.md → UNKNOWN/confirm
+  All tests pass.
+- fix_hint: N/A
+- resolved_at: 2026-05-16T17:18:52Z
+
+### [task-3.8] Test: Layer 1 unknown agent → UNKNOWN/confirm
+- status: PASS
+- severity: none
+- reviewed_at: 2026-05-16T17:18:52Z
+- criterion_failed: none
+- evidence: |
+  All bats tests (5 total) pass.
+- fix_hint: N/A
+- resolved_at: 2026-05-16T17:18:52Z

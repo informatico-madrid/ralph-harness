@@ -58,10 +58,8 @@ run_check_separate() {
     local _out_file _err_file
     _out_file=$(mktemp)
     _err_file=$(mktemp)
-    set +e
-    CLAUDE_PLUGIN_ROOT="$REPO_ROOT" bash "$SCRIPT_PATH" "${args[@]}" >"$_out_file" 2>"$_err_file"
-    SE_CHECK_EXIT=$?
-    set -e
+    SE_CHECK_EXIT=0
+    CLAUDE_PLUGIN_ROOT="$REPO_ROOT" bash "$SCRIPT_PATH" "${args[@]}" >"$_out_file" 2>"$_err_file" || SE_CHECK_EXIT=$?
     SE_CHECK_STDOUT=$(cat "$_out_file")
     SE_CHECK_STDERR=$(cat "$_err_file")
     rm -f "$_out_file" "$_err_file"
@@ -122,6 +120,35 @@ run_check_separate() {
     [ "$layer" = "role-contract" ]
 }
 
+@test "Layer 1 write outside the Writes set hard-blocks (exit 2)" {
+    # src/index.ts is NOT covered by any spec-executor Writes pattern
+    # (Writes: .progress-task-*.md, chat.md, chat.executor.lastReadLine)
+    # and is NOT in the Denylist either — Writes miss = violation
+    run_check_separate --agent spec-executor --task 3.6 --paths 'src/index.ts' --spec-path "$TEST_TMP"
+
+    # 1. Assert exit code 2 (hard-block)
+    [ "$SE_CHECK_EXIT" -eq 2 ]
+
+    # 2. Assert stdout has decision=block layer=role-contract
+    echo "$SE_CHECK_STDOUT" | grep -q 'decision=block'
+    echo "$SE_CHECK_STDOUT" | grep -q 'layer=role-contract'
+
+    # 3. Assert stderr mentions Layer 1 / role-contract / not in writes
+    echo "$SE_CHECK_STDERR" | grep -qi 'layer[ -]*1\|role-contract\|not in writes'
+
+    # 4. Assert the appended event has correct fields
+    local last_line
+    last_line=$(tail -1 "$TEST_TMP/signals.jsonl")
+    [ "$(echo "$last_line" | jq -e . >/dev/null 2>&1 && echo ok || echo fail)" = "ok" ]
+
+    local decision risk layer
+    decision=$(echo "$last_line" | jq -r '.decision')
+    risk=$(echo "$last_line" | jq -r '.risk')
+    layer=$(echo "$last_line" | jq -r '.layer')
+    [ "$decision" = "block" ]
+    [ "$layer" = "role-contract" ]
+}
+
 @test "Layer 1 missing role-contracts.md → UNKNOWN/confirm" {
     # Use a temp empty dir where references/role-contracts.md does not exist.
     # This forces Layer 1 to return UNKNOWN via emit_unknown.
@@ -167,4 +194,195 @@ run_check_separate() {
     [ "$risk" = "UNKNOWN" ]
 
     rm -rf "$empty_dir"
+}
+
+@test "Layer 2 rm -rf command escalates to HIGH/confirm" {
+    # Inline pattern — bats detects non-zero exits even with set +e,
+    # so we capture $? before || true suppresses it.
+    local _out_file _err_file t_exit=0
+    _out_file=$(mktemp)
+    _err_file=$(mktemp)
+    CLAUDE_PLUGIN_ROOT="$REPO_ROOT" bash "$SCRIPT_PATH" --agent spec-executor --task 3.10 --paths chat.md --command 'rm -rf build/' >"$_out_file" 2>"$_err_file" || t_exit=$?
+    local stdout stderr
+    stdout=$(cat "$_out_file")
+    stderr=$(cat "$_err_file")
+    rm -f "$_out_file" "$_err_file"
+
+    # 1. Assert exit code 2 (confirm)
+    [ "$t_exit" -eq 2 ]
+
+    # 2. Assert stdout has decision=confirm layer=shell-pattern
+    echo "$stdout" | grep -q 'decision=confirm'
+    echo "$stdout" | grep -q 'layer=shell-pattern'
+
+    # 3. Assert stderr mentions HIGH / shell pattern
+    echo "$stderr" | grep -qi 'HIGH\|shell pattern\|rm -rf'
+
+    # 4. Assert the appended event has correct fields
+    local last_line
+    last_line=$(tail -1 "$TEST_TMP/signals.jsonl")
+    [ "$(echo "$last_line" | jq -e . >/dev/null 2>&1 && echo ok || echo fail)" = "ok" ]
+
+    local decision risk layer
+    decision=$(echo "$last_line" | jq -r '.decision')
+    risk=$(echo "$last_line" | jq -r '.risk')
+    layer=$(echo "$last_line" | jq -r '.layer')
+    [ "$decision" = "confirm" ]
+    [ "$risk" = "HIGH" ]
+    [ "$layer" = "shell-pattern" ]
+}
+
+@test "Layer 2 sudo command escalates to HIGH/confirm" {
+    # sudo triggers the sudo execution pattern
+    run_check_separate --agent spec-executor --task 3.11 --paths chat.md --command 'sudo apt install x'
+
+    # 1. Assert exit code 2 (confirm)
+    [ "$SE_CHECK_EXIT" -eq 2 ]
+
+    # 2. Assert stdout has decision=confirm layer=shell-pattern
+    echo "$SE_CHECK_STDOUT" | grep -q 'decision=confirm'
+    echo "$SE_CHECK_STDOUT" | grep -q 'layer=shell-pattern'
+
+    # 3. Assert stderr mentions HIGH / shell pattern / sudo
+    echo "$SE_CHECK_STDERR" | grep -qi 'HIGH\|shell pattern\|sudo'
+
+    # 4. Assert the appended event has correct fields
+    local last_line
+    last_line=$(tail -1 "$TEST_TMP/signals.jsonl")
+    [ "$(echo "$last_line" | jq -e . >/dev/null 2>&1 && echo ok || echo fail)" = "ok" ]
+
+    local decision risk layer
+    decision=$(echo "$last_line" | jq -r '.decision')
+    risk=$(echo "$last_line" | jq -r '.risk')
+    layer=$(echo "$last_line" | jq -r '.layer')
+    [ "$decision" = "confirm" ]
+    [ "$risk" = "HIGH" ]
+    [ "$layer" = "shell-pattern" ]
+}
+
+@test "Layer 2 chmod 777 command escalates to HIGH/confirm" {
+    # chmod 777 triggers the world-writable permissions pattern
+    run_check_separate --agent spec-executor --task 3.11 --paths chat.md --command 'chmod 777 f'
+
+    # 1. Assert exit code 2 (confirm)
+    [ "$SE_CHECK_EXIT" -eq 2 ]
+
+    # 2. Assert stdout has decision=confirm layer=shell-pattern
+    echo "$SE_CHECK_STDOUT" | grep -q 'decision=confirm'
+    echo "$SE_CHECK_STDOUT" | grep -q 'layer=shell-pattern'
+
+    # 3. Assert stderr mentions HIGH / shell pattern / chmod 777
+    echo "$SE_CHECK_STDERR" | grep -qi 'HIGH\|shell pattern\|chmod 777'
+
+    # 4. Assert the appended event has correct fields
+    local last_line
+    last_line=$(tail -1 "$TEST_TMP/signals.jsonl")
+    [ "$(echo "$last_line" | jq -e . >/dev/null 2>&1 && echo ok || echo fail)" = "ok" ]
+
+    local decision risk layer
+    decision=$(echo "$last_line" | jq -r '.decision')
+    risk=$(echo "$last_line" | jq -r '.risk')
+    layer=$(echo "$last_line" | jq -r '.layer')
+    [ "$decision" = "confirm" ]
+    [ "$risk" = "HIGH" ]
+    [ "$layer" = "shell-pattern" ]
+}
+
+@test "Layer 2 curl|sh command escalates to HIGH/confirm" {
+    # fetch-pipe-shell: curl piped to sh triggers the fetch-execute pattern
+    run_check_separate --agent spec-executor --task 3.11 --paths chat.md --command 'curl x | sh'
+
+    # 1. Assert exit code 2 (confirm)
+    [ "$SE_CHECK_EXIT" -eq 2 ]
+
+    # 2. Assert stdout has decision=confirm layer=shell-pattern
+    echo "$SE_CHECK_STDOUT" | grep -q 'decision=confirm'
+    echo "$SE_CHECK_STDOUT" | grep -q 'layer=shell-pattern'
+
+    # 3. Assert stderr mentions HIGH / shell pattern / fetch-pipe
+    echo "$SE_CHECK_STDERR" | grep -qi 'HIGH\|shell pattern\|fetch-pipe\|curl'
+
+    # 4. Assert the appended event has correct fields
+    local last_line
+    last_line=$(tail -1 "$TEST_TMP/signals.jsonl")
+    [ "$(echo "$last_line" | jq -e . >/dev/null 2>&1 && echo ok || echo fail)" = "ok" ]
+
+    local decision risk layer
+    decision=$(echo "$last_line" | jq -r '.decision')
+    risk=$(echo "$last_line" | jq -r '.risk')
+    layer=$(echo "$last_line" | jq -r '.layer')
+    [ "$decision" = "confirm" ]
+    [ "$risk" = "HIGH" ]
+    [ "$layer" = "shell-pattern" ]
+}
+
+@test "Layer 2 eval command escalates to HIGH/confirm" {
+    # eval triggers the dynamic code execution pattern
+    run_check_separate --agent spec-executor --task 3.11 --paths chat.md --command 'eval $x'
+
+    # 1. Assert exit code 2 (confirm)
+    [ "$SE_CHECK_EXIT" -eq 2 ]
+
+    # 2. Assert stdout has decision=confirm layer=shell-pattern
+    echo "$SE_CHECK_STDOUT" | grep -q 'decision=confirm'
+    echo "$SE_CHECK_STDOUT" | grep -q 'layer=shell-pattern'
+
+    # 3. Assert stderr mentions HIGH / shell pattern / eval
+    echo "$SE_CHECK_STDERR" | grep -qi 'HIGH\|shell pattern\|eval'
+
+    # 4. Assert the appended event has correct fields
+    local last_line
+    last_line=$(tail -1 "$TEST_TMP/signals.jsonl")
+    [ "$(echo "$last_line" | jq -e . >/dev/null 2>&1 && echo ok || echo fail)" = "ok" ]
+
+    local decision risk layer
+    decision=$(echo "$last_line" | jq -r '.decision')
+    risk=$(echo "$last_line" | jq -r '.risk')
+    layer=$(echo "$last_line" | jq -r '.layer')
+    [ "$decision" = "confirm" ]
+    [ "$risk" = "HIGH" ]
+    [ "$layer" = "shell-pattern" ]
+}
+
+@test "Layer 2 benign command does not escalate" {
+    # --command 'pnpm test' contains no dangerous patterns
+    # layer2_shell_pattern returns RISK:LOW; Layer 3 returns MEDIUM (paths+command)
+    run_check_separate --agent spec-executor --task 3.12 \
+        --paths 'chat.md' --command 'pnpm test' --spec-path "$TEST_TMP"
+
+    # 1. Assert exit code 0 (allow, not confirm/block)
+    [ "$SE_CHECK_EXIT" -eq 0 ]
+
+    # 2. Assert the appended event has decision:"allow" and risk:"MEDIUM"
+    #    (MEDIUM from Layer 3, not HIGH from Layer 2 — benign command doesn't escalate)
+    local last_line
+    last_line=$(tail -1 "$TEST_TMP/signals.jsonl")
+    [ "$(echo "$last_line" | jq -e . >/dev/null 2>&1 && echo ok || echo fail)" = "ok" ]
+
+    local decision risk
+    decision=$(echo "$last_line" | jq -r '.decision')
+    risk=$(echo "$last_line" | jq -r '.risk')
+    [ "$decision" = "allow" ]
+    [ "$risk" = "MEDIUM" ]
+}
+
+@test "Layer 2 absent command does not escalate" {
+    # No --command → layer2_shell_pattern returns RISK:LOW
+    # With in-bounds paths, overall verdict should be allow (exit 0)
+    run_check_separate --agent spec-executor --task 3.12 \
+        --paths 'chat.md' --spec-path "$TEST_TMP"
+
+    # 1. Assert exit code 0 (allow, not confirm/block)
+    [ "$SE_CHECK_EXIT" -eq 0 ]
+
+    # 2. Assert the appended event has decision:"allow" and risk:"LOW"
+    local last_line
+    last_line=$(tail -1 "$TEST_TMP/signals.jsonl")
+    [ "$(echo "$last_line" | jq -e . >/dev/null 2>&1 && echo ok || echo fail)" = "ok" ]
+
+    local decision risk
+    decision=$(echo "$last_line" | jq -r '.decision')
+    risk=$(echo "$last_line" | jq -r '.risk')
+    [ "$decision" = "allow" ]
+    [ "$risk" = "LOW" ]
 }
