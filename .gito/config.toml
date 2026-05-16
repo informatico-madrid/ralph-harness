@@ -39,6 +39,7 @@ aux_files = [
     "README.md",
     "docs/ARCHITECTURE.md",
     "docs/ENGINE_ROADMAP.md",
+    ".gito/context.md",
 ]
 
 # PR comment triggers
@@ -78,6 +79,22 @@ KNOWN TRUE ISSUES (ALREADY FIXED, DO NOT FLAG AGAIN):
 #5 plugins/ralphharness/skills/e2e/examples/homeassistant-selector-map.skill.md L50: :scope >> → text=
 #6 plugins/ralphharness-codex/scripts/merge_state.py: FileExistsError try/except
 REVIEW FOCUS: Flag ONLY NEW issues unrelated to the rename. Do not flag any naming, version, or path changes from the rename. Do not flag build output or generated files.
+
+[PAIR-DEBUG AUTO-TRIGGER CONTEXT — spec/collaboration-resolution-real → main]
+Branch: spec/collaboration-resolution-real (13 commits)
+Goal: Add automatic pair-debug mode trigger with 3-condition check and Driver/Navigator role split
+INTENTIONAL PATTERNS (NOT BUGS — DO NOT FLAG):
+- All edits to existing files are APPEND-ONLY (new sections/branches), except one value change in collaboration-resolution.md:53 (>3 → >10)
+- No new subagent_type: role files are prompt markdown only, NOT registered agents
+- No new .ralph-state.json fields: all state in chat.md and signals.jsonl
+- Filesystem-only coordination between Driver/Navigator: flock fd 200 for chat.md, fd 202 for signals.jsonl
+- Role files self-contained: no CLAUDE_PLUGIN_ROOT references, inlined flock blocks
+- Anti-anchoring rule: Navigator MUST propose >=2 independent hypotheses BEFORE first EXPERIMENT
+- Loop bound >10 cycles (raised from >3 per user override) — intentional
+- PAIR-DEBUG: marker for temporary debug logs — cleanup verifiable via single grep
+- Two-instance exportable role files: pair-debug-driver.md + pair-debug-navigator.md with Section 0 Bootstrap
+- Placement step in implement.md: onboarding asks where to run pair-debug roles (3 branches)
+REVIEW FOCUS: Flag ONLY genuine issues in production/plugin files and tests. Do not flag intentional patterns listed above. Exclude specs/ directory (planning artifacts).
 """
 
 # Summary-specific requirements
