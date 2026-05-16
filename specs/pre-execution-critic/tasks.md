@@ -63,7 +63,7 @@ Goal: build `pre-execution-check.sh` end-to-end (arg parsing, 3 layers, max-seve
   - _Requirements: FR-2, AC-1.1, AC-1.4_
   - _Design: Layer 1 — role-contract matrix parser; Implementation Step 2_
 
-- [ ] 1.5 Implement Layer 1 — agent-row lookup
+- [x] 1.5 Implement Layer 1 — agent-row lookup
   - **Do**:
     1. In `layer1_role_contract()`, split extracted table rows on `|`, trim cells.
     2. Find the row whose `Agent` cell equals `--agent`; capture its `Writes` and `Denylist` cells.
