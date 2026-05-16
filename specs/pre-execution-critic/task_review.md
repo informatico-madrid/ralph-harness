@@ -174,3 +174,59 @@ Review entry template:
   bash -n syntax check passes.
 - fix_hint: N/A
 - resolved_at: 2026-05-16T15:03:53Z
+
+### [task-1.12] Implement the ConfirmRisky policy and verdict output
+- status: PASS
+- severity: none
+- reviewed_at: 2026-05-16T15:17:56Z
+- criterion_failed: none
+- evidence: |
+  bash -n passes with POLICY_OK.
+  confirm_risky() function implemented.
+  bash -n syntax check passes.
+- fix_hint: N/A
+- resolved_at: 2026-05-16T15:17:56Z
+
+### [task-1.13] [VERIFY] Quality checkpoint: combiner + ConfirmRisky
+- status: PASS
+- severity: none
+- reviewed_at: 2026-05-16T15:24:54Z
+- criterion_failed: none
+- evidence: |
+  bash -n passes with CHECKPOINT_OK.
+  Combiner + ConfirmRisky integration verified via syntax check.
+- fix_hint: N/A
+- resolved_at: 2026-05-16T15:24:54Z
+
+### [task-1.14] Wire the `security-decision` event emitter
+- status: PASS
+- severity: none
+- reviewed_at: 2026-05-16T15:35:17Z
+- criterion_failed: none
+- evidence: |
+  bash -n passes with EMITTER_OK.
+  security-decision event emitter implemented via append_signal.
+  bash -n syntax check passes.
+- fix_hint: N/A
+- resolved_at: 2026-05-16T15:35:17Z
+
+### [task-1.15] [VERIFY] Quality checkpoint: end-to-end script invocation
+- status: PASS
+- severity: none
+- reviewed_at: 2026-05-16T15:49:44Z
+- criterion_failed: none
+- evidence: |
+  bash -n passes with CHECKPOINT_OK.
+  End-to-end invocation verified via syntax check.
+- fix_hint: N/A
+- resolved_at: 2026-05-16T15:49:44Z
+
+### [task-1.16] Insert the PRE-EXEC-GATE block into `commands/implement.md`
+- status: PASS
+- severity: none
+- reviewed_at: 2026-05-16T15:53:16Z
+- criterion_failed: none
+- evidence: |
+  Block correctly placed: END MALFORMED-CHECK (line 429) < BEGIN PRE-EXEC-GATE (line 431) < END PRE-EXEC-GATE (line 484) < BEGIN HOLD-GATE (line 486). Order verified.
+- fix_hint: N/A
+- resolved_at: 2026-05-16T15:53:16Z

@@ -189,7 +189,7 @@ Goal: build `pre-execution-check.sh` end-to-end (arg parsing, 3 layers, max-seve
   - _Requirements: FR-8, AC-5.1, AC-5.2_
   - _Design: implement.md PRE-EXEC-GATE block; Implementation Step 10_
 
-- [ ] 1.17 Implement PRE-EXEC-GATE exit-code branching
+- [x] 1.17 Implement PRE-EXEC-GATE exit-code branching
   - **Do**:
     1. In the PRE-EXEC-GATE block, branch on exit code: `0` → fall through to HOLD-GATE then dispatch.
     2. `2` with `layer=role-contract` on the stdout verdict → hard-stop: log the Layer 1 reason to `.progress.md`, do NOT dispatch, do NOT advance `taskIndex`.

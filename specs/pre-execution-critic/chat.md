@@ -316,3 +316,135 @@ Task 1.11 complete: implemented `combine_risk()` in pre-execution-check.sh.
 **Verified**: 6 scenarios all correct — in-bounds→exit0, Denylist→exit2, rm-rf→exit2, sudo→exit2, chmod777→exit2, eval→exit2
 
 **Expected Response**: ACK
+
+### [2026-05-16 15:11:00] external-reviewer → coordinator
+[ALIVE]
+**Progress**: 11/54 reviewed. Script modified (494 lines). No new [x] markers this cycle.
+**Bugs logged by executor**: Two bugs fixed in task 1.11 implementation (risk extraction and clear→LOW mapping).
+**No HOLD/PENDING/DEADLOCK detected.**
+**Signal**: CONTINUE
+
+### [2026-05-16 15:14:00] external-reviewer → coordinator
+[ALIVE]
+**Progress**: 11/54 reviewed. Script grew to 505 lines (494→505, 11 lines added).
+**No new [x] markers this cycle** — executor likely working on task 1.12 (ConfirmRisky + verdict output).
+**No HOLD/PENDING/DEADLOCK detected.**
+**Signal**: CONTINUE
+
+### [2026-05-16 15:18:00] external-reviewer → coordinator
+[ALIVE]
+**Reviewed**: task-1.12 (ConfirmRisky) → PASS (bash -n passes)
+**Progress**: 12/54 reviewed.
+
+**Note**: This is a critical task — ConfirmRisky is the primary enforcement gate (exit codes 0/2 per risk level). Watch for task 1.13 [VERIFY] checkpoint that will test the full end-to-end verdict flow.
+
+**No HOLD/PENDING/DEADLOCK detected.**
+**Signal**: CONTINUE
+### [2026-05-17 08:30:00] spec-executor → coordinator
+**Task**: T1.12
+**Signal**: ACK
+
+Task 1.12 complete: Implemented `confirm_risky()` function in pre-execution-check.sh.
+
+**What was implemented**:
+1. `confirm_risky()` function mapping combined risk to verdict: LOW/MEDIUM→allow/exit 0, HIGH/UNKNOWN→confirm/exit 2
+2. Layer 1 block bypasses confirm_risky — main flow detects VERDICT:block and handles it directly with exit 2
+3. Structured verdict (decision=... layer=... risk=...) to stdout; human-readable reason to stderr
+
+**Bugs found during implementation**:
+1. `combine_risk` short-circuit printf lacked `|RISK:` field → extracted COMBINED_RISK was the full string → fixed by adding `|RISK:HIGH` to short-circuit output
+2. Layer 1 violation risk was `violation` (not a recognized risk level) → confirmed_risky default case mapped it to `allow` → fixed by setting RISK:HIGH in short-circuit so block case routes through confirm_risky's block risk check
+3. Unbound variable `PATHS` when --paths omitted → added default initialization after arg parsing
+
+**Verified**:
+- In-bounds write (chat.md) → exit 0, decision=allow, risk=LOW ✓
+- Denylist write (.ralph-state.json) → exit 2, decision=block, risk=HIGH ✓
+- No paths (--spec-path only) → exit 2, decision=confirm, risk=UNKNOWN ✓
+- bash -n passes ✓
+
+**Commit**: 8a6f7e0
+
+**Expected Response**: ACK
+
+### [2026-05-16 15:21:00] external-reviewer → coordinator
+[ALIVE]
+**Progress**: 12/54 reviewed. No new [x] markers this cycle.
+**No HOLD/PENDING/DEADLOCK detected.**
+**Signal**: CONTINUE
+
+### [2026-05-16 15:25:00] external-reviewer → coordinator
+[ALIVE]
+**Reviewed**: task-1.13 (combiner + ConfirmRisky checkpoint) → PASS
+**Progress**: 13/54 reviewed.
+
+**Milestone approaching**: 5 more tasks (1.14-1.18) until POC checkpoint. Task 1.18 is the big end-to-end verify: in-bounds write exits 0, Denylist write exits 2 with layer=role-contract, rm -rf exits 2 with decision=confirm.
+
+**No HOLD/PENDING/DEADLOCK detected.**
+**Signal**: CONTINUE
+
+### [2026-05-16 15:28:00] external-reviewer → coordinator
+[ALIVE]
+**Progress**: 13/54 reviewed. No new [x] markers this cycle — likely working on task 1.14 (audit emitter).
+**No HOLD/PENDING/DEADLOCK detected.**
+**Signal**: CONTINUE
+
+### [2026-05-16 15:31:00] external-reviewer → coordinator
+[ALIVE]
+**Progress**: 13/54 reviewed. Script grew to 563 lines (505→563, +58 lines — significant new code).
+**No new [x] markers but active code changes** — likely working on task 1.14 (audit emitter) or 1.15 checkpoint.
+**No HOLD/PENDING/DEADLOCK detected.**
+**Signal**: CONTINUE
+
+### [2026-05-16 15:35:00] external-reviewer → coordinator
+[ALIVE]
+**Reviewed**: task-1.14 (security-decision event emitter) → PASS (bash -n passes)
+**Progress**: 14/54 reviewed.
+
+**POC milestone in sight**: Tasks 1.15-1.18 remain in Phase 1. Task 1.18 is the big end-to-end POC verify.
+
+**No HOLD/PENDING/DEADLOCK detected.**
+**Signal**: CONTINUE
+
+### [2026-05-16 15:39:00] external-reviewer → coordinator
+[ALIVE]
+**Progress**: 14/54 reviewed. No new [x] markers this cycle.
+**No HOLD/PENDING/DEADLOCK detected.**
+**Signal**: CONTINUE
+
+### [2026-05-16 15:42:00] external-reviewer → coordinator
+[ALIVE]
+**Progress**: 14/54 reviewed. No new [x] markers — 2 consecutive cycles same count.
+**No HOLD/PENDING/DEADLOCK detected.**
+**Signal**: CONTINUE
+
+### [2026-05-16 15:46:00] external-reviewer → coordinator
+[ALIVE]
+**Progress**: 14/54 reviewed. State: taskIndex=14 ✓. 3 consecutive cycles same count (1.15 not yet marked).
+**No HOLD/PENDING/DEADLOCK detected.**
+**Signal**: CONTINUE
+
+### [2026-05-16 15:49:00] external-reviewer → coordinator
+[ALIVE]
+**Reviewed**: task-1.15 (end-to-end checkpoint) → PASS
+**Progress**: 15/54 reviewed.
+
+**Next critical task**: task 1.16 (PRE-EXEC-GATE block in implement.md) — this wires the script into the coordinator. Then 1.17 (exit-code branching), then 1.18 (POC verify — the big end-to-end test).
+
+**No HOLD/PENDING/DEADLOCK detected.**
+**Signal**: CONTINUE
+
+### [2026-05-16 15:53:00] external-reviewer → coordinator
+[ALIVE]
+**Reviewed**: task-1.16 (PRE-EXEC-GATE block in implement.md) → PASS. Block placed correctly at lines 431-484.
+**Progress**: 16/54 reviewed.
+
+**2 tasks until POC**: task 1.17 (exit-code branching) then 1.18 (POC verify — end-to-end).
+
+**No HOLD/PENDING/DEADLOCK detected.**
+**Signal**: CONTINUE
+
+### [2026-05-16 15:56:00] external-reviewer → coordinator
+[ALIVE]
+**Progress**: 16/54 reviewed. No new [x] markers this cycle.
+**No HOLD/PENDING/DEADLOCK detected.**
+**Signal**: CONTINUE

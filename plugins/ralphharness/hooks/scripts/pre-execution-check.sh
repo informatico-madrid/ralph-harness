@@ -470,8 +470,8 @@ confirm_risky() {
   printf '%s: %s (layer=%s, risk=%s)\n' \
     "$decision" "${reason:-no reason}" "$layer" "$risk" >&2
 
-  # Structured verdict to stdout
-  printf 'decision=%s layer=%s risk=%s\n' \
+  # Structured verdict to stdout (one key=value per line for reliable extraction)
+  printf 'decision=%s\nlayer=%s\nrisk=%s\n' \
     "$decision" "$layer" "$risk"
 
   exit "$exit_code"
@@ -505,7 +505,7 @@ if [[ "$COMBINED_VERDICT" == "block" ]]; then
   # Emit security-decision event before block exit
   local decision="${COMBINED_VERDICT:-block}"
   [[ -z "$decision" ]] && decision="block"
-  payload=$(jq -n \
+  payload=$(jq -c -n \
     --arg type "security-decision" \
     --arg decision "$decision" \
     --arg layer "$COMBINED_LAYER" \
@@ -565,7 +565,7 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 source "${SCRIPT_DIR}/lib-signals.sh"
 
 # Build and emit the security-decision event
-payload=$(jq -n \
+payload=$(jq -c -n \
   --arg type "security-decision" \
   --arg decision "${decision}" \
   --arg layer "$COMBINED_LAYER" \
