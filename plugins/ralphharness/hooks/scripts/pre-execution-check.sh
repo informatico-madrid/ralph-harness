@@ -43,5 +43,36 @@ if [[ -n "$missing" ]]; then
   usage
 fi
 
+# ── Severity-rank helpers ─────────────────────────────────────────
+
+# rank() — numeric rank for a risk severity string.
+# Mapping: LOW=0, MEDIUM=1, HIGH=2, UNKNOWN=3
+# UNKNOWN ranks above HIGH per design (unknown risk should not be downgraded).
+rank() {
+  case "${1^^}" in
+    LOW)      echo 0 ;;
+    MEDIUM)   echo 1 ;;
+    HIGH)     echo 2 ;;
+    UNKNOWN)  echo 3 ;;
+    *)        echo 3 ;;   # anything unrecognized defaults to UNKNOWN rank
+  esac
+}
+
+# max_risk() — returns the higher-ranked risk string from two inputs.
+max_risk() {
+  local a_r=$(rank "$1")
+  local b_r=$(rank "$2")
+  if (( a_r >= b_r )); then
+    printf '%s' "$1"
+  else
+    printf '%s' "$2"
+  fi
+}
+
+# ── Exit-code constants ──────────────────────────────────────────
+# 0   — allow (pre-execution check passed)
+# 2   — block/confirm (risky operation, awaiting security-decision)
+# N   — other non-zero = error (generic failure)
+
 # ── Placeholder ──────────────────────────────────────────────────
 exit 0

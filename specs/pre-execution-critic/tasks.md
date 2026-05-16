@@ -19,7 +19,7 @@
 
 Goal: build `pre-execution-check.sh` end-to-end (arg parsing, 3 layers, max-severity combiner, ConfirmRisky policy, the `security-decision` audit emitter) and wire the PRE-EXEC-GATE block into `commands/implement.md`. Skip tests here — prove the mechanism works against fixture inputs. Ordering: skeleton → Layer 1 → Layer 2 → Layer 3 → combiner → ConfirmRisky → audit emitter → coordinator gate → POC checkpoint.
 
-- [ ] 1.1 Create `pre-execution-check.sh` skeleton with arg parsing
+- [x] 1.1 Create `pre-execution-check.sh` skeleton with arg parsing
   - **Do**:
     1. Create `plugins/ralphharness/hooks/scripts/pre-execution-check.sh` with `#!/usr/bin/env bash` and `set -euo pipefail` (relax `-e` where layer functions intentionally return non-zero).
     2. Parse flags `--agent`, `--task`, `--paths`, `--command`, `--spec-path` into variables; `--agent`, `--task`, `--spec-path` required, `--paths` and `--command` optional (default empty).
@@ -32,7 +32,7 @@ Goal: build `pre-execution-check.sh` end-to-end (arg parsing, 3 layers, max-seve
   - _Requirements: FR-1, AC-5.1_
   - _Design: pre-execution-check.sh CLI contract; Implementation Step 1_
 
-- [ ] 1.2 Add severity-rank helper and exit-code constants
+- [x] 1.2 Add severity-rank helper and exit-code constants
   - **Do**:
     1. In `pre-execution-check.sh`, add a `rank()` function mapping `LOW=0 MEDIUM=1 HIGH=2 UNKNOWN=3` (UNKNOWN ranks above HIGH per design).
     2. Add a `max_risk()` helper that takes two risk strings and returns the higher-ranked one.
