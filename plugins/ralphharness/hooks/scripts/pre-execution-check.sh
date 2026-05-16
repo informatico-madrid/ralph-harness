@@ -85,6 +85,9 @@ layer1_role_contract() {
   local role="$1"
   local paths="$2"
 
+  # Enable extglob for advanced glob patterns
+  shopt -s extglob
+
   # ── 1. Resolve role-contracts.md location ──────────────────────
   local rc_path=""
   if [[ -n "${CLAUDE_PLUGIN_ROOT:-}" ]]; then
@@ -163,6 +166,13 @@ layer1_role_contract() {
 
   # ── 6. Classify each provided path ─────────────────────────────
   #    Returns the highest severity risk across all paths.
+
+  # --paths absent → UNKNOWN (cannot prove writes are in-bounds)
+  if [[ -z "$paths" || "$paths" =~ ^[[:space:]]*$ ]]; then
+    printf 'RISK:UNKNOWN|REASON:no paths provided'
+    return 0
+  fi
+
   local worst_risk="clear"
   local reasons=()
 
@@ -187,15 +197,15 @@ layer1_role_contract() {
         if [[ -z "$deny_base" || "$deny_base" == "n/a" || "$deny_base" == "none" ]]; then
           continue
         fi
-        # Direct match or prefix match
-        if [[ "$p" == "$deny_base" || "$p" == "$deny_base/"* ]]; then
-          # Check if there's an exception that covers this path
-          local exception="${d##* (}"
-          exception="${exception%%)}"
-          if [[ -n "$exception" && "$exception" != "$d" ]]; then
-            # Path is excepted — not a violation
-            continue
-          fi
+        # Check if there's an exception that covers this path
+        local exception="${d##* (}"
+        exception="${exception%%)}"
+        if [[ -n "$exception" && "$exception" != "$d" ]]; then
+          # Path is excepted — not a violation
+          continue
+        fi
+        # extglob glob match (pattern can contain * wildcards)
+        if [[ "$p" == $deny_base ]]; then
           worst_risk="violation"
           reasons+=("path $p is in denylist for $agent_col")
           break
@@ -215,8 +225,7 @@ layer1_role_contract() {
         reasons+=("agent $agent_col is read-only")
       fi
     elif [[ "${writes_norm}" != *"All"* && -n "$writes_col" ]]; then
-      # Check if path is in the writes column
-      # Normalize: strip backticks from writes_col for splitting
+      # Check if path is in the writes column using extglob
       local writes_for_split="${writes_col//\`/}"
       IFS=',' read -ra write_arr <<< "$writes_for_split"
       local in_writes=0
@@ -228,15 +237,8 @@ layer1_role_contract() {
         if [[ -z "$w_base" || "$w_base" == "n/a" ]]; then
           continue
         fi
-        # Convert glob to regex: escape special chars, * -> .*
-        local regex_w
-        regex_w=$(printf '%s' "$w_base" | sed 's/[.[\^$()+?{|]/\\&/g; s/\*/.*/g')
-        # Check direct or glob match
-        if [[ "$p" == "$w_base" || "$p" == "$w_base/"* ]]; then
-          in_writes=1
-          break
-        fi
-        if [[ "$p" =~ ^${regex_w}$ ]]; then
+        # extglob glob match — pattern can contain * wildcards
+        if [[ "$p" == $w_base ]]; then
           in_writes=1
           break
         fi

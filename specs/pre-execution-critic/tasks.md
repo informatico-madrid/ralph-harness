@@ -75,7 +75,7 @@ Goal: build `pre-execution-check.sh` end-to-end (arg parsing, 3 layers, max-seve
   - _Requirements: FR-2, AC-1.1, AC-1.4_
   - _Design: Layer 1 — role-contract matrix parser; Error Handling table_
 
-- [ ] 1.6 Implement Layer 1 — glob path matching and hard-block verdict
+- [x] 1.6 Implement Layer 1 — glob path matching and hard-block verdict
   - **Do**:
     1. In `layer1_role_contract()`, enable `shopt -s extglob`; for each path in `--paths` (comma-split), test against each `Denylist` then each `Writes` pattern using `[[ "$path" == $pattern ]]`.
     2. A path matching `Denylist`, or NOT matching any `Writes` pattern, is a Layer 1 violation → set verdict `block`, `layer=role-contract`, risk `HIGH`, build a reason naming the offending path.
