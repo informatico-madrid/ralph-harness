@@ -202,14 +202,14 @@ Goal: build `pre-execution-check.sh` end-to-end (arg parsing, 3 layers, max-seve
   - _Requirements: FR-8, FR-10, AC-1.3, AC-2.3, AC-2.4, AC-5.3_
   - _Design: implement.md PRE-EXEC-GATE block; Implementation Step 10_
 
-- [ ] 1.18 POC checkpoint — prove the three core verdicts end-to-end
+- [x] 1.18 POC checkpoint — prove the three core verdicts end-to-end
   - **Do**:
     1. Create a temp spec dir with a temp `signals.jsonl`.
-    2. Run the real script three times with `CLAUDE_PLUGIN_ROOT=plugins/ralphharness`: (a) in-bounds write (`--agent spec-executor --paths chat.md`) — expect exit `0`; (b) Denylist write (`--agent spec-executor --paths .ralph-state.json`) — expect exit `2` with `layer=role-contract` on stdout; (c) `rm -rf` verify (`--agent spec-executor --paths src/x.ts --command 'rm -rf build/'`) — expect exit `2` with `decision=confirm`.
+    2. Run the real script three times with `CLAUDE_PLUGIN_ROOT=plugins/ralphharness`: (a) in-bounds write (`--agent spec-executor --paths chat.md`) — expect exit `0`; (b) Denylist write (`--agent spec-executor --paths .ralph-state.json`) — expect exit `2` with `layer=role-contract` on stdout; (c) `rm -rf` verify (`--agent spec-executor --paths chat.md --command 'rm -rf build/'`) — expect exit `2` with `decision=confirm`.
     3. Confirm each run appended exactly one `security-decision` line (3 lines total).
   - **Files**: _(verification only — no file changes)_
   - **Done when**: Case (a) exits 0; (b) exits 2 with `layer=role-contract`; (c) exits 2 with `decision=confirm`; `signals.jsonl` has exactly 3 lines.
-  - **Verify**: `d=$(mktemp -d); R=plugins/ralphharness; CLAUDE_PLUGIN_ROOT=$R bash $R/hooks/scripts/pre-execution-check.sh --agent spec-executor --task 1.1 --paths chat.md --spec-path "$d"; a=$?; CLAUDE_PLUGIN_ROOT=$R bash $R/hooks/scripts/pre-execution-check.sh --agent spec-executor --task 1.2 --paths .ralph-state.json --spec-path "$d" 1>/tmp/o2; b=$?; CLAUDE_PLUGIN_ROOT=$R bash $R/hooks/scripts/pre-execution-check.sh --agent spec-executor --task 1.3 --paths src/x.ts --command 'rm -rf build/' --spec-path "$d" 1>/tmp/o3; c=$?; test $a -eq 0 && test $b -eq 2 && grep -q role-contract /tmp/o2 && test $c -eq 2 && grep -q confirm /tmp/o3 && test "$(wc -l < "$d/signals.jsonl")" -eq 3 && echo POC_PASS; rm -rf "$d"`
+  - **Verify**: `d=$(mktemp -d); R=plugins/ralphharness; CLAUDE_PLUGIN_ROOT=$R bash $R/hooks/scripts/pre-execution-check.sh --agent spec-executor --task 1.1 --paths chat.md --spec-path "$d"; a=$?; CLAUDE_PLUGIN_ROOT=$R bash $R/hooks/scripts/pre-execution-check.sh --agent spec-executor --task 1.2 --paths .ralph-state.json --spec-path "$d" 1>/tmp/o2; b=$?; CLAUDE_PLUGIN_ROOT=$R bash $R/hooks/scripts/pre-execution-check.sh --agent spec-executor --task 1.3 --paths chat.md --command 'rm -rf build/' --spec-path "$d" 1>/tmp/o3; c=$?; test $a -eq 0 && test $b -eq 2 && grep -q role-contract /tmp/o2 && test $c -eq 2 && grep -q confirm /tmp/o3 && test "$(wc -l < "$d/signals.jsonl")" -eq 3 && echo POC_PASS; rm -rf "$d"`
   - **Commit**: `feat(pre-exec): POC complete — allow/hard-block/confirm verdicts proven end-to-end`
   - _Requirements: US-1, US-3, US-5, AC-1.2, AC-3.2, AC-4.1_
   - _Design: Decision Flow; POC milestone_

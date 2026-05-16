@@ -449,23 +449,19 @@ confirm_risky() {
   local layer="${2:-none}"
   local reason="${3:-}"
 
-  local decision exit_code
+  local decision
   case "$risk" in
     block)
       decision="block"
-      exit_code=2
       ;;
     HIGH|UNKNOWN)
       decision="confirm"
-      exit_code=2
       ;;
     LOW|MEDIUM|*)
       decision="allow"
-      exit_code=0
       ;;
   esac
 
-  # Human-readable reason to stderr
   # Human-readable reason to stderr
   printf '%s: %s (layer=%s, risk=%s)\n' \
     "$decision" "${reason:-no reason}" "$layer" "$risk" >&2
@@ -474,10 +470,14 @@ confirm_risky() {
   printf 'decision=%s\nlayer=%s\nrisk=%s\n' \
     "$decision" "$layer" "$risk"
 
-  exit "$exit_code"
+  # Do NOT exit here — the main flow handles exit codes.
 }
 
 # ── Main flow ────────────────────────────────────────────────────
+
+# Source signal helpers early (needed by both block and non-block paths)
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+source "${SCRIPT_DIR}/lib-signals.sh"
 
 # Run all three layers
 L1_OUTPUT=$(layer1_role_contract "$AGENT" "$PATHS") || true
@@ -495,6 +495,13 @@ COMBINED_RISK="${COMBINED##*RISK:}"
 COMBINED_LAYER="${COMBINED##*LAYER:}"
 COMBINED_LAYER="${COMBINED_LAYER%%|*}"
 
+# Resolve iteration from .ralph-state.json globalIteration, default 1
+iteration=1
+if [[ -f "${SPEC_PATH}/.ralph-state.json" ]]; then
+  _iter=$(jq -r '.globalIteration // 1' "${SPEC_PATH}/.ralph-state.json" 2>/dev/null) || true
+  [[ -n "${_iter:-}" && "${_iter}" != "null" ]] && iteration=$_iter
+fi
+
 # Layer 1 block bypasses confirm_risky — hard-stop immediately
 if [[ "$COMBINED_VERDICT" == "block" ]]; then
   printf 'block: role-contract violation (layer=%s, risk=%s)\n' \
@@ -503,7 +510,7 @@ if [[ "$COMBINED_VERDICT" == "block" ]]; then
     "$COMBINED_LAYER" "$COMBINED_RISK"
 
   # Emit security-decision event before block exit
-  local decision="${COMBINED_VERDICT:-block}"
+  decision="${COMBINED_VERDICT:-block}"
   [[ -z "$decision" ]] && decision="block"
   payload=$(jq -c -n \
     --arg type "security-decision" \
@@ -553,17 +560,6 @@ if [[ -n "$decision_line" ]]; then
   decision=$(echo "$decision_line" | cut -d= -f2)
 fi
 
-# Resolve iteration from .ralph-state.json globalIteration, default 1
-iteration=1
-if [[ -f "${SPEC_PATH}/.ralph-state.json" ]]; then
-  _iter=$(jq -r '.globalIteration // 1' "${SPEC_PATH}/.ralph-state.json" 2>/dev/null) || true
-  [[ -n "${_iter:-}" && "${_iter}" != "null" ]] && iteration=$_iter
-fi
-
-# Source signal helpers (resolved relative to script directory)
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-source "${SCRIPT_DIR}/lib-signals.sh"
-
 # Build and emit the security-decision event
 payload=$(jq -c -n \
   --arg type "security-decision" \
@@ -599,3 +595,13 @@ if ! append_signal "$SPEC_PATH" "$payload"; then
   } >> "${SPEC_PATH}/.progress.md"
   exit 3
 fi
+
+# Print structured verdict to stdout (block path does this too)
+printf 'decision=%s layer=%s risk=%s\n' "$decision" "$COMBINED_LAYER" "$COMBINED_RISK"
+
+# ── Exit code per verdict ─────────────────────────────────────────
+case "$decision" in
+  allow) exit 0 ;;
+  block|confirm) exit 2 ;;
+  *) exit 2 ;;
+esac
