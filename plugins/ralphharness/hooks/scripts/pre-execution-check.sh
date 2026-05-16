@@ -285,7 +285,7 @@ layer1_role_contract() {
 
     # --- Check writes permission ---
     local writes_norm="${writes_col//\`/}"
-    if [[ "$writes_norm" == "*_\(read-only\)*" || "$writes_norm" == "*(read-only)*" ]]; then
+    if [[ "$writes_norm" == *"(read-only)"* || "$writes_norm" == *"_\(read-only\)*" ]]; then
       if [[ -n "$p" ]]; then
         if [[ "$worst_risk" != "violation" ]]; then
           worst_risk="violation"
