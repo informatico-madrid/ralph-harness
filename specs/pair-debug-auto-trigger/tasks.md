@@ -37,7 +37,7 @@ Focus: Implement the mechanical trigger, role files, placement step, and all app
   - _Requirements: Verification Contract_
   - _Design: Test Strategy_
 
-- [ ] 1.3 [P] Create `references/pair-debug.md`
+- [x] 1.3 [P] Create `references/pair-debug.md`
   - **Do**: Create the file with the following sections:
     1. `## Section 1 — 3-Condition Auto-Trigger` — Document all 3 conditions (a/b/c) canonically. Include the reconciliation sentence: "The roadmap states 3 conditions; plan.md listed 4 by splitting condition (a) into two parts. The canonical count is 3: (a) pre-existing test failing + test file unchanged, (b) taskIteration >= 2, (c) no reviewer FAIL row. ALL THREE must hold."
     2. `## Section 2 — Driver / Navigator Roles` — Table with: Driver = spec-executor (writes code, runs commands, applies fixes, adds debug logging); Navigator = external-reviewer (reads diff, analyzes architecture, proposes hypotheses, suggests experiments, validates findings). Include shared instruction: "formulate hypotheses, respond to the other's, do not escalate to a human unless an explicit product/design decision is required."
