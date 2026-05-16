@@ -170,13 +170,13 @@ Goal: build `pre-execution-check.sh` end-to-end (arg parsing, 3 layers, max-seve
   - _Requirements: FR-6, AC-4.1, AC-4.2, NFR-7_
   - _Design: security-decision event emitter; Data Design; Implementation Step 6_
 
-- [ ] 1.15 [VERIFY] Quality checkpoint: end-to-end script invocation
+- [x] 1.15 [VERIFY] Quality checkpoint: end-to-end script invocation
   - **Do**: Run `bash -n`; invoke the script against the real `role-contracts.md` with a temp `--spec-path` and confirm one `security-decision` line is appended.
   - **Verify**: `bash -n plugins/ralphharness/hooks/scripts/pre-execution-check.sh && d=$(mktemp -d) && CLAUDE_PLUGIN_ROOT=plugins/ralphharness bash plugins/ralphharness/hooks/scripts/pre-execution-check.sh --agent spec-executor --task 1.1 --paths 'chat.md' --spec-path "$d"; test "$(wc -l < "$d/signals.jsonl")" -eq 1 && echo CHECKPOINT_OK; rm -rf "$d"`
   - **Done when**: No syntax errors; exactly one event line appended.
   - **Commit**: none. Log checkpoint timestamp to `.progress.md`.
 
-- [ ] 1.16 Insert the PRE-EXEC-GATE block into `commands/implement.md`
+- [x] 1.16 Insert the PRE-EXEC-GATE block into `commands/implement.md`
   - **Do**:
     1. Open `plugins/ralphharness/commands/implement.md`; insert a new `# BEGIN PRE-EXEC-GATE` / `# END PRE-EXEC-GATE` block AFTER `# END MALFORMED-CHECK` and BEFORE `# BEGIN HOLD-GATE`.
     2. The block instructs the coordinator to: parse the current task block's `**Files:**` → `--paths` and `**Verify:**` → `--command` (verbatim); a missing `**Files:**` means no `--paths`.
