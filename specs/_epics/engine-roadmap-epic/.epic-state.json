@@ -4,7 +4,7 @@
   "specs": [
     {
       "name": "engine-state-hardening",
-      "status": "completed",
+      "status": "cancelled",
       "dependencies": []
     },
     {
@@ -24,33 +24,33 @@
     },
     {
       "name": "signal-log-and-ci-autodetect",
-      "status": "pending",
+      "status": "completed",
       "dependencies": []
     },
     {
       "name": "collaboration-resolution",
-      "status": "pending",
+      "status": "completed",
       "dependencies": [
         "signal-log-and-ci-autodetect"
       ]
     },
     {
       "name": "pair-debug-auto-trigger",
-      "status": "pending",
+      "status": "completed",
       "dependencies": [
         "collaboration-resolution"
       ]
     },
     {
       "name": "pre-execution-critic",
-      "status": "pending",
+      "status": "completed",
       "dependencies": [
         "pair-debug-auto-trigger"
       ]
     },
     {
       "name": "context-middleware",
-      "status": "pending",
+      "status": "completed",
       "dependencies": [
         "pre-execution-critic"
       ]

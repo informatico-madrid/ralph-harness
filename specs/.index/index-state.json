@@ -1,10 +1,10 @@
 {
   "version": "1.0",
-  "updated": "2026-05-16T13:03:53Z",
+  "updated": "2026-05-17T03:44:37Z",
   "directories": [
     {
       "path": "./specs",
-      "specsCount": 52,
+      "specsCount": 53,
       "isDefault": true
     }
   ],
@@ -361,7 +361,17 @@
     {
       "name": "pre-execution-critic",
       "path": "./specs/pre-execution-critic",
-      "phase": "research"
+      "phase": "complete",
+      "taskIndex": 54,
+      "totalTasks": 54
+    },
+    {
+      "name": "context-middleware",
+      "path": "./specs/context-middleware",
+      "phase": "tasks",
+      "taskIndex": 0,
+      "totalTasks": 29,
+      "awaitingApproval": true
     }
   ]
 }

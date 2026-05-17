@@ -27,10 +27,12 @@ Add an always-on, file-level context management middleware that runs before each
 **So that** the loop survives overflow instead of crashing.
 
 **Acceptance Criteria:**
-- [ ] AC-2.1: When a `context_length_exceeded` (or equivalent overflow) condition is detected, reactive condensation is triggered.
+- [ ] AC-2.1: Reactive condensation is triggered by REAL token measurement, not API-error interception: a hook (e.g. `stop-watcher.sh`, which receives `transcript_path` on stdin) reads the last `message.usage` object from the Claude Code transcript JSONL, computes context usage as `(input_tokens + cache_creation_input_tokens + cache_read_input_tokens) / 200000`, and triggers reactive condensation when usage exceeds ~85%.
 - [ ] AC-2.2: Reactive condensation applies the same preservation rules as proactive (FR-5), writes an archive (FR-3), and is logged to `.metrics.jsonl` with a `reactive` mode marker.
 - [ ] AC-2.3: After reactive condensation, the delegation is retried once with the condensed context.
 - [ ] AC-2.4: Reactive condensation preserves current task state and all active signals so execution resumes at the same task.
+- [ ] AC-2.5: As a last-resort safety net, the `PreCompact` hook triggers an emergency condensation + archival pass before Claude Code's automatic compaction (~95% of context) can destroy context.
+- [ ] AC-2.6: The trigger model is two-gated: the combined line count of `chat.md` + `.progress.md` (>2,000 lines, FR-1 / AC-1.1) is a CHEAP first-pass gate, while the transcript-JSONL token-percentage read (AC-2.1) is the AUTHORITATIVE trigger. The line-count threshold remains as the inexpensive pre-check; it is not replaced by the token read.
 
 ### US-3: Tool Result Eviction
 **As a** Claude Code agent (that loaded Smart Ralph's prompt rules) producing large tool outputs
@@ -50,12 +52,13 @@ Add an always-on, file-level context management middleware that runs before each
 **So that** per-iteration context shrinks for the coordinator session without restructuring shared reference files.
 
 **Acceptance Criteria:**
-- [ ] AC-4.1: Reference loading in `implement.md` is conditional on the `phase` field in `.ralph-state.json`.
-- [ ] AC-4.2: Phase 1 (POC) loads `coordinator-pattern.md` + `failure-recovery.md`; Phase 2 (Refactor) additionally loads `commit-discipline.md`; Phases 3-4 (Test/Quality) additionally load `verification-layers.md`; `phase-rules.md` is skipped during Phases 1-2.
+- [ ] AC-4.1: Reference loading in `implement.md` is conditional on the new `executionPhase` field (enum `poc | refactor | test | quality`) in `.ralph-state.json`.
+- [ ] AC-4.2: `executionPhase: poc` loads `coordinator-pattern.md` + `failure-recovery.md`; `executionPhase: refactor` additionally loads `commit-discipline.md`; `executionPhase: test` and `executionPhase: quality` additionally load `verification-layers.md`; `phase-rules.md` is skipped during `poc` and `refactor`.
 - [ ] AC-4.3: When `chat.md` contains a `PAIR-DEBUG` marker, the pair-debug reference is additionally loaded.
 - [ ] AC-4.4: Scoping is implemented as conditional logic in `implement.md` only — no reference file is split, renamed, or moved.
 - [ ] AC-4.5: Always-relevant references are loaded in every phase (no phase ever loses required guidance).
 - [ ] AC-4.6: Phase-based scoping affects `implement.md` (coordinator command) only; it does not bound the context of the separate executor or reviewer sessions.
+- [ ] AC-4.7: When `.ralph-state.json` has no `executionPhase` field (e.g. a spec created before this feature), `implement.md` loads all reference files — the pre-existing behavior — so scoping never breaks an older spec.
 
 ### US-5: Graceful Degradation and Cleanup
 **As a** Ralph operator
@@ -80,16 +83,17 @@ Add an always-on, file-level context management middleware that runs before each
 | FR-6 | `.progress.md` is treated as stable (Goal, Learnings — always kept) vs volatile (per-task entries — keep last 3) | High | Stable section intact; only last 3 task entries kept |
 | FR-7 | `chat.md` condensation keeps last 15 messages plus all preserved signals | High | Condensed `chat.md` has ≤15 messages + signals |
 | FR-8 | Condensation MUST reconcile ALL THREE chat read pointers (`chat.coordinator.lastReadLine`, `chat.executor.lastReadLine`, `chat.reviewer.lastReadLine`) in `.ralph-state.json` against the shortened `chat.md`, so no session re-reads or skips a message | High | No message re-read or skipped by any of the three sessions after condensation |
-| FR-9 | Reactive condensation triggers on context overflow and retries the delegation once | High | Overflow → condense → retry succeeds at same task |
+| FR-9 | Reactive condensation triggers on real transcript token measurement (context usage > ~85% of the 200k window, read from the transcript JSONL `message.usage`) and retries the delegation once; the `PreCompact` hook provides an emergency fallback before auto-compaction | High | Transcript `message.usage` shows >85% context → condense → retry succeeds at same task; `PreCompact` hook fires emergency condensation before auto-compaction |
 | FR-10 | Tool result eviction by per-file-type threshold (grep >100, git diff >200, file read >500, ls/find >300) | High | Oversized output evicted; smaller output passes through |
 | FR-11 | Evicted output written to `.tool-results/`; conversation gets first 50 lines + summary + on-disk path | High | Preview + path present; full content on disk |
-| FR-12 | Phase-based selective reference loading in `implement.md` (coordinator session only) keyed off `.ralph-state.json` `phase`; does not bound the separate executor/reviewer sessions | High | Phase 1 omits `verification-layers.md`/`phase-rules.md` |
+| FR-12 | Phase-based selective reference loading in `implement.md` (coordinator session only) keyed off a new `.ralph-state.json` field `executionPhase` (enum `poc | refactor | test | quality`), written by the coordinator at each POC-first phase transition; the existing coarse `phase` field is unchanged and unaffected; does not bound the separate executor/reviewer sessions | High | `executionPhase: poc` omits `verification-layers.md`/`phase-rules.md` |
 | FR-13 | Pair-debug reference additionally loaded when `chat.md` contains `PAIR-DEBUG` | Medium | Marker present → pair-debug reference loaded |
 | FR-14 | Condensation events logged to `.metrics.jsonl` (proactive and reactive distinguished) | Medium | One JSONL line per event with mode field |
 | FR-15 | Archive retention capped at 3; cleanup of archives and `.tool-results/` on spec completion | Medium | ≤3 archives mid-run; 0 archives + no `.tool-results/` after completion |
 | FR-16 | Graceful degradation when writes are not permitted (read-only-agent case) | High | Read-only spec dir → middleware skips, loop continues |
 | FR-17 | Middleware is always-on with no opt-in flag | Medium | No flag in state or command; activates on threshold |
 | FR-18 | Condensation of `chat.md` MUST acquire the same `flock` on `chat.md.lock` (fd 200) used by the reviewer and executor before rewriting the file, so in-place condensation never races a concurrent reader | High | `chat.md` rewrite always occurs while holding `chat.md.lock` (fd 200) |
+| FR-19 | The coordinator MUST write the `executionPhase` field (`poc \| refactor \| test \| quality`) to `.ralph-state.json` at each POC-first phase transition, and `schemas/spec.schema.json` MUST define `executionPhase` as an optional enum property. When `executionPhase` is absent (older specs), reference loading falls back to loading all references (safe default, byte-identical to pre-spec behavior). | High | Coordinator writes `executionPhase` at each transition; schema validates the enum; absent field → all references loaded |
 
 ## Non-Functional Requirements
 
@@ -107,7 +111,9 @@ Add an always-on, file-level context management middleware that runs before each
 
 - **Condensation**: Replacing verbose conversation/progress content with a compact summary while preserving required signals and sections.
 - **Proactive condensation**: Condensation triggered by a line-count threshold before an overflow occurs.
-- **Reactive condensation**: Condensation triggered as a fallback after a context overflow is detected.
+- **Reactive condensation**: Condensation triggered as a fallback when real transcript token measurement shows context usage exceeding ~85% of the 200k window.
+- **Transcript JSONL**: The Claude Code session log at `~/.claude/projects/<encoded-project-path>/<session-id>.jsonl`, one JSON object per line; an assistant-message line's `message.usage` field (`input_tokens` + `cache_creation_input_tokens` + `cache_read_input_tokens`) gives the real context-window token count at that turn.
+- **PreCompact hook**: A Claude Code hook that fires before automatic context compaction (~95% of context), used here as a last-resort emergency condensation + archival trigger.
 - **Tool result eviction**: Writing an oversized tool output to disk and replacing it in-conversation with a short preview.
 - **Context scoping**: Loading only the reference files relevant to the current phase/task type.
 - **Archive**: Timestamped full backup of `chat.md`/`.progress.md` written before condensation (`.archive.<timestamp>.md`).
@@ -117,6 +123,7 @@ Add an always-on, file-level context management middleware that runs before each
 - **Preserved signals**: Control signals (HOLD/PENDING/DEADLOCK/URGENT/ACK/CONTINUE), collaboration signals (HYPOTHESIS, ROOT_CAUSE, FIX_PROPOSAL, BUG_DISCOVERY), pair-debug markers — never dropped by condensation.
 - **`.tool-results/`**: Directory holding full evicted tool outputs.
 - **`.metrics.jsonl`**: Append-only metrics log shared with Spec 4 (loop-safety) loop metrics.
+- **`executionPhase`**: Fine-grained POC-first sub-phase (`poc | refactor | test | quality`) stored in `.ralph-state.json`, written by the coordinator, distinct from the coarse `phase` field; drives phase-based reference scoping.
 
 ## Out of Scope
 
@@ -158,8 +165,10 @@ Deferred to v0.2 (explicitly NOT in this spec):
 **Entry points**:
 - `condense-context.sh` (new) — proactive condensation script invoked before delegation by the Ralph loop.
 - `evict-tool-result.sh` (new) — tool-result eviction helper invoked when oversized output is produced.
-- `stop-watcher.sh` (modified) — pre-delegation check invokes condensation; inline reactive-condensation handler on overflow.
-- `implement.md` (modified) — phase-based conditional reference-loading logic in the "Read these references" section.
+- `stop-watcher.sh` (modified) — pre-delegation check invokes condensation; reads `transcript_path` from stdin and computes context token usage from the transcript JSONL `message.usage`; triggers reactive condensation when usage exceeds ~85%.
+- `PreCompact` hook (new) — last-resort emergency condensation + archival pass firing before Claude Code's automatic context compaction (~95%).
+- `implement.md` (modified) — phase-based conditional reference-loading logic in the "Read these references" section, keyed off `executionPhase`.
+- `schemas/spec.schema.json` (modified) — adds `executionPhase` as an optional enum property (`poc | refactor | test | quality`); the `chat.coordinator`/`chat.reviewer` pointer objects remain defined here.
 - `.metrics.jsonl` — append target for condensation events (shared with Spec 4).
 - `.archive.<timestamp>.md`, `.tool-results/` — files/dirs created and cleaned up by the middleware.
 
@@ -171,8 +180,10 @@ Deferred to v0.2 (explicitly NOT in this spec):
   - Condensed `chat.md`/`.progress.md` still `grep`-match all preserved signal/marker strings and the `Goal`/`Learnings` headings.
   - All three `.ralph-state.json` chat read pointers (`chat.coordinator.lastReadLine`, `chat.executor.lastReadLine`, `chat.reviewer.lastReadLine`) are within bounds of condensed `chat.md` line count.
   - `.metrics.jsonl` has a new line with `event: condensation` and a `mode` field.
+  - Reactive condensation fires when the transcript JSONL `message.usage` shows >85% context usage of the 200k window.
   - Evicted tool output: conversation text contains a `.tool-results/` path + line count; full file exists on disk.
   - After completion: `ls .archive.*.md` returns nothing; `.tool-results/` does not exist.
+  - With `executionPhase: poc`, `implement.md` does not load `verification-layers.md` or `phase-rules.md`.
 - FAIL looks like:
   - `signals.jsonl` modified or removed.
   - Any of the three chat read pointers points past the end of (or before valid content in) condensed `chat.md`.
@@ -202,6 +213,7 @@ Deferred to v0.2 (explicitly NOT in this spec):
 - Reads/respects `signals.jsonl` and the three chat read pointers from Spec 6 (signal-log-and-ci-autodetect).
 - Touches `stop-watcher.sh` and `implement.md` — also modified by Specs 4, 6, 8; regression-sweep these.
 - Middleware-managed files (`.archive.*`, `.tool-results/`) interact with Spec 3 role contracts and Spec 9 risk classification.
+- `executionPhase` is a new coordinator-owned state field in `.ralph-state.json` (enum `poc | refactor | test | quality`), defined as an optional property in `schemas/spec.schema.json`; written only by the coordinator, read by `implement.md` for reference scoping.
 
 **Escalate if**:
 - Condensation would drop content not covered by the preservation rules and the LLM is uncertain whether it is load-bearing.
@@ -212,9 +224,9 @@ Deferred to v0.2 (explicitly NOT in this spec):
 
 ## Unresolved Questions
 
-- Reactive overflow detection: Smart Ralph is a plugin and cannot intercept the API error directly. The exact observable signal for "context overflow" (loop iteration failure pattern, error string in output, or a heuristic line-count ceiling above the proactive threshold) must be pinned down in design.
+- RESOLVED (design interview + research): reactive trigger = transcript-JSONL `message.usage` token measurement + `PreCompact` hook fallback; not API-error interception. `stop-watcher.sh` reads `transcript_path` from stdin, tails the transcript JSONL, and computes `(input_tokens + cache_creation_input_tokens + cache_read_input_tokens) / 200000`; reactive condensation fires above ~85%.
 - `.metrics.jsonl` event schema: exact field names for the condensation event line should align with the Spec 4 metrics schema — confirm during design.
-- Phase identification: `implement.md` must derive Phase 1-5 from the `.ralph-state.json` `phase` field (currently a coarse string); confirm the field granularity is sufficient to distinguish POC/Refactor/Test/Quality.
+- RESOLVED (design + user decision): the coarse `phase` field is insufficient; a new coordinator-written `executionPhase` enum field is added (FR-19). User-approved scope addition.
 - Three-pointer reconciliation: condensing only messages older than `min(coordinator, executor, reviewer)` is safe but may rarely fire if one session lags far behind. Confirm in design whether a lagging-session policy (e.g. force-advancing a stale reviewer pointer) is needed, or whether the conservative min-prefix rule is sufficient for v0.1.
 
 ## Next Steps
@@ -225,4 +237,6 @@ Deferred to v0.2 (explicitly NOT in this spec):
 4. Run `/ralphharness:implement` to execute.
 
 <!-- Changed: multi-session honesty pass — three-pointer chat-read reconciliation (FR-8, AC-1.6/1.8), eviction-as-prompt-rule (AC-3.5), coordinator-only scope qualifiers (FR-12, AC-4.6), chat.md.lock flock invariant (FR-18), and Out-of-Scope clauses for non-Claude/foreign-session context management. Corrections for honesty/correctness only; no scope expansion. -->
+<!-- Changed: reactive-trigger correctness amendment — reactive condensation now triggered by real transcript-JSONL `message.usage` token measurement (>85% of 200k) plus a `PreCompact` hook fallback, replacing the unimplementable `context_length_exceeded` API-error interception (AC-2.1, AC-2.5, AC-2.6, FR-9, Verification Contract, Glossary). Two-gate model documented. Trigger mechanism corrected; reactive condensation feature scope unchanged. -->
+<!-- Changed: authorization amendment — phase-based reference scoping now keyed off a new coordinator-written `executionPhase` enum field (`poc | refactor | test | quality`) instead of the coarse `phase` field (FR-12, AC-4.1, AC-4.2); added FR-19 + AC-4.7 for the field's coordinator-write contract, schema definition, and absent-field fallback; Verification Contract, Glossary, and Unresolved Questions updated. User-approved scope addition; no other scope expansion. -->
 
