@@ -51,7 +51,7 @@ Focus: land all functional edits end-to-end. Heartbeat emit + reviewer gate + bo
   - _Requirements: NFR-4, AC-2.5_
   - _Design: AC-2.5 No-Regression Guard — BYTE-STABLE Sections_
 
-- [ ] 1.4 Rewrite external-reviewer.md Section 0 bootstrap (full spec-state read)
+- [x] 1.4 Rewrite external-reviewer.md Section 0 bootstrap (full spec-state read)
   - **Do**:
     1. Rewrite Section 0 (lines ~19-33): read `chat.md` IN FULL, read `.progress.md` fully, read `git log --oneline` + `git diff --stat` since the spec branch point.
     2. Stop setting `chat.reviewer.lastReadLine` to the full chat.md line count; set it to `0`.
