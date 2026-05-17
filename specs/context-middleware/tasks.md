@@ -256,7 +256,7 @@ Focus: Comprehensive test coverage. One task per Test Coverage Table row. Real t
   - _Requirements: AC-1.1, AC-1.2, AC-1.3, AC-1.4, AC-1.5, AC-1.6, AC-1.8, FR-1, FR-3, FR-4, FR-5, FR-6, FR-7, FR-8, FR-14, FR-15, FR-16, FR-18_
   - _Design: Test Coverage Table — condense-context.sh_
 
-- [ ] 3.3 [P] Create test-evict-tool-result.bats: eviction + pair-debug + read-only
+- [x] 3.3 [P] Create test-evict-tool-result.bats: eviction + pair-debug + read-only
   - **Do**:
     1. Create `plugins/ralphharness/tests/test-evict-tool-result.bats`
     2. Test each kind (grep >100, gitdiff >200, fileread >500, lsfind >300) → evicted with preview + path
