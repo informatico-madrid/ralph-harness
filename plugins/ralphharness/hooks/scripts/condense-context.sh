@@ -13,7 +13,7 @@
 set -euo pipefail
 
 # Source shared helpers (lib-context.sh)
-CLAUDE_PLUGIN_ROOT="$(git -C "${1:-.}" rev-parse --show-toplevel 2>/dev/null || echo "$PWD")/plugins/ralphharness"
+CLAUDE_PLUGIN_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")/../.." && pwd)"
 source "${CLAUDE_PLUGIN_ROOT}/hooks/scripts/lib-context.sh"
 
 # --- Arg Parsing ---
