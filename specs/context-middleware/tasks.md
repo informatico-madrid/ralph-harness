@@ -192,7 +192,7 @@ Focus: Add error handling, improve robustness, version bump in implement.md comp
   - _Requirements: NFR-4_
   - _Design: Error Handling / Failure Modes_
 
-- [ ] 2.4 Add spec-completion cleanup to implement.md (AC-5.3)
+- [x] 2.4 Add spec-completion cleanup to implement.md (AC-5.3)
   - **Do**:
     1. In implement.md Step 5 (Completion), after taskIndex verification and before the existing cleanup step, add:
     2. `rm -f "$SPEC_PATH"/.archive.*.md` — delete all archive files
@@ -205,7 +205,7 @@ Focus: Add error handling, improve robustness, version bump in implement.md comp
   - _Requirements: FR-15, AC-5.3_
   - _Design: Architecture → Cleanup_
 
-- [ ] 2.5 Modify coordinator-pattern.md: document executionPhase writes + eviction prompt-rule
+- [x] 2.5 Modify coordinator-pattern.md: document executionPhase writes + eviction prompt-rule
   - **Do**:
     1. Add a section documenting that the coordinator writes `executionPhase` field to `.ralph-state.json` at each phase transition (poc→refactor→test→quality)
     2. Add the eviction prompt-rule: "When a tool produces output exceeding its threshold (grep/rg >100 lines, git diff >200, file read >500, ls/find >300), route the full output through `evict-tool-result.sh` and use only the returned preview"
@@ -221,7 +221,7 @@ Focus: Add error handling, improve robustness, version bump in implement.md comp
 
 Focus: Comprehensive test coverage. One task per Test Coverage Table row. Real temp dirs via `mktemp -d`. No stubs/mocks.
 
-- [ ] 3.1 [P] Create test-lib-context.bats: all lib-context.sh functions
+- [x] 3.1 [P] Create test-lib-context.bats: all lib-context.sh functions
   - **Do**:
     1. Create `plugins/ralphharness/tests/test-lib-context.bats`
     2. `combined_line_count`: correct sum; missing .progress.md; both missing
@@ -236,7 +236,7 @@ Focus: Comprehensive test coverage. One task per Test Coverage Table row. Real t
   - _Requirements: FR-1, FR-9, NFR-4_
   - _Design: Test Coverage Table — lib-context.sh all functions_
 
-- [ ] 3.2 [P] Create test-condense-context.bats: proactive condensation
+- [x] 3.2 [P] Create test-condense-context.bats: proactive condensation
   - **Do**:
     1. Create `plugins/ralphharness/tests/test-condense-context.bats`
     2. `setup()`: `build_oversized_spec()` creates temp dir with chat.md (1200 lines + HOLD signal), .progress.md (900 lines + Goal/Learnings + 5 task entries), .ralph-state.json with 3 pointers, signals.jsonl
