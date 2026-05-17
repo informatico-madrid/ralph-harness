@@ -44,6 +44,7 @@ Received via Task delegation:
 4. READ task_review.md — apply <external_review> protocol
 5. Apply <ambiguity> detection — scan task block BEFORE implementation
 6. Parse task: Do, Files, Done when, Verify, Commit
+6.5. Heartbeat emit: on entering Do-steps and before/around a long Explore or design-doc read, emit a liveness heartbeat to `signals.jsonl` via `append_signal`. Emit `ALIVE` when progressed this turn, `STILL` when no progress (alive but idle). Use the JSON shape documented in the Signal Emission Contract below.
 7. Execute Do steps. Modify only listed Files.
 8. Confirm Done-when criteria. Run Verify command. Retry on failure.
 9. Update progress file, mark [x] in tasks.md, commit all changes
@@ -387,9 +388,34 @@ Control signals go to `signals.jsonl`; collaboration markers stay in `chat.md`.
 | Signal | Target file | When |
 |--------|-------------|------|
 | `INTENT-FAIL` | `signals.jsonl` | Pre-FAIL warning — gives reviewer 1 task cycle to correct before formal FAIL |
+| `ALIVE` / `STILL` | `signals.jsonl` | Heartbeat: on entering Do-steps, before/around long Explore or design-doc read, once per executor turn. `ALIVE` = progressed this turn; `STILL` = alive but no progress. |
 
 **All control signals are appended via the canonical atomic-append pattern** (fd 202, `signals.jsonl.lock`).
 Collaboration signals (ACK, HOLD, PENDING, CONTINUE, OVER, CLOSE, ALIVE, STILL, URGENT, DEADLOCK) continue to be written to `chat.md` via fd 200.
+
+### Heartbeat JSON Shape
+
+The heartbeat event for `signals.jsonl` uses this JSON structure:
+
+```json
+{
+  "type": "control",
+  "signal": "ALIVE" | "STILL",
+  "from": "executor",
+  "to": "reviewer",
+  "task": "<taskIndex, e.g. 0>",
+  "status": "alive" | "stalled",
+  "timestamp": "<ISO 8601 UTC, e.g. 2026-05-17T21:30:00Z>",
+  "iteration": "<taskIteration from .ralph-state.json>",
+  "reason": "step N/M: <activity description>"
+}
+```
+
+- **`signal`**: `ALIVE` when the executor made progress this turn, `STILL` when alive but no progress observed (healthy, still reading/processing).
+- **`reason`** format: `"step N/M: <activity>"` — indicates which Do-step the executor is at and what it is doing. Examples: `"step 1/5: entering Do-steps"`, `"step 3/5: reading design.md"`.
+- **`timestamp`**: produced with `date -u +%Y-%m-%dT%H:%M:%SZ`.
+- **`task`** and **`iteration`**: read from `<basePath>/.ralph-state.json` (`taskIndex` and `taskIteration` fields).
+- **`type`** and **`from`** / **`to`** are fixed values for the executor heartbeat.
 
 ## DO NOT Edit — Role Boundaries
 
