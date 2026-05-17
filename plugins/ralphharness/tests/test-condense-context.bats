@@ -176,11 +176,16 @@ run_test() {
 # ===== Archive pruning =====
 
 @test "condense-context: archive pruning keeps only 3 newest" {
+  # Create 4 archives directly to test pruning logic, bypassing condensation triggers
   for i in $(seq 1 4); do
-    run_test "$SPEC_DIR" --mode proactive 2>/dev/null
+    touch "$SPEC_DIR/.archive.prune_test_${i}.md"
   done
   local archive_count
-  archive_count="$(find "$SPEC_DIR" -name '.archive.*.md' | wc -l)"
+  archive_count="$(find "$SPEC_DIR" -name '.archive.prune_test_*' | wc -l)"
+  [ "$archive_count" -eq 4 ]
+  # Run condensation to trigger pruning
+  run_test "$SPEC_DIR" --mode proactive 2>/dev/null
+  archive_count="$(find "$SPEC_DIR" -name '.archive.prune_test_*' | wc -l)"
   [ "$archive_count" -le 3 ]
 }
 

@@ -74,7 +74,7 @@ run_eviction_pair() {
   local line_count
   line_count="$(echo "$output" | wc -l)"
   [ "$line_count" -eq 50 ]
-  echo "$output" | grep -q '\[evicted\]' && false || true
+  ! echo "$output" | grep -q '\[evicted\]'
 }
 
 @test "evict-tool-result: gitdiff below 200 lines passes through" {
@@ -85,7 +85,7 @@ run_eviction_pair() {
   local line_count
   line_count="$(echo "$output" | wc -l)"
   [ "$line_count" -eq 100 ]
-  echo "$output" | grep -q '\[evicted\]' && false || true
+  ! echo "$output" | grep -q '\[evicted\]'
 }
 
 # ===== Pair-debug pass-through =====
@@ -98,7 +98,7 @@ run_eviction_pair() {
   local line_count
   line_count="$(echo "$output" | wc -l)"
   [ "$line_count" -eq 500 ]
-  echo "$output" | grep -q '\[evicted\]' && false || true
+  ! echo "$output" | grep -q '\[evicted\]'
   [ ! -d "$SPEC_DIR/.tool-results" ]
 }
 

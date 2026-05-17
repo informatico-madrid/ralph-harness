@@ -227,7 +227,7 @@ if [ -f "${SPEC_PATH}/.progress.md" ]; then
     echo ""
 
     # Keep last 3 task entries from volatile section
-    TASK_ENTRIES="$(grep -n '^\- \[x\]\|^\- \[.\]' "${SPEC_PATH}/.progress.md" 2>/dev/null | tail -3 || true)"
+    TASK_ENTRIES="$(grep '^\- \[x\]\|^\- \[.\]' "${SPEC_PATH}/.progress.md" 2>/dev/null | tail -3 || true)"
     if [ -n "$TASK_ENTRIES" ]; then
       echo "## Recent Task Entries"
       echo ""

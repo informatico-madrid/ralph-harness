@@ -57,14 +57,6 @@ If state file missing or corrupt (invalid JSON, missing required fields):
 3. Do NOT continue execution
 4. Do NOT output ALL_TASKS_COMPLETE
 
-**ERROR: Missing/Corrupt State File**
-
-If state file missing or corrupt (invalid JSON, missing required fields):
-1. Output error: "ERROR: State file missing or corrupt at $SPEC_PATH/.ralph-state.json"
-2. Suggest: "Run /ralphharness:implement to reinitialize execution state"
-3. Do NOT continue execution
-4. Do NOT output ALL_TASKS_COMPLETE
-
 ## Native Task Sync - Initial Setup
 
 If `nativeSyncEnabled` is not `false` in state AND (`nativeTaskMap` is missing or empty, OR existing IDs are stale):

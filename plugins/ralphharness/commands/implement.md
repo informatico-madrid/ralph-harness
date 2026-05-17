@@ -379,7 +379,7 @@ Phase-based conditional loading reduces context by loading only references relev
 
 ```bash
 # Resolve executionPhase from state file
-EXECUTION_PHASE=$(jq -r '.state.executionPhase // empty' "$STATE_FILE" 2>/dev/null || true)
+EXECUTION_PHASE=$(jq -r '.executionPhase // empty' "$STATE_FILE" 2>/dev/null || true)
 # Fallback: if executionPhase absent, load all (safe default — AC-4.7)
 if [ -z "$EXECUTION_PHASE" ]; then
     EXECUTION_PHASE="all"
