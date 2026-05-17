@@ -86,7 +86,7 @@ Focus: land all functional edits end-to-end. Heartbeat emit + reviewer gate + bo
   - _Requirements: FR-6, AC-4.2_
   - _Design: Component D canonical relationship, Implementation Step 4_
 
-- [ ] 1.7 Add reviewer-skill export sub-step to implement.md onboarding
+- [x] 1.7 Add reviewer-skill export sub-step to implement.md onboarding
   - **Do**:
     1. Add an onboarding sub-step to `implement.md`, modeled on the "Pair-Debug Placement Step" (lines ~364-392), offering the reviewer-warmup skill export when the external reviewer runs in a foreign runtime.
     2. Reuse the pair-debug runtime→path map (Roo Code / Qwen / Cursor / Other) with filename `reviewer-warmup.md`; support manual-path mode (print absolute source path + activation step) and automatic-copy mode (resolve destination, copy `SKILL.md`).

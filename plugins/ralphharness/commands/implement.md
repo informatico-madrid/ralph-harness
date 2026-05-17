@@ -393,6 +393,44 @@ To activate:
 
 ---
 
+### Reviewer-Skill Export Step
+
+Offer the reviewer-warmup skill export when the external reviewer runs in a foreign runtime.
+
+**Prerequisite**: skip this entire step if the user answered NO to parallel reviewer in Step 4, or if `$REVIEWER_EXISTS` is `1` (auto-detected).
+
+Ask the user:
+```
+Should the reviewer-warmup skill be exportable to a foreign agent runtime? [y/n]
+
+If yes: where should reviewer-warmup.md run?
+(a) This same instance — skill runs in-session [DEFAULT]
+(b) A second Claude Code instance
+(c) A foreign agent runtime (Roo Code, Qwen, Cursor, other)
+```
+
+**(a) chosen** → no files copied, no further questions; skill runs in-session. Export step skipped silently. Behavior byte-identical to pre-spec.
+
+**(b) chosen** → manual print: absolute path of `skills/reviewer-warmup/SKILL.md`, plus the activation step "open a second Claude Code session and load via @skill: reviewer-warmup or paste the file contents as the session prompt."
+
+**(c) chosen** → **which-runtime sub-question** (Roo Code / Qwen / Cursor / other), then **export-mode question** (automatic copy / manual print).
+- **Automatic copy**: resolve destination path from the runtime→path map (same map as Pair-Debug Placement Step, but filename is `reviewer-warmup.md` and source is `skills/reviewer-warmup/SKILL.md`). If destination already exists, prompt overwrite/skip per file. Copy `SKILL.md` to destination as `reviewer-warmup.md`. Print the report.
+- **Manual print**: print the absolute source path of `SKILL.md` AND the copy-paste-ready activation text. Print the report.
+- **Unknown runtime**: fall back to manual print with reason ("no known destination path for <runtime>").
+
+**Export report** (printed in BOTH modes):
+```
+Reviewer-warmup skill exported.
+Skill file:
+  source:      <abs>/plugins/ralphharness/skills/reviewer-warmup/SKILL.md
+  destination: <abs dest> # automatic mode only
+To activate:
+  <runtime-specific concrete step>
+```
+- **Idempotency**: if re-running and destination file already exists, prompt overwrite/skip rather than failing or silently clobbering.
+
+---
+
 After writing the state file (and optionally setting up external reviewer), output the coordinator prompt below. This starts the execution loop.
 The stop-hook will continue the loop by blocking stops and prompting the coordinator to check state.
 
