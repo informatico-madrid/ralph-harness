@@ -707,6 +707,27 @@ if [ "$PHASE" = "execution" ] && [ "$TASK_INDEX" -lt "$TOTAL_TASKS" ]; then
     fi
     # END HOLD-GATE
 
+    # --- Context Middleware: Two-gate condensation check ---
+    # Source shared context helpers (lib-context.sh, FR-1, FR-9)
+    source "$CLAUDE_PLUGIN_ROOT/hooks/scripts/lib-context.sh" 2>/dev/null || true
+
+    # Gate 1: Line-count pre-filter (cheap, no transcript I/O)
+    if [ -n "$SPEC_PATH" ]; then
+        LINE_COUNT=$(combined_line_count "$SPEC_PATH" 2>/dev/null || echo 0)
+        if [ "$LINE_COUNT" -gt 2000 ] 2>/dev/null; then
+            "$SCRIPT_DIR/condense-context.sh" "$SPEC_PATH" --mode proactive 2>/dev/null || true
+        fi
+    fi
+
+    # Gate 2: Transcript token-% (authoritative, requires transcript)
+    if [ -n "$TRANSCRIPT_PATH" ] && [ -f "$TRANSCRIPT_PATH" ]; then
+        TOKEN_PCT=$(transcript_usage_pct "$TRANSCRIPT_PATH" 2>/dev/null || echo 0)
+        if [ "$TOKEN_PCT" -gt 85 ] 2>/dev/null; then
+            "$SCRIPT_DIR/condense-context.sh" "$SPEC_PATH" --mode reactive 2>/dev/null || true
+        fi
+    fi
+    # --- End Context Middleware ---
+
     # Safety guard: prevent infinite re-invocation loop
     # If a stop event fires while already processing a stop-hook continuation,
     # re-blocking would cause infinite loops. Allow Claude to stop; the next

@@ -100,7 +100,7 @@ Focus: Create middleware scripts, wire hooks, prove condensation works end-to-en
   - _Requirements: FR-9, AC-2.5_
   - _Design: PreCompact hook_
 
-- [ ] 1.8 [P] Modify stop-watcher.sh: source lib-context.sh, two-gate check, condensation call
+- [x] 1.8 [P] Modify stop-watcher.sh: source lib-context.sh, two-gate check, condensation call
   - **Do**:
     1. In the execution-phase block of `stop-watcher.sh` (after HOLD-GATE, before continuation prompt), add:
     2. Source `lib-context.sh`
