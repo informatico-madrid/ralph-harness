@@ -4,7 +4,7 @@
 
 Focus: Create middleware scripts, wire hooks, prove condensation works end-to-end. Skip tests. Accept hardcoded values.
 
-- [ ] 1.1 [P] Create lib-context.sh with shared helpers
+- [x] 1.1 [P] Create lib-context.sh with shared helpers
   - **Do**:
     1. Create `plugins/ralphharness/hooks/scripts/lib-context.sh` (parallel to `lib-signals.sh`)
     2. Implement `combined_line_count <spec_path>`: `wc -l chat.md .progress.md`, handle missing files as 0
