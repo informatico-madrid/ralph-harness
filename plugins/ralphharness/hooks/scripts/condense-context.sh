@@ -99,7 +99,7 @@ PROGRESS_LINES_BEFORE=0
 MIN_POINTER=0
 STATE_FILE="${SPEC_PATH}/.ralph-state.json"
 if [ -f "$STATE_FILE" ]; then
-  MIN_POINTER="$(jq -r '[.chat.coordinator.lastReadLine // 0, .chat.executor.lastReadLine // 0, .chat.reviewer.lastReadLine // 0] | min' "$STATE_FILE" 2>/dev/null || echo 0)"
+  MIN_POINTER="$(jq -r '[.state.chat.coordinator.lastReadLine // 0, .state.executor.lastReadLine // 0, .state.reviewer.lastReadLine // 0] | min' "$STATE_FILE" 2>/dev/null || echo 0)"
 fi
 
 # --- Condense chat.md (under flock, fd 200) ---
@@ -202,9 +202,9 @@ if [ -f "${SPEC_PATH}/chat.md" ]; then
       rm -f "${SPEC_PATH}/chat.md.tmp"
       exit 1
     }
-    CHAT_REWRITTEN=1
 
-  ) 200>"$LOCK_FILE"
+  ) 200>"$LOCK_FILE" || { echo "[ralphharness] ERROR: flock block failed" >&2; }
+  CHAT_REWRITTEN=1
 
   CHAT_LINES_AFTER="$(wc -l < "${SPEC_PATH}/chat.md" 2>/dev/null || echo 0)"
 fi
@@ -243,12 +243,16 @@ if [ "$CHAT_REWRITTEN" -eq 1 ] && [ -f "$STATE_FILE" ]; then
   REMOVED=$(( PREFIX_LINES - CHAT_LINES_AFTER ))
   if [ "$REMOVED" -lt 0 ]; then REMOVED=0; fi
 
+  # Ensure removal covers any condensation overhead: use actual line reduction
+  ACTUAL_REMOVED=$(( CHAT_LINES_BEFORE - CHAT_LINES_AFTER ))
+  if [ "$ACTUAL_REMOVED" -gt "$REMOVED" ]; then REMOVED="$ACTUAL_REMOVED"; fi
+
   TEMP_STATE="${STATE_FILE}.tmp"
   if ! jq --argjson removed "$REMOVED" \
-    'if .chat then
-      .chat.coordinator.lastReadLine = (if (.chat.coordinator.lastReadLine // 0) - $removed < 0 then 0 else (.chat.coordinator.lastReadLine // 0) - $removed end) |
-      .chat.executor.lastReadLine = (if (.chat.executor.lastReadLine // 0) - $removed < 0 then 0 else (.chat.executor.lastReadLine // 0) - $removed end) |
-      .chat.reviewer.lastReadLine = (if (.chat.reviewer.lastReadLine // 0) - $removed < 0 then 0 else (.chat.reviewer.lastReadLine // 0) - $removed end)
+    'if .state then
+      .state.chat.coordinator.lastReadLine = (if (.state.chat.coordinator.lastReadLine // 0) - $removed < 0 then 0 else (.state.chat.coordinator.lastReadLine // 0) - $removed end) |
+      .state.chat.executor.lastReadLine = (if (.state.chat.executor.lastReadLine // 0) - $removed < 0 then 0 else (.state.chat.executor.lastReadLine // 0) - $removed end) |
+      .state.chat.reviewer.lastReadLine = (if (.state.chat.reviewer.lastReadLine // 0) - $removed < 0 then 0 else (.state.chat.reviewer.lastReadLine // 0) - $removed end)
     else . end' "$STATE_FILE" > "$TEMP_STATE" 2>/dev/null; then
     echo "[ralphharness] ERROR: jq failed updating state pointers (removed=$removed), original preserved" >&2
     rm -f "$TEMP_STATE"
@@ -256,6 +260,18 @@ if [ "$CHAT_REWRITTEN" -eq 1 ] && [ -f "$STATE_FILE" ]; then
     mv "$TEMP_STATE" "$STATE_FILE" || {
       echo "[ralphharness] ERROR: atomic mv of state file failed, original preserved" >&2
     }
+  fi
+
+  # Clamp all pointers to the post-condensation file size (safety net)
+  if [ -f "$STATE_FILE" ]; then
+    TEMP_STATE2="${STATE_FILE}.tmp2"
+    jq --argjson max "$CHAT_LINES_AFTER" \
+      'if .state then
+        .state.chat.coordinator.lastReadLine = ([.state.chat.coordinator.lastReadLine, $max] | min) |
+        .state.chat.executor.lastReadLine = ([.state.chat.executor.lastReadLine, $max] | min) |
+        .state.chat.reviewer.lastReadLine = ([.state.chat.reviewer.lastReadLine, $max] | min)
+      else . end' "$STATE_FILE" > "$TEMP_STATE2" 2>/dev/null && \
+      mv "$TEMP_STATE2" "$STATE_FILE" || rm -f "$TEMP_STATE2"
   fi
 fi
 
@@ -267,7 +283,7 @@ if [ "$MODE" = "reactive" ] || [ "$MODE" = "emergency" ]; then
   fi
 fi
 
-LINE_COUNT_BEFORE="$(combined_line_count "$SPEC_PATH")"
+LINE_COUNT_BEFORE=$(( CHAT_LINES_BEFORE + PROGRESS_LINES_BEFORE ))
 LINE_COUNT_AFTER=$(( CHAT_LINES_AFTER + PROGRESS_LINES_AFTER ))
 
 write_condensation_metric "$SPEC_PATH" "$MODE" "$LINE_COUNT_BEFORE" "$LINE_COUNT_AFTER" "$TOKENS_PCT" "$ARCHIVE_FILE"

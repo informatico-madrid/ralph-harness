@@ -351,17 +351,17 @@ Focus: Full local CI, PR creation, AC verification.
 
 Focus: Autonomous PR validation, review comment resolution, final E2E verification.
 
-- [ ] 5.1 [VERIFY] CI monitoring: watch for CI completion
+- [x] 5.1 [VERIFY] CI monitoring: watch for CI completion
   - **Do**: Monitor PR checks via `gh pr checks`. If any check fails, read failure details, fix issues, push fix.
   - **Verify**: `gh pr checks` shows all green
   - **Done when**: All CI checks green
 
-- [ ] 5.2 [VERIFY] Code review: address any review comments
+- [x] 5.2 [VERIFY] Code review: address any review comments
   - **Do**: If review comments appear, address them surgically (no scope creep). Push fixes.
   - **Verify**: `gh pr reviews` — no pending review requests requiring changes
   - **Done when**: All review comments resolved
 
-- [ ] 5.3 [VERIFY] Final verification: all bats tests pass, files exist, scripts parse
+- [x] 5.3 [VERIFY] Final verification: all bats tests pass, files exist, scripts parse
   - **Do**:
     1. `bats plugins/ralphharness/tests/` — all tests pass
     2. `bash -n plugins/ralphharness/hooks/scripts/{lib-context,condense-context,evict-tool-result,precompact-condense,stop-watcher}.sh` — all scripts parse
@@ -371,7 +371,7 @@ Focus: Autonomous PR validation, review comment resolution, final E2E verificati
   - **Done when**: Zero test failures, zero parse errors, zero schema errors
   - **Commit**: `chore(context): final verification pass`
 
-- [ ] 5.4 [VERIFY] Goal verification: condensation reduces context, cleanup works
+- [x] 5.4 [VERIFY] Goal verification: condensation reduces context, cleanup works
   - **Do**:
     1. Create temp spec dir with oversized chat.md + .progress.md
     2. Run `condense-context.sh` — verify line count reduced below 2000
