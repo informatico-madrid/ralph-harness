@@ -15,7 +15,7 @@ Single PR, phased internally. POC-first order: heartbeat (US-1/US-2) → bootstr
 
 Focus: land all functional edits end-to-end. Heartbeat emit + reviewer gate + bootstrap + skill + export + docs.
 
-- [ ] 1.1 Add executor heartbeat emission to spec-executor.md
+- [x] 1.1 Add executor heartbeat emission to spec-executor.md
   - **Do**:
     1. In `spec-executor.md` `<flow>`, after step 6 "Parse task", add a heartbeat-emit step: on entering Do-steps and before/around a long Explore or design-doc read, append an `ALIVE`/`STILL` `type:control` event to `signals.jsonl` via `append_signal`.
     2. Add a Signal Emission Contract row for `ALIVE`/`STILL` → `signals.jsonl` (NOT `chat.md`), tied to the "Do-steps" and "long read" triggers.
