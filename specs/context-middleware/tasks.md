@@ -88,7 +88,7 @@ Focus: Create middleware scripts, wire hooks, prove condensation works end-to-en
   - _Requirements: FR-10, FR-11, AC-3.1, AC-3.2, AC-3.3, AC-3.4_
   - _Design: evict-tool-result.sh interface_
 
-- [ ] 1.7 [P] Create precompact-condense.sh and wire PreCompact hook
+- [x] 1.7 [P] Create precompact-condense.sh and wire PreCompact hook
   - **Do**:
     1. Create `plugins/ralphharness/hooks/scripts/precompact-condense.sh`: resolve active spec via `ralph_resolve_current`, call `condense-context.sh <spec> --mode emergency`
     2. Always exit 0 (never blocks compaction)
