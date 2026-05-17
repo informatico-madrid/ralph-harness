@@ -295,13 +295,13 @@ Focus: Comprehensive test coverage. One task per Test Coverage Table row. Real t
 
 Focus: Full local CI, PR creation, AC verification.
 
-- [ ] 4.1 [VERIFY] Full local CI: bats + script syntax + JSON validation
+- [x] 4.1 [VERIFY] Full local CI: bats + script syntax + JSON validation
   - **Do**: Run the complete bats test suite AND verify all scripts parse AND all JSON files are valid
   - **Verify**: `bats plugins/ralphharness/tests/ && bash -n plugins/ralphharness/hooks/scripts/{lib-context,condense-context,evict-tool-result,precompact-condense,stop-watcher}.sh && jq empty plugins/ralphharness/hooks/hooks.json && jq empty plugins/ralphharness/schemas/spec.schema.json && echo FULL_CI_PASS`
   - **Done when**: All tests pass, zero script parse errors, zero JSON validation errors
   - **Commit**: `chore(context): pass full local CI` (if fixes needed)
 
-- [ ] 4.2 [VERIFY] AC checklist: verify all 28 acceptance criteria
+- [x] 4.2 [VERIFY] AC checklist: verify all 28 acceptance criteria
   - **Do**:
     1. FR-1/AC-1.1: `grep -q 'combined_line_count' plugins/ralphharness/hooks/scripts/condense-context.sh && echo AC11_PASS`
     2. FR-2/AC-1.3: `grep -q 'mv.*chat.md' plugins/ralphharness/hooks/scripts/condense-context.sh && echo AC12_PASS`
@@ -320,7 +320,7 @@ Focus: Full local CI, PR creation, AC verification.
   - **Done when**: All grep assertions pass — every AC verified by concrete code presence check
   - **Commit**: `chore(context): AC checklist verified`
 
-- [ ] 4.3 Bump versions: plugin.json + marketplace.json from 5.4.0 to 5.5.0
+- [x] 4.3 Bump versions: plugin.json + marketplace.json from 5.4.0 to 5.5.0
   - **Do**:
     1. Update `plugins/ralphharness/.claude-plugin/plugin.json`: change `"version": "5.4.0"` to `"version": "5.5.0"`
     2. Update `.claude-plugin/marketplace.json`: change ralphharness entry version from `"5.4.0"` to `"5.5.0"`
@@ -329,7 +329,7 @@ Focus: Full local CI, PR creation, AC verification.
   - **Verify**: `jq -r .version plugins/ralphharness/.claude-plugin/plugin.json && jq '.plugins[] | select(.name=="ralphharness") | .version' .claude-plugin/marketplace.json | grep 5.5.0 && echo 4.3_PASS`
   - **Commit**: `chore(context): bump version to 5.5.0`
 
-- [ ] 4.4 [VERIFY] PR opened correctly
+- [x] 4.4 [VERIFY] PR opened correctly
   - **Do**:
     1. Verify feature branch: `git branch --show-current`
     2. Push: `git push -u origin context-middleware`
