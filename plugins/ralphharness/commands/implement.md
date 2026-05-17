@@ -46,6 +46,29 @@ From `$ARGUMENTS`:
 - **--max-global-iterations**: Max total loop iterations (default: 100). Safety limit to prevent infinite execution loops.
 - **--recovery-mode**: Enable iterative failure recovery (default: false). When enabled, failed tasks trigger automatic fix task generation instead of stopping.
 
+## Step 2.5: External Reviewer Auto-Detection
+
+Before asking the user, check if `task_review.md` already exists in the spec directory.
+If it does, the external reviewer was already set up (either from a prior run or
+manual setup). Auto-activate it without asking the user.
+
+```bash
+REVIEWER_EXISTS=0
+if [ -f "$SPEC_PATH/task_review.md" ]; then
+  REVIEWER_EXISTS=1
+  # Ensure chat.md exists for the reviewer to write signals
+  if [ ! -f "$SPEC_PATH/chat.md" ]; then
+    cp "$CLAUDE_PLUGIN_ROOT/templates/chat.md" "$SPEC_PATH/chat.md"
+  fi
+  echo "[external-reviewer] auto-detected: task_review.md exists, reviewer is active" >> "$SPEC_PATH/.progress.md"
+fi
+```
+
+If `$REVIEWER_EXISTS` is `1`: skip the Parallel Reviewer Onboarding question (Step 4).
+If `$REVIEWER_EXISTS` is `0`: proceed to the Parallel Reviewer Onboarding question (Step 4).
+
+---
+
 ## Step 3: Initialize Execution State
 
 Count tasks using these exact commands:
@@ -274,7 +297,17 @@ TOTAL=$(jq '.totalTasks' "$SPEC_PATH/.ralph-state.json")
 
 ### Parallel Reviewer Onboarding
 
-Before starting execution, check if the user wants to run an external parallel reviewer:
+First, check if `task_review.md` was already auto-detected in Step 2.5:
+
+```bash
+if [ "$REVIEWER_EXISTS" -eq 1 ]; then
+  echo "[external-reviewer] auto-detected in Step 2.5, skipping onboarding question" >> "$SPEC_PATH/.progress.md"
+  # reviewer is already active, skip to Pair-Debug Placement Step
+  true
+fi
+```
+
+If `REVIEWER_EXISTS` is `0`, proceed with the onboarding question:
 
 **Ask the user:**
 ```
