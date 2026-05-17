@@ -237,7 +237,7 @@ NEVER push to the default branch. Use a feature branch + PR. Branch should alrea
 
 ## Phase 5: PR Lifecycle
 
-- [ ] 5.1 [VERIFY] Resolve CI failures and review comments
+- [x] 5.1 [VERIFY] Resolve CI failures and review comments - CI-green, no-review-comments
   - **Do**:
     1. Monitor the PR: `gh pr checks` and `gh pr view --comments`.
     2. For each CI failure or review comment, fix locally, commit, `git push`, re-verify.
@@ -249,7 +249,7 @@ NEVER push to the default branch. Use a feature branch + PR. Branch should alrea
   - _Requirements: NFR-4_
   - _Design: Test Strategy_
 
-- [ ] VF [VERIFY] Final verification: heartbeat suppresses false escalation, stale still DEADLOCKs
+- [x] VF [VERIFY] Final verification: heartbeat suppresses false escalation, stale still DEADLOCKs - 20/20 tests pass
   - **Do**:
     1. Re-run `bats plugins/ralphharness/tests/test-reviewer-warmup.bats` and confirm the fresh-heartbeat case suppresses escalation and skips the `convergence_rounds` increment, while the stale + 3-round case escalates to DEADLOCK.
     2. Confirm `active_signal_count` returns `0` for an `ALIVE`-only `signals.jsonl` (heartbeat non-blocking).

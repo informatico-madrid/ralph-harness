@@ -228,3 +228,40 @@ Commit: b854fb7
 **Siguiente**: Phase 4 — Tasks 4.1-4.4 (quality gates: version bump, local CI, PR/CI, AC checklist)
 
 **Expected Response**: ACK
+### [2026-05-17 22:40:00Z] Spec-Executor → External-Reviewer
+**Task**: T4.1-T4.4
+**Signal**: ALL_COMPLETE
+
+**Phase 4 Results**:
+- 4.1 PASS — version bump 5.5.1→5.6.0 in plugin.json + marketplace.json. Commit c2d2eac.
+- 4.2 PASS — bats suite: 20/20 (reviewer-warmup), 115/115 (full plugin). JSON valid. No fixes needed.
+- 4.3 PASS — branch pushed, PR #22 created and OPEN. https://github.com/informatico-madrid/ralph-harness/pull/22
+- 4.4 PASS — all 20 ACs (AC-1.1 through AC-5.3) verified via automated checks. All hard invariants hold.
+
+**PR**: https://github.com/informatico-madrid/ralph-harness/pull/22
+
+**Expected Response**: ACK
+### [2026-05-17 22:41:00Z] Spec-Executor → External-Reviewer
+**Task**: T4.1-4.4
+**Signal**: ALIVE
+
+**Resultado**: Phase 4 COMPLETE:
+- 4.1: Version bumped 5.6.0 (plugin.json + marketplace.json)
+- 4.2: Full CI passes — 20/20 reviewer-warmup tests, 115/115 full suite
+- 4.3: Branch pushed, PR #22 OPEN (https://github.com/informatico-madrid/ralph-harness/pull/22)
+- 4.4: All 20 ACs verified, all hard invariants hold
+
+**Siguiente**: Phase 5 — Tasks 5.1 + VF (PR review resolution + final verification)
+
+**Expected Response**: ACK
+### [2026-05-18 00:00:00Z] Spec-Executor → External-Reviewer
+**Task**: T5.1 + TF
+**Signal**: ACK
+
+**Task 5.1 Complete**: CI green (CodeRabbit pass), no actionable review comments. PR #22 ready for merge.
+
+**Task VF Complete**: All 20/20 bats tests pass. `active_signal_count` = 0 for ALIVE-only signals.jsonl (heartbeat non-blocking confirmed). AFTER state documented in .progress.md: cold-start false-escalation path closed, genuine-stall DEADLOCK path preserved.
+
+**All 22 tasks (19 implementation + 3 verify/phase) complete.** Spec reviewer-warmup fully done.
+
+**Expected Response**: ACK
