@@ -52,7 +52,11 @@ esac
 
 # --- Read stdin ---
 INPUT="$(cat)"
-INPUT_LINES="$(echo "$INPUT" | wc -l)"
+INPUT_LINES="$(echo "$INPUT" | wc -l 2>/dev/null || echo 0)"
+if ! [[ "$INPUT_LINES" =~ ^[0-9]+$ ]]; then
+  echo "[ralphharness] WARN: wc returned non-numeric line count, treating as 0" >&2
+  INPUT_LINES=0
+fi
 
 # --- Pair-debug: always pass through ---
 if [ "$PAIR_DEBUG" -eq 1 ]; then
@@ -86,15 +90,24 @@ fi
 
 # --- Evict to disk ---
 TOOL_RESULTS_DIR="${SPEC_PATH}/.tool-results"
-mkdir -p "$TOOL_RESULTS_DIR"
+if ! mkdir -p "$TOOL_RESULTS_DIR" 2>/dev/null; then
+  echo "$INPUT"
+  echo "[ralphharness] WARN: failed to create .tool-results/, passing through" >&2
+  exit 0
+fi
 
 TIMESTAMP="$(date -u +%Y%m%dT%H%M%SZ)"
 EVICT_FILE="${TOOL_RESULTS_DIR}/${TOOL_KIND}-${TIMESTAMP}.txt"
 
 # Write full content to disk
-printf '%s\n' "$INPUT" > "$EVICT_FILE"
+if ! printf '%s\n' "$INPUT" > "$EVICT_FILE" 2>/dev/null; then
+  echo "$INPUT"
+  echo "[ralphharness] WARN: failed to write evicted output to $EVICT_FILE, passing through" >&2
+  exit 0
+fi
 
 # Emit first 50 lines as preview
-echo "$INPUT" | head -n 50
+PREVIEW="$(echo "$INPUT" | head -n 50 2>/dev/null || echo "")"
+echo "$PREVIEW"
 echo ""
 echo "[evicted] ${INPUT_LINES} lines total, full output: .tool-results/${TOOL_KIND}-${TIMESTAMP}.txt"

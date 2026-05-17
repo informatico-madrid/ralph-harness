@@ -181,7 +181,7 @@ Focus: Add error handling, improve robustness, version bump in implement.md comp
   - _Requirements: NFR-4_
   - _Design: Error Handling / Failure Modes_
 
-- [ ] 2.3 Improve error handling in evict-tool-result.sh
+- [x] 2.3 Improve error handling in evict-tool-result.sh
   - **Do**:
     1. Validate `tool_kind` is one of the 4 allowed values (`grep|gitdiff|fileread|lsfind`)
     2. Add `set -o pipefail`
