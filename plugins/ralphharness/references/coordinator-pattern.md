@@ -34,9 +34,20 @@ Read `$SPEC_PATH/.ralph-state.json` to get current state:
   "taskIndex": "<current task index, 0-based>",
   "totalTasks": "<total task count>",
   "taskIteration": "<retry count for current task>",
-  "maxTaskIterations": "<max retries>"
+  "maxTaskIterations": "<max retries>",
+  "state": {
+    "executionPhase": "poc | refactor | test | quality"
+  }
 }
 ```
+
+**executionPhase Field**: The coordinator writes the `executionPhase` field to `.ralph-state.json → state.executionPhase` at each phase transition:
+- `poc` — Phase 1 (Make It Work): set when taskIndex points to Phase 1 tasks
+- `refactor` — Phase 2 (Refactoring): set when taskIndex points to Phase 2 tasks
+- `test` — Phase 3 (Testing): set when taskIndex points to Phase 3 tasks
+- `quality` — Phase 4 (Quality Gates): set when taskIndex points to Phase 4 tasks
+
+This field is read by `implement.md` to gate phase-specific reference loading (e.g., `verification-layers.md` only loaded in `test`/`quality` phases, `phase-rules.md` only in `all`/`quality` phases).
 
 **ERROR: Missing/Corrupt State File**
 
@@ -715,9 +726,56 @@ Updated fields (all other fields preserved as-is):
 }
 ```
 
+### executionPhase State Write
+
+At each phase transition, the coordinator writes the `executionPhase` field to `.ralph-state.json`. This field is read by `implement.md` to gate phase-specific reference loading (see `implement.md` Phase-Conditional Reference Loading):
+
+| Phase | executionPhase value |
+|-------|---------------------|
+| Phase 1 (POC) | `poc` |
+| Phase 2 (Refactor) | `refactor` |
+| Phase 3 (Testing) | `test` |
+| Phase 4 (Quality) | `quality` |
+| Phase 5 (PR Lifecycle) | `quality` (same as Phase 4) |
+
+**Implementation**: When the completion signal fires (taskIndex >= totalTasks), merge the next phase's executionPhase into state:
+```bash
+jq --arg phase "$NEXT_PHASE_VALUE" '.state.executionPhase = $phase' "$SPEC_PATH/.ralph-state.json" > "$SPEC_PATH/.ralph-state.json.tmp" && mv "$SPEC_PATH/.ralph-state.json.tmp" "$SPEC_PATH/.ralph-state.json"
+```
+
+When all tasks complete (final phase), clear `executionPhase`:
+```bash
+jq 'del(.state.executionPhase)' "$SPEC_PATH/.ralph-state.json" > "$SPEC_PATH/.ralph-state.json.tmp" && mv "$SPEC_PATH/.ralph-state.json.tmp" "$SPEC_PATH/.ralph-state.json"
+```
+
+If `executionPhase` is not set in state, references default to `all` (load all references).
+
 Check if all tasks complete:
 - If taskIndex >= totalTasks: proceed to Completion Signal
 - If taskIndex < totalTasks: continue to next iteration (loop re-invokes coordinator)
+
+## Prompt Rule — Tool Result Eviction (AC-5.4)
+
+When a Claude Code tool (Read, Bash, Grep, Edit, Write, Agent, etc.) produces output that exceeds per-kind thresholds, route the output through the eviction helper instead of using it directly:
+
+| Tool kind | Threshold |
+|-----------|-----------|
+| grep / rg | 100 lines |
+| git diff | 200 lines |
+| file read | 500 lines |
+| ls / find | 300 lines |
+
+**Eviction rule**: When output exceeds the threshold:
+1. Route the full output through `evict-tool-result.sh` (with `--pair-debug` flag if in pair-debug mode)
+2. Use only the returned preview (first 50 lines + summary) in the conversation
+3. The full output is written to `$SPEC_PATH/.tool-results/<kind>-<timestamp>.txt`
+
+**Pair-debug exception**: Never route pair-debug debug-logging output through eviction. When `PAIR-DEBUG` is active in chat.md (indicated by `PAIR-DEBUG` marker or `$SPEC_PATH/.pair-debug-active` file), pass all tool output through unchanged regardless of size.
+
+**Implementation**: Agent invokes `evict-tool-result.sh` per a prompt-rule, not via tool interception. The script runs:
+```bash
+echo "<tool output>" | evict-tool-result.sh "$SPEC_PATH" "<tool_kind>" [--pair-debug]
+```
 
 ## Git Push Strategy
 

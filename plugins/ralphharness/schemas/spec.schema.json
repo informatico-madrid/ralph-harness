@@ -235,6 +235,11 @@
           "default": 0,
           "description": "Consecutive native sync failures (disables at 3)"
         },
+        "executionPhase": {
+          "type": "string",
+          "enum": ["poc", "refactor", "test", "quality"],
+          "description": "Sub-phase within execution workflow (finer granularity than phase; absent means load all references)"
+        },
         "chat": {
           "type": "object",
           "description": "Chat protocol state for external reviewer coordination",
@@ -247,6 +252,28 @@
                   "minimum": 0,
                   "default": 0,
                   "description": "Last line read in chat.md by executor"
+                }
+              }
+            },
+            "coordinator": {
+              "type": "object",
+              "properties": {
+                "lastReadLine": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "default": 0,
+                  "description": "Last line read in chat.md by coordinator"
+                }
+              }
+            },
+            "reviewer": {
+              "type": "object",
+              "properties": {
+                "lastReadLine": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "default": 0,
+                  "description": "Last line read in chat.md by external reviewer"
                 }
               }
             }

@@ -48,7 +48,6 @@ collapse_previous_code_review_comments = true
 
 # Custom review instructions — provides project-specific context
 [prompt_vars]
-# Requirements that apply to ALL code reviews in this project
 requirements = """
 - This is the Smart Ralph project: a Claude Code plugin for spec-driven development
 - Smart Ralph transforms feature requests into structured specs (research, requirements, design, tasks) then executes them task-by-task
@@ -59,42 +58,33 @@ requirements = """
 - For specs: use specs/<name>/tasks.md with done-when + verify commands
 - Never commit directly to main — always PR
 
-[RENAMING FEATURE CONTEXT — feature/renaming → main]
-Branch: feature/renaming (67 commits)
-Goal: Rename ralph-specum → RalphHarness, Smart Ralph → RalphHarness everywhere
-INTENTIONAL PATTERNS (NOT BUGS — DO NOT FLAG):
-- All references of "ralph-specum" → "ralphharness"
-- All references of "Smart Ralph" → "RalphHarness"
-- All references of "ralph-harness" → "ralphharness"
-- Plugin path: plugins/ralph-specum/ → plugins/ralphharness/
-- Slash commands: /ralph-specum:* → /ralphharness:*
-- All agent names, scripts, docs, templates updated
-- Version bumps in .claude-plugin/plugin.json and .claude-plugin/marketplace.json
-- CHANGELOG updates from ralph-specum → RalphHarness
-KNOWN TRUE ISSUES (ALREADY FIXED, DO NOT FLAG AGAIN):
-#1 plugins/ralphharness/commands/cancel.md L77: Added SPEC_NAME variable
-#2 plugins/ralphharness/hooks/scripts/path-resolver.sh L136: tr → sed for space preservation
-#3 plugins/ralphharness/references/loop-safety.md L35: gmtime | strftime
-#4 plugins/ralphharness/references/phase-rules.md: Removed duplicate EOF sections
-#5 plugins/ralphharness/skills/e2e/examples/homeassistant-selector-map.skill.md L50: :scope >> → text=
-#6 plugins/ralphharness-codex/scripts/merge_state.py: FileExistsError try/except
-REVIEW FOCUS: Flag ONLY NEW issues unrelated to the rename. Do not flag any naming, version, or path changes from the rename. Do not flag build output or generated files.
+[PRE-EXECUTION-CRITIC CONTEXT — spec/pre-execution-critic → main]
+Branch: spec/pre-execution-critic (PR #20)
+Goal: Add 3-layer pre-execution security critic (role-contract + shell-pattern + risk classifier) with exit-code contract (0=allow, 2=block/confirm, other=UNKNOWN)
 
-[PAIR-DEBUG AUTO-TRIGGER CONTEXT — spec/collaboration-resolution-real → main]
-Branch: spec/collaboration-resolution-real (13 commits)
-Goal: Add automatic pair-debug mode trigger with 3-condition check and Driver/Navigator role split
 INTENTIONAL PATTERNS (NOT BUGS — DO NOT FLAG):
-- All edits to existing files are APPEND-ONLY (new sections/branches), except one value change in collaboration-resolution.md:53 (>3 → >10)
-- No new subagent_type: role files are prompt markdown only, NOT registered agents
-- No new .ralph-state.json fields: all state in chat.md and signals.jsonl
-- Filesystem-only coordination between Driver/Navigator: flock fd 200 for chat.md, fd 202 for signals.jsonl
-- Role files self-contained: no CLAUDE_PLUGIN_ROOT references, inlined flock blocks
-- Anti-anchoring rule: Navigator MUST propose >=2 independent hypotheses BEFORE first EXPERIMENT
-- Loop bound >10 cycles (raised from >3 per user override) — intentional
-- PAIR-DEBUG: marker for temporary debug logs — cleanup verifiable via single grep
-- Two-instance exportable role files: pair-debug-driver.md + pair-debug-navigator.md with Section 0 Bootstrap
-- Placement step in implement.md: onboarding asks where to run pair-debug roles (3 branches)
-REVIEW FOCUS: Flag ONLY genuine issues in production/plugin files and tests. Do not flag intentional patterns listed above. Exclude specs/ directory (planning artifacts).
+- Layer 1 (role-contract) ALWAYS short-circuits before Layer 2/3 — this is by design, path-based veto is the core security model
+- Exit code contract: 0=allow, 2=block-or-confirm, other non-zero = fail-safe confirm — no other exit codes used
+- signals.jsonl contains comment lines (starting with #); replay-signals.sh strips them with grep -v '^#' before jq — this is NOT a bug
+- pre-execution-check.sh is a bash script (~607 lines), NOT a Claude Code subagent
+- All edits to existing files are APPEND-ONLY (new sections, new table rows)
+- No new subagent_type entries — only bash hooks and test files
+- Version bump 5.3.0 → 5.4.0 is mandatory per CLAUDE.md version-bump mandate
+- Fixture path docs/guide.md is intentionally outside spec-executor Writes set for the "outside Writes" test
+- securityDecisionEvent schema adds path and command as nullable fields
+- Append-only signals.jsonl: resolution via new event, never deletion or in-place edit
+
+KNOWN TRUE ISSUES (ALREADY FIXED, DO NOT FLAG AGAIN):
+#1 local keyword used outside function (fixed in 1.18)
+#2 iteration used before initialization (fixed in 1.18)
+#3 lib-signals.sh sourced after append_signal usage (fixed in 1.18)
+#4 exit called inside subshell (fixed in 1.18)
+#5 Missing stdout verdict output on non-block path (fixed in 1.18)
+#6 4 bats tests missing --spec-path argument (fixed, caused reviewer DEADLOCK)
+#7 replay-signals.sh failing on comment lines (grep -v '^#' fix)
+#8 "outside Writes" test path src/index.ts was in-bounds (changed to docs/guide.md)
+
+REVIEW FOCUS: Flag ONLY genuine issues in pre-execution-check.sh logic, exit codes, shell patterns, and test coverage. Do not flag intentional patterns listed above. Do not flag spec planning documents in specs/.
 """
 
 # Summary-specific requirements
