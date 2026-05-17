@@ -19,7 +19,7 @@ Focus: Create middleware scripts, wire hooks, prove condensation works end-to-en
   - _Requirements: FR-1, FR-14, FR-18, FR-9_
   - _Design: lib-context.sh, fd-201 isolation_
 
-- [ ] 1.2 [P] Extend spec.schema.json with executionPhase and 3 chat pointers
+- [x] 1.2 [P] Extend spec.schema.json with executionPhase and 3 chat pointers
   - **Do**:
     1. Add `"executionPhase"` property under `state.properties`: enum `["poc", "refactor", "test", "quality"]`, optional
     2. Extend `chat` object properties to add `coordinator` and `reviewer` objects (same shape as existing `executor`: `lastReadLine` integer)
@@ -30,7 +30,7 @@ Focus: Create middleware scripts, wire hooks, prove condensation works end-to-en
   - _Requirements: FR-19, AC-4.1, AC-4.2_
   - _Design: spec.schema.json modifications_
 
-- [ ] 1.3 [P] Create condense-context.sh: arg parsing, degradation check, archive, gate
+- [x] 1.3 [P] Create condense-context.sh: arg parsing, degradation check, archive, gate
   - **Do**:
     1. Create `plugins/ralphharness/hooks/scripts/condense-context.sh`
     2. Parse args: `<spec_path> --mode <proactive|reactive|emergency>`
@@ -44,7 +44,7 @@ Focus: Create middleware scripts, wire hooks, prove condensation works end-to-en
   - _Requirements: FR-1, FR-3_
   - _Design: Condensation Algorithm steps 1-4_
 
-- [ ] 1.4 [P] Create condense-context.sh: min-pointer prefix condensation under flock
+- [x] 1.4 [P] Create condense-context.sh: min-pointer prefix condensation under flock
   - **Do**:
     1. Compute min pointer: `jq -r '[.chat.coordinator.lastReadLine // 0, .chat.executor.lastReadLine // 0, .chat.reviewer.lastReadLine // 0] | min'` from `.ralph-state.json`
     2. Under `flock` on `chat.md.lock` (fd 200): split chat.md into condensable prefix (lines 1..minPtr) and protected suffix (minPtr+1..EOF)
@@ -58,7 +58,7 @@ Focus: Create middleware scripts, wire hooks, prove condensation works end-to-en
   - _Requirements: FR-5, FR-7, FR-8_
   - _Design: Condensation Algorithm step 5_
 
-- [ ] 1.5 [P] Create condense-context.sh: pointer atomicity, progress.md, metrics, prune
+- [x] 1.5 [P] Create condense-context.sh: pointer atomicity, progress.md, metrics, prune
   - **Do**:
     1. Under same flock: rewrite 3 pointers in `.ralph-state.json` atomically via temp file + `mv`. Compute `removed = oldPrefixLines - newPrefixLines`. Each pointer `p` → `max(0, p - removed)`
     2. Condense `.progress.md`: keep `## Goal` + `## Learnings` sections verbatim, keep last 3 task entries from volatile section. Rewrite via temp file + `mv`.
