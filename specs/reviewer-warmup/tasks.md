@@ -27,7 +27,7 @@ Focus: land all functional edits end-to-end. Heartbeat emit + reviewer gate + bo
   - _Requirements: FR-1, FR-2, AC-1.1, AC-1.2, AC-1.3, AC-1.6_
   - _Design: Component A, Implementation Step 1_
 
-- [ ] 1.2 Add reviewer freshness gate to external-reviewer.md Section 4 + Step 6
+- [x] 1.2 Add reviewer freshness gate to external-reviewer.md Section 4 + Step 6
   - **Do**:
     1. Prepend the heartbeat freshness-gate algorithm block to `external-reviewer.md` Section 4, before the existing §4 "Convergence Detection" (lines ~380-405). Encode the 10-min time-based threshold, the newest-`ALIVE`/`STILL` `jq` selection, `date -u -d` epoch parse with fail-safe (parse failure / empty → `heartbeat_fresh=false`).
     2. Make the §4 `convergence_rounds` increment conditional on heartbeat freshness: fresh cycle → suppress verdict AND skip the increment + log the deferral string; stale/absent → existing §4 Convergence Detection runs unchanged (3-round → DEADLOCK).
@@ -39,7 +39,7 @@ Focus: land all functional edits end-to-end. Heartbeat emit + reviewer gate + bo
   - _Requirements: FR-3, FR-4, AC-2.1, AC-2.2, AC-2.3, AC-2.4_
   - _Design: Component B, Reviewer Freshness-Gate Algorithm, Implementation Step 2_
 
-- [ ] 1.3 Verify AC-2.5 byte-stable detection sections are untouched
+- [x] 1.3 Verify AC-2.5 byte-stable detection sections are untouched
   - **Do**:
     1. Confirm the edits in task 1.2 land only as a NEW gate block prepended to Section 4 plus the conditional `convergence_rounds` increment — nothing inside the byte-stable ranges.
     2. Verify FABRICATION §5 (lines ~409-428, esp. the "actively run the exact verify command" PASS-evidence rule) is byte-identical to its pre-edit state.
