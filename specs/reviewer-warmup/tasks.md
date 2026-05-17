@@ -188,7 +188,7 @@ Build `test-reviewer-warmup.bats` per the design Test Coverage Table (11 rows). 
 
 NEVER push to the default branch. Use a feature branch + PR. Branch should already be set by `/ralphharness:start`.
 
-- [ ] 4.1 Version bump 5.5.1 → 5.6.0
+- [x] 4.1 Version bump 5.5.1 → 5.6.0 - c2d2eac
   - **Do**:
     1. Bump `version` in `plugins/ralphharness/.claude-plugin/plugin.json` from `5.5.1` to `5.6.0`.
     2. Mirror the bump in the ralphharness entry of `.claude-plugin/marketplace.json`.
@@ -199,7 +199,7 @@ NEVER push to the default branch. Use a feature branch + PR. Branch should alrea
   - _Requirements: NFR-5_
   - _Design: File Structure, Implementation Step 8_
 
-- [ ] 4.2 [VERIFY] Full local CI: bats suite + JSON + bash -n
+- [x] 4.2 [VERIFY] Full local CI: bats suite + JSON + bash -n - 2fb5010
   - **Do**:
     1. Run the spec test file: `bats plugins/ralphharness/tests/test-reviewer-warmup.bats`.
     2. Run the broader plugin test suite to confirm no regression: `bats plugins/ralphharness/tests/`.
@@ -211,7 +211,7 @@ NEVER push to the default branch. Use a feature branch + PR. Branch should alrea
   - _Requirements: NFR-4, NFR-5_
   - _Design: Test Strategy_
 
-- [ ] 4.3 [VERIFY] Create PR and verify CI
+- [x] 4.3 [VERIFY] Create PR and verify CI - 2fb5010
   - **Do**:
     1. Verify current branch is a feature branch: `git branch --show-current`. If on `main`, STOP and alert the user (branch should be set at startup).
     2. Push the branch: `git push -u origin <branch-name>`.
@@ -224,7 +224,7 @@ NEVER push to the default branch. Use a feature branch + PR. Branch should alrea
   - _Requirements: NFR-5_
   - _Design: File Structure_
 
-- [ ] 4.4 [VERIFY] AC checklist
+- [x] 4.4 [VERIFY] AC checklist - 2fb5010
   - **Do**:
     1. Read `requirements.md`; for each AC (AC-1.1–AC-5.3) programmatically confirm satisfaction via grep on the touched artifacts and a `bats` run.
     2. Confirm hard invariants: `active_signal_count()` unchanged; no new `READING` kind; bootstrap no longer skips history; FABRICATION/e2e detection text byte-stable; `condense-context.sh`/`lib-context.sh` untouched.
