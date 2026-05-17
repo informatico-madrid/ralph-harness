@@ -98,7 +98,7 @@ Focus: land all functional edits end-to-end. Heartbeat emit + reviewer gate + bo
   - _Requirements: FR-7, AC-4.3, AC-4.4_
   - _Design: Exportable Reviewer Skill — Export mechanism, Implementation Step 5_
 
-- [ ] 1.8 Update docs: chat.md legend, signals.jsonl schema, coordinator-pattern.md
+- [x] 1.8 Update docs: chat.md legend, signals.jsonl schema, coordinator-pattern.md
   - **Do**:
     1. Update `templates/chat.md` legend rows for `ALIVE`/`STILL` to reflect their use as the executor liveness heartbeat in `signals.jsonl`.
     2. Add/extend the `templates/signals.jsonl` schema comment to document heartbeat events (`signal:ALIVE`/`STILL`, `reason` = `"step N/M: <activity>"`).

@@ -243,7 +243,7 @@ jq --argjson idx "$LINES" '.chat.executor.lastReadLine = $idx' \
 | **OVER** | Reviewer asked a question. Respond in `chat.md` using atomic append (see below) before delegating. |
 | **CONTINUE** | No-op. Proceed normally. |
 | **CLOSE** | Thread resolved. No-op. Proceed normally. |
-| **ALIVE** / **STILL** | Heartbeat signals. Ignore, do not block. |
+| **ALIVE** / **STILL** | Heartbeat liveness pings emitted by the executor to `signals.jsonl`. Non-blocking — ignored by the HOLD gate; `active_signal_count()` returns 0. The coordinator does not wait for or block on these signals. |
 | **ACK** | Reviewer acknowledged coordinator's last message. Proceed normally. |
 | **SPEC-ADJUSTMENT** | An agent proposes amending a `Verify` or `Done when` field. Process the amendment: validate scope (auto-approve if only Verify/Done-when fields change AND `investigation` is non-empty AND `affectedTasks` ≤ half of `totalTasks`). If approved, apply to all affected tasks and log under `## Spec Adjustments` in `.progress.md`. If rejected (scope too large or field affects acceptance criteria), write `SPEC-DEFICIENCY` to chat.md, set `awaitingHumanInput: true` in state, and halt. |
 | **SPEC-DEFICIENCY** | Human decision required on a spec criterion. HARD STOP. Do NOT delegate. Halt until human responds. |

@@ -25,8 +25,8 @@ Collaboration markers are written as `**Signal**: <NAME>` in chat.md message bod
 | OVER | Task/turn complete, no more output |
 | ACK | Acknowledged, understood |
 | CONTINUE | Work in progress, more to come |
-| STILL | Still alive/active, no progress but not dead |
-| ALIVE | Initial check-in or heartbeat |
+| STILL | Still alive/active, no progress but not dead — also used as the executor liveness **heartbeat** emitted to `signals.jsonl` (non-blocking, ignored by HOLD gate) |
+| ALIVE | Initial check-in or liveness **heartbeat** — also used as the executor heartbeat emitted to `signals.jsonl` with `reason: "step N/M: <activity>"` (non-blocking, ignored by HOLD gate) |
 | CLOSE | Conversation closing |
 | HYPOTHESIS | Proposed root-cause theory for a regression (typically reviewer) |
 | EXPERIMENT | A test/probe run to validate a hypothesis (typically executor) |
