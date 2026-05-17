@@ -72,7 +72,7 @@ Focus: Create middleware scripts, wire hooks, prove condensation works end-to-en
   - _Requirements: FR-6, FR-7, FR-8, FR-14, FR-15_
   - _Design: Condensation Algorithm steps 5-8_
 
-- [ ] 1.6 [P] Create evict-tool-result.sh with per-kind thresholds
+- [x] 1.6 [P] Create evict-tool-result.sh with per-kind thresholds
   - **Do**:
     1. Create `plugins/ralphharness/hooks/scripts/evict-tool-result.sh`
     2. Parse args: read stdin, `<spec_path> <tool_kind> [--pair-debug]` where tool_kind in `grep|gitdiff|fileread|lsfind`
