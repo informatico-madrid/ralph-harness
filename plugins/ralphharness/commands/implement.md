@@ -373,20 +373,76 @@ You are the execution COORDINATOR for spec: $spec
 
 Then Read and follow these references in order. They contain the complete coordinator logic:
 
-1. **Core delegation pattern**: Read `${CLAUDE_PLUGIN_ROOT}/references/coordinator-pattern.md` and follow it.
-   This covers: role definition, integrity rules, reading state, checking completion, parsing tasks, parallel group detection, task delegation (sequential, parallel, [VERIFY] tasks), modification request handling, verification layers, state updates, progress merge, completion signal, and PR lifecycle loop.
+### Context-Scoped Reference Loading (FR-12, AC-4.1–AC-4.7)
 
-2. **Failure handling**: Read `${CLAUDE_PLUGIN_ROOT}/references/failure-recovery.md` and follow it.
-   This covers: parsing failure output, fix task generation, fix task limits and depth checks, iterative recovery orchestrator, fix task insertion into tasks.md, fixTaskMap state tracking, and progress logging for fix chains.
+Phase-based conditional loading reduces context by loading only references relevant to the current execution phase. Read `.ralph-state.json` to determine `executionPhase`, then load references accordingly.
 
-3. **Verification after each task**: Read `${CLAUDE_PLUGIN_ROOT}/references/verification-layers.md` and follow it.
-   This covers: 5 layers (EXECUTOR_START, contradiction detection, TASK_COMPLETE signal, anti-fabrication, periodic artifact review via spec-reviewer). All must pass before advancing.
+```bash
+# Resolve executionPhase from state file
+EXECUTION_PHASE=$(jq -r '.state.executionPhase // empty' "$STATE_FILE" 2>/dev/null || true)
+# Fallback: if executionPhase absent, load all (safe default — AC-4.7)
+if [ -z "$EXECUTION_PHASE" ]; then
+    EXECUTION_PHASE="all"
+fi
 
-4. **Phase-specific behavior**: Read `${CLAUDE_PLUGIN_ROOT}/references/phase-rules.md` and follow it.
-   This covers: POC-first workflow (Phase 1-4), phase distribution, quality checkpoints, and phase-specific constraints.
+# Check for pair-debug marker in chat.md
+PAIR_DEBUG=0
+if [ -f "$CWD/$SPEC_PATH/chat.md" ] && grep -q 'PAIR-DEBUG' "$CWD/$SPEC_PATH/chat.md" 2>/dev/null; then
+    PAIR_DEBUG=1
+fi
 
-5. **Commit conventions**: Read `${CLAUDE_PLUGIN_ROOT}/references/commit-discipline.md` and follow it.
-   This covers: one commit per task, commit message format, spec file staging, and when to commit.
+# Always loaded (AC-4.5): core delegation + failure handling
+Read ${CLAUDE_PLUGIN_ROOT}/references/coordinator-pattern.md
+Read ${CLAUDE_PLUGIN_ROOT}/references/failure-recovery.md
+
+case "$EXECUTION_PHASE" in
+    poc)
+        # POC-first: working implementation only, no tests
+        ;;
+    refactor)
+        # Code cleanup: need commit discipline
+        Read ${CLAUDE_PLUGIN_ROOT}/references/commit-discipline.md
+        ;;
+    test)
+        # Testing phase: commit discipline + verification layers
+        Read ${CLAUDE_PLUGIN_ROOT}/references/commit-discipline.md
+        Read ${CLAUDE_PLUGIN_ROOT}/references/verification-layers.md
+        ;;
+    quality)
+        # Quality gates: commit discipline + verification layers
+        Read ${CLAUDE_PLUGIN_ROOT}/references/commit-discipline.md
+        Read ${CLAUDE_PLUGIN_ROOT}/references/verification-layers.md
+        Read ${CLAUDE_PLUGIN_ROOT}/references/phase-rules.md
+        ;;
+    all|*)
+        # Default (unknown phase or absent field): load all references — safe fallback
+        Read ${CLAUDE_PLUGIN_ROOT}/references/commit-discipline.md
+        Read ${CLAUDE_PLUGIN_ROOT}/references/verification-layers.md
+        Read ${CLAUDE_PLUGIN_ROOT}/references/phase-rules.md
+        ;;
+esac
+
+# Pair-debug: loaded only when chat.md contains PAIR-DEBUG marker
+if [ "$PAIR_DEBUG" -eq 1 ]; then
+    Read ${CLAUDE_PLUGIN_ROOT}/references/pair-debug.md
+fi
+```
+
+**Reference guide per phase:**
+
+| Reference | poc | refactor | test | quality | all (default) |
+|-----------|-----|----------|------|---------|---------------|
+| coordinator-pattern.md | Always | Always | Always | Always | Always |
+| failure-recovery.md | Always | Always | Always | Always | Always |
+| commit-discipline.md | | Yes | Yes | Yes | Yes |
+| verification-layers.md | | | Yes | Yes | Yes |
+| phase-rules.md | | | | Yes | Yes |
+| pair-debug.md | When PAIR-DEBUG in chat.md (same for all phases) | | | | |
+
+**Phase scoping invariants (AC-4.4):**
+- Scoping applies ONLY to implement.md reference loading
+- NO reference files are split, renamed, or moved (deferred to v0.2 if needed)
+- The plugin's `references/` directory structure is unchanged
 
 ### Key Coordinator Behaviors (quick reference — see coordinator-pattern.md for authoritative details)
 
@@ -394,6 +450,8 @@ Then Read and follow these references in order. They contain the complete coordi
 - **Fully autonomous.** Never ask questions or wait for user input.
 - **State-driven loop.** Read .ralph-state.json each iteration to determine current task.
 - **MANDATORY: Read task_review.md BEFORE delegating.** Before every task delegation, read `<basePath>/task_review.md` if it exists. If the current task is marked FAIL, DO NOT delegate—add a fix task first. If marked PENDING, treat it as a blocking state: do not delegate or advance to another task until the review is resolved.
+- **Tool result eviction (AC-3.5).** When a Claude Code tool (Read, Bash, Grep, etc.) returns an output exceeding per-kind thresholds (grep=100, gitdiff=200, fileread=500, lsfind=300 lines), route the oversized output through `evict-tool-result.sh` — write to `.tool-results/<kind>-<ts>.txt`, keep first 50 lines as preview. Pair-debug mode (`PAIR-DEBUG` in chat.md) always passes through without eviction.
+
 - **MANDATORY: Mechanical HOLD check BEFORE delegation.** Before delegating, run the canonical gate below.
   ```bash
   # BEGIN MALFORMED-CHECK

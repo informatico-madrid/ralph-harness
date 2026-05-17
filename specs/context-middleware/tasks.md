@@ -114,7 +114,7 @@ Focus: Create middleware scripts, wire hooks, prove condensation works end-to-en
   - _Requirements: FR-1, FR-9, AC-2.1, AC-2.3, AC-2.6_
   - _Design: stop-watcher.sh modifications, Two-gate trigger model_
 
-- [ ] 1.9 [P] Modify implement.md: phase-conditional reference loading + eviction prompt-rule
+- [x] 1.9 [P] Modify implement.md: phase-conditional reference loading + eviction prompt-rule
   - **Do**:
     1. Replace the static "Read these references" section (lines 374-389) with a `case` statement keyed off `executionPhase` from `.ralph-state.json`
     2. `executionPhase: poc` → load coordinator-pattern.md + failure-recovery.md
