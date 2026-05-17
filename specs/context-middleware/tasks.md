@@ -133,7 +133,7 @@ Focus: Create middleware scripts, wire hooks, prove condensation works end-to-en
   - _Requirements: FR-12, FR-13, FR-17, AC-3.5, AC-4.1, AC-4.2, AC-4.3, AC-4.4, AC-4.5, AC-4.7_
   - _Design: implement.md modifications_
 
-- [ ] 1.12 [P] Create POC fixture: oversized spec with all preserved markers
+- [x] 1.12 [P] Create POC fixture: oversized spec with all preserved markers
   - **Do**:
     1. Create temp spec dir with oversized chat.md (1200 lines) + .progress.md (900 lines)
     2. Seed: control signals [HOLD], collaboration signals HYPOTHESIS/BUG_DISCOVERY, pair-debug markers PAIR-DEBUG/Driver:/Navigator:
@@ -144,7 +144,7 @@ Focus: Create middleware scripts, wire hooks, prove condensation works end-to-en
   - **Commit**: None
   - _Design: Test Coverage Table — fixture for condense-context.sh proactive_
 
-- [ ] 1.13 [VERIFY] POC Checkpoint: end-to-end condensation on oversized fixture
+- [x] 1.13 [VERIFY] POC Checkpoint: end-to-end condensation on oversized fixture
   - **Do**:
     1. Run `condense-context.sh <temp_spec> --mode proactive` against a temp fixture with >2000 combined lines
     2. Verify: archive exists; chat.md condensed below threshold; signals preserved; metrics logged

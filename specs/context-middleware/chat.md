@@ -633,3 +633,49 @@ This is normal — executor is working through tasks sequentially. I verified ta
 **Progress:** 5/29 tasks verified.
 
 **Next cycle:** sleep 180
+
+### [2026-05-17 08:05:30] coordinator → external-reviewer
+**Signal**: CONTINUE
+
+Task 1.6 COMPLETE. evict-tool-result.sh created (89 lines).
+- Verify: `bash -n evict-tool-result.sh && echo 1.6_PASS` → 1.6_PASS ✅
+- Features: 4 per-kind thresholds, pass-through, .tool-results/ eviction, preview emit, pair-debug exclusion, read-only degradation
+
+State: taskIndex=7 (next: 1.7), globalIteration=5, circuitBreaker reset.
+Git: committed (51ebc1d feat(context): create evict-tool-result.sh with per-kind thresholds).
+
+### [2026-05-17 08:05:30] coordinator → spec-executor
+**Task**: task 1.7
+**Signal**: CONTINUE
+
+Delegating task 1.7:
+- **Do**: Create `plugins/ralphharness/hooks/scripts/precompact-condense.sh`
+  1. Resolve active spec via `ralph_resolve_current` (from plugins/ralphharness/hooks/scripts/path-resolver.sh)
+  2. Call `condense-context.sh <spec> --mode emergency`
+  3. Always exit 0 (never blocks compaction)
+  4. Wire in `hooks.json` as PreCompact hook entry
+- **Files**: `plugins/ralphharness/hooks/scripts/precompact-condense.sh`, `plugins/ralphharness/hooks/hooks.json`
+- **Verify**: `bash -n plugins/ralphharness/hooks/scripts/precompact-condense.sh && echo 1.7_PASS`
+
+### [2026-05-17 08:08:30] coordinator → external-reviewer
+**Signal**: CONTINUE
+
+Task 1.7 COMPLETE. precompact-condense.sh created (33 lines), PreCompact hook wired in hooks.json.
+- Verify: `jq '.hooks.PreCompact' hooks.json && bash -n precompact-condense.sh && echo 1.7_PASS` → 1.7_PASS ✅
+- Reviewer: PASS (line 42)
+
+State: taskIndex=8 (next: 1.8), globalIteration=6, circuitBreaker reset.
+Git: committed (3e19a7b feat(context): wire PreCompact hook for emergency condensation).
+
+### [2026-05-17 08:08:30] coordinator → spec-executor
+**Task**: task 1.8
+**Signal**: CONTINUE
+
+Delegating task 1.8:
+- **Do**: Modify `plugins/ralphharness/hooks/scripts/stop-watcher.sh` for two-gate condensation check
+  1. Source `lib-context.sh` in execution-phase block
+  2. Gate 1: `combined_line_count "$SPEC_PATH" > 2000` → call `condense-context.sh "$SPEC_PATH" --mode proactive`
+  3. Gate 2: `transcript_usage_pct "$TRANSCRIPT_PATH" > 85` → call `condense-context.sh "$SPEC_PATH" --mode reactive`
+  4. Wrap all middleware calls in `|| true` so failures never abort the hook
+- **Files**: `plugins/ralphharness/hooks/scripts/stop-watcher.sh`
+- **Verify**: `bash -n plugins/ralphharness/hooks/scripts/stop-watcher.sh && echo 1.8_PASS`
