@@ -672,18 +672,17 @@ fi
 ## Step 5: Completion
 
 When all tasks complete (taskIndex >= totalTasks):
-1. Verify all tasks marked [x] in tasks.md
-2. Delete .ralph-state.json
-3. Keep .progress.md (preserve learnings and history)
-4. Cleanup orphaned temp progress files: `find "$SPEC_PATH" -name ".progress-task-*.md" -mmin +60 -delete 2>/dev/null || true`
-5. Update spec index: `./plugins/ralphharness/hooks/scripts/update-spec-index.sh --quiet`
-6. Commit remaining spec changes:
+1. Delete state files (`.ralph-state.json`), condensation artifacts (`.archive.*.md` and `.tool-results/`), and verify tasks marked [x]
+2. Keep .progress.md (preserve learnings and history)
+3. Cleanup orphaned temp progress files: `find "$SPEC_PATH" -name ".progress-task-*.md" -mmin +60 -delete 2>/dev/null || true`
+4. Update spec index: `./plugins/ralphharness/hooks/scripts/update-spec-index.sh --quiet`
+5. Commit remaining spec changes:
    ```bash
    git add "$SPEC_PATH/tasks.md" "$SPEC_PATH/.progress.md" ./specs/.index/
    git diff --cached --quiet || git commit -m "chore(spec): final progress update for $spec"
    ```
-7. Check for PR link: `gh pr view --json url -q .url 2>/dev/null`
-8. Output: ALL_TASKS_COMPLETE (and PR link if exists)
+6. Check for PR link: `gh pr view --json url -q .url 2>/dev/null`
+7. Output: ALL_TASKS_COMPLETE (and PR link if exists)
 
 ## Output on Start
 
