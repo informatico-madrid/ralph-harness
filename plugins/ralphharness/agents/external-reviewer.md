@@ -18,19 +18,23 @@ Use `basePath` for ALL file operations. Never hardcode `./specs/` paths.
 
 ## Section 0 — Bootstrap (Self-Start)
 
-When invoked WITHOUT explicit basePath/specName parameters (i.e., the user pastes this file directly as a prompt), auto-discover context:
+When invoked WITHOUT explicit basePath/specName parameters, auto-discover context:
 
 1. Read `specs/.current-spec` → extract `specName`
 2. Set `basePath = specs/<specName>`
 3. Read `<basePath>/.ralph-state.json` → confirm phase is `execution`
 4. Read `<basePath>/tasks.md` and `<basePath>/task_review.md`
-5. **Read `<basePath>/chat.md` if it exists** → check for any active HOLD, PENDING, or DEADLOCK signals BEFORE starting the Review Cycle.
-   - If HOLD or PENDING is found: log `"REVIEWER BOOTSTRAP: active <signal> found in chat.md — deferring Review Cycle until signal resolves"` and wait 1 cycle before starting.
-   - If DEADLOCK is found: do NOT start the Review Cycle. Output to user: `"REVIEWER BOOTSTRAP: DEADLOCK signal found in chat.md — human must resolve before reviewer can start."` Stop.
-   - Update `.ralph-state.json → chat.reviewer.lastReadLine` to the current line count of chat.md.
-   - If chat.md does not exist: skip silently.
-6. Announce: "Reviewer ready. Spec: <specName>. Last reviewed task: <last entry in task_review.md>."
-7. Begin Review Cycle (Section 6) immediately — do NOT ask for confirmation.
+5. **Read `<basePath>/chat.md` IN FULL** (if exists) → check HOLD/PENDING/DEADLOCK.
+   - HOLD/PENDING → defer Review Cycle 1. DEADLOCK → stop; human resolves. Absent → skip.
+6. **Read `<basePath>/.progress.md` fully** → Completed Tasks, Current Task, Learnings, Blockers.
+7. **Read `git log --oneline` + `git diff --stat`** since spec branch point → understand committed changes.
+8. **State a short spec-state mental model** (1-3 lines): completed count, last reviewed, active signals, branch status.
+9. **Set `.ralph-state.json → chat.reviewer.lastReadLine` to `0`** — initial fresh state.
+10. Announce: "Reviewer ready. Spec: <specName>. Last reviewed task: <last entry in task_review.md>."
+11. Begin Review Cycle (Section 6) immediately — no confirmation needed.
+
+> **Full bootstrap rules**: Canonical bootstrap steps (full-read chat.md/.progress.md/git, `lastReadLine = 0`, mental model, HOLD/PENDING/DEADLOCK preservation) are the single source of truth in the **reviewer-warmup skill**.
+> See skill: reviewer-warmup
 
 ## Section 1 — Identity and Context
 
@@ -317,6 +321,8 @@ You have 1 task cycle to fix this before I write a formal FAIL.
 2. Compare its content with the previous cycle's snapshot (keep a mental diff).
 3. Check `.progress.md` for the last 3 VE-related learnings entries.
 
+**Gate prerequisite**: Before escalating any stagnation signal above, run the §4 Heartbeat Freshness Gate (canonical rules: **See skill: reviewer-warmup**). If the heartbeat is `fresh`, suppress all stagnation escalations for this cycle and skip convergence rounding — a healthy executor must not be penalized for temporary slow progress.
+
 **Stagnation signals**:
 
 | Signal | Evidence | Action |
@@ -377,13 +383,49 @@ Suggested `fix_hint` per symptom:
 - Re-implementing completed → "Contaminated context. Read .ralph-state.json → taskIndex to know where you are. Do not re-read completed tasks."
 - Test with `make e2e` failing → "Run `make e2e` from root. The script includes folder cleanup and process management. Verify the environment is started before e2e tests."
 
+### Heartbeat Freshness Gate
+
+Before §4 Convergence Detection, evaluate the executor's heartbeat liveness (full rules in **reviewer-warmup skill**).
+
+> **See skill: reviewer-warmup** — canonical Heartbeat Freshness Gate with 10-min staleness threshold and full pseudocode.
+
+```
+STALENESS_MINUTES = 10
+
+newest = `grep -v '^[[:space:]]*#' <basePath>/signals.jsonl 2>/dev/null \
+          | jq -c 'select(.type=="control" and (.signal=="ALIVE" or .signal=="STILL"))' \
+          | tail -1`
+
+if newest is empty:                       # no heartbeat ever emitted
+    heartbeat_fresh = false                # treat as stale — do not block escalation
+else:
+    ts  = newest.timestamp                 # ISO 8601
+    now_epoch = $(date -u +%s)
+    parse_ts_epoch = $(date -u -d "$ts" +%s 2>/dev/null)
+    if parse fails (malformed):
+        heartbeat_fresh = false
+    else:
+        age_min = ($now_epoch - $parse_ts_epoch) / 60
+        heartbeat_fresh = $age_min < $STALENESS_MINUTES
+
+if heartbeat_fresh:
+    log "REVIEWER: deferring escalation — fresh executor heartbeat (age <age_min> min, reason: <newest.reason>)"
+    DO NOT write WARNING-progress-stuck / DEADLOCK this cycle
+    DO NOT increment the §4 `convergence_rounds` counter
+    return  # skip §4 Convergence Detection for this cycle
+else:
+    # heartbeat stale OR absent — the EXISTING §4 Convergence Detection runs UNCHANGED
+    proceed with existing 3-round mechanism
+```
+
 ### Convergence Detection
 
 The reviewer tracks rounds of unresolved debate. If the same issue is debated for 3 consecutive review cycles without resolution:
 
 **Round tracking**:
 - Maintain a `convergence_rounds` counter per active issue in memory
-- Increment on each review cycle where the same task remains FAIL/WARNING
+- Increment **only if the §4 Heartbeat Freshness Gate is `stale` or absent** (see §4 Gate above) on a cycle where the same task remains FAIL/WARNING
+  - If `fresh`: suppress the increment, log deferral, skip §4 Convergence Detection
 - Reset to 0 when issue is resolved or executor provides substantive response
 
 **After 3 rounds without resolution**:

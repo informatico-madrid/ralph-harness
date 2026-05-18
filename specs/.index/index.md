@@ -3,15 +3,15 @@
 Auto-generated summary of all specs across configured directories.
 See [index-state.json](./index-state.json) for machine-readable data.
 
-**Last updated:** 2026-05-17T08:29:57Z
+**Last updated:** 2026-05-17T21:11:26Z
 
 ## Directories (1)
 
 | Directory | Specs | Default |
 |-----------|-------|---------|
-| ./specs | 53 | Yes |
+| ./specs | 54 | Yes |
 
-## All Specs (53)
+## All Specs (54)
 
 | Spec | Directory | Phase | Status |
 |------|-----------|-------|--------|
@@ -67,7 +67,8 @@ See [index-state.json](./index-state.json) for machine-readable data.
 | code-review-fixes | ./specs | new |  |
 | signal-log-and-ci-autodetect | ./specs | completed | done |
 | pre-execution-critic | ./specs | complete |  |
-| context-middleware | ./specs | execution | 11/29 tasks |
+| context-middleware | ./specs | complete |  |
+| reviewer-warmup | ./specs | tasks | awaiting approval |
 
 ---
 
