@@ -370,7 +370,7 @@ git-diff assertion and the E2E gate-integration task.
   - **Done when**: Both suites pass.
   - **Commit**: `chore(tests): pass quality checkpoint` (only if fixes needed)
 
-- [ ] 3.7 Create `test-task-metrics.bats` — pass / fail / count
+- [x] 3.7 Create `test-task-metrics.bats` — pass / fail / count
   - **Do**:
     1. Create the bats file; `setup()` writes a `fixture-multiphase` spec dir + state file.
     2. Cases: `taskIndex` advanced ⇒ one `pass` line for index-1 + `lastMetricTaskIndex` updated; `taskIteration` up no advance ⇒ one `fail` line for current index; N advancements ⇒ N lines, zero empty lines.

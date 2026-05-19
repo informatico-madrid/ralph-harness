@@ -158,3 +158,28 @@ write_tasks() {
     # Verify the WARN was logged to .progress.md
     grep -q 'WARN.*signals.jsonl write failed' "$SPEC_PATH/.progress.md"
 }
+
+# ---- Case 5: append-only discipline — assertion exists + git diff clean ----
+@test "append-only assertion exists in stop-watcher.sh" {
+    # The stop-watcher.sh must contain the append-only assertion block
+    # (task 1.8: insertion at start of loop-control block)
+    local sw_file="$REPO_ROOT/plugins/ralphharness/hooks/scripts/stop-watcher.sh"
+    [ -f "$sw_file" ]
+
+    # Verify the assertion logic is present: looks for deletion count in git diff
+    grep -q 'deletion_count\|_deletion_count\|APPEND-ONLY' "$sw_file"
+}
+
+@test "git diff append-only discipline — zero content deletions" {
+    # Assert that stop-watcher.sh changes from main are purely appended.
+    # `^-` lines in a git diff that start with `-` followed by something
+    # other than `-` represent content deletions (not the `--- a/b` headers).
+    # Bats tests run in a temp directory so we must use absolute paths.
+    local abs_path
+    abs_path=$(cd "$REPO_ROOT" && pwd)
+
+    local deletion_count
+    deletion_count=$(git -C "$abs_path" diff main -- plugins/ralphharness/hooks/scripts/stop-watcher.sh | grep -c '^-[^-]' || true)
+    deletion_count=${deletion_count%%[^0-9]*}
+    [ "$deletion_count" -eq 0 ]
+}
