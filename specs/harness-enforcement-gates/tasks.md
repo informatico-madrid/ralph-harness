@@ -364,7 +364,7 @@ git-diff assertion and the E2E gate-integration task.
   - _Requirements: FR-9, FR-10, AC-3.1..3.5, NFR-6_
   - _Design: Test Coverage Table row 10_
 
-- [ ] 3.6 [VERIFY] Quality checkpoint: sequential-gate + exit-gate suites green
+- [x] 3.6 [VERIFY] Quality checkpoint: sequential-gate + exit-gate suites green
   - **Do**: Run `test-verify-sequential-gate.bats` and `test-phase-exit-gate.bats`.
   - **Verify**: `bats plugins/ralphharness/tests/test-verify-sequential-gate.bats && bats plugins/ralphharness/tests/test-phase-exit-gate.bats`
   - **Done when**: Both suites pass.
