@@ -483,7 +483,7 @@ NEVER push to the default branch. Use the existing feature branch and a PR.
 
 Continuous PR validation — CI monitoring, review-comment resolution, final verification.
 
-- [ ] 5.1 Monitor CI and resolve failures
+- [x] 5.1 Monitor CI and resolve failures
   - **Do**:
     1. `gh pr checks --watch` until CI completes.
     2. On any failure: read `gh pr checks`, fix locally, `git push`, re-verify.
@@ -492,7 +492,7 @@ Continuous PR validation — CI monitoring, review-comment resolution, final ver
   - **Verify**: `gh pr checks` shows all checks passing.
   - **Commit**: `fix(harness): resolve CI failure` (only if fixes needed)
 
-- [ ] 5.2 Resolve code-review comments
+- [x] 5.2 Resolve code-review comments
   - **Do**:
     1. Fetch review comments: `gh api repos/<owner>/<repo>/pulls/<n>/comments`.
     2. Address each actionable comment with a surgical fix; reply/resolve.
