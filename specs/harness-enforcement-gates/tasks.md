@@ -260,7 +260,7 @@ verify with direct shell invocation against ad-hoc fixtures.
   - _Requirements: US-1..US-6_
   - _Design: Implementation Steps 1-8_
 
-- [ ] 1.G [VERIFY] Phase 1 exit gate
+- [x] 1.G [VERIFY] Phase 1 exit gate
   - **Do**: Confirm all preceding tasks and checkpoints of Phase 1 are complete and green.
   - **Verify**: All Phase 1 `[VERIFY]` tasks above are `[x]`; `bash -n` passes on both scripts.
   - **Done when**: Phase 1 is fully satisfied; safe to advance to Phase 2.
