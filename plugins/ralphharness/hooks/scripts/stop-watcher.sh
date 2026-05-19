@@ -706,6 +706,9 @@ if [ "$PHASE" = "execution" ] && [ "$TASK_INDEX" -lt "$TOTAL_TASKS" ]; then
       exit 0
     fi
 
+    # Capture task-mark snapshot at start of each loop iteration (AC-5.1, AC-5.2)
+    capture_task_marks "$SPEC_PATH" "$TASKS_FILE" "$STATE_FILE" 2>/dev/null || true
+
     # BEGIN HOLD-GATE
     # Mechanical active-signal gate (Layer 2). Source of truth: signals.jsonl.
     [ ! -f "$SPEC_PATH/signals.jsonl" ] && cp "$CLAUDE_PLUGIN_ROOT/templates/signals.jsonl" "$SPEC_PATH/signals.jsonl"
@@ -925,4 +928,48 @@ gate_verify_sequential() {
       return 0
     fi
     return 1
+}
+
+# Capture a snapshot of checked task IDs from tasks.md for task-mark integrity
+# guard.  Builds {"checkedTaskIds":[...],"capturedAt":"<ISO>"} and merges it
+# into .ralph-state.json.taskMarkSnapshot atomically.
+capture_task_marks() {
+    local spec_path="$1"
+    local tasks_file="$2"
+    local state_file="$3"
+
+    if [ ! -f "$tasks_file" ]; then
+        return 0
+    fi
+
+    local captured_at
+    captured_at=$(date -u +%FT%TZ)
+
+    # Build JSON array of checked task IDs (0-based index)
+    local checked_ids
+    checked_ids=$(awk '
+        /^- \[x\]/ { printf "%d\n", idx; idx++ ; next }
+        /^- \[[ x]\]/ { idx++; next }
+        { next }
+    ' "$tasks_file")
+
+    # Build JSON array string
+    local ids_json
+    ids_json=$(printf '%s\n' "$checked_ids" | jq -R 'tonumber' | jq -s '.')
+
+    local payload
+    payload=$(jq -n \
+      --argjson ids "$ids_json" \
+      --arg ts "$captured_at" \
+      '{checkedTaskIds: $ids, capturedAt: $ts}')
+
+    # Atomically update state file — merge into taskMarkSnapshot
+    if [ -f "$state_file" ]; then
+        local tmp="${state_file}.tmp"
+        if jq --argjson snap "$payload" '.taskMarkSnapshot = $snap' "$state_file" > "$tmp" 2>/dev/null; then
+            mv "$tmp" "$state_file"
+        else
+            rm -f "$tmp"
+        fi
+    fi
 }

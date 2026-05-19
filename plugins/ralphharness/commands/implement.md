@@ -109,7 +109,8 @@ Update `.ralph-state.json` by merging these fields into the existing object:
   "awaitingApproval": false,
   "nativeTaskMap": {},
   "nativeSyncEnabled": true,
-  "nativeSyncFailureCount": 0
+  "nativeSyncFailureCount": 0,
+  "taskMarkSnapshot": null
 }
 ```
 
@@ -143,6 +144,7 @@ jq --argjson taskIndex <first_incomplete> \
      nativeTaskMap: {},
      nativeSyncEnabled: true,
      nativeSyncFailureCount: 0,
+     taskMarkSnapshot: null,
      circuitBreaker: {
        state: "closed",
        consecutiveFailures: 0,
