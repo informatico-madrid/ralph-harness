@@ -685,6 +685,13 @@ if [ "$PHASE" = "execution" ] && [ "$TASK_INDEX" -lt "$TOTAL_TASKS" ]; then
     RECOVERY_MODE=$(jq -r '.recoveryMode // false' "$STATE_FILE" 2>/dev/null || echo "false")
     MAX_TASK_ITER=$(jq -r '.maxTaskIterations // 5' "$STATE_FILE" 2>/dev/null || echo "5")
 
+    # Sequential VERIFY gate (FR-1, AC-1.1, AC-1.3)
+    gate_verify_sequential "$SPEC_PATH" "$TASKS_FILE" "$TASK_INDEX"
+    if [ $? -ne 0 ]; then
+      echo "[ralphharness] VERIFY gate blocked — not emitting continuation prompt" >&2
+      exit 0
+    fi
+
     # BEGIN HOLD-GATE
     # Mechanical active-signal gate (Layer 2). Source of truth: signals.jsonl.
     [ ! -f "$SPEC_PATH/signals.jsonl" ] && cp "$CLAUDE_PLUGIN_ROOT/templates/signals.jsonl" "$SPEC_PATH/signals.jsonl"

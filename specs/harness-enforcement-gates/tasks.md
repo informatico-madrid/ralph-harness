@@ -83,7 +83,7 @@ verify with direct shell invocation against ad-hoc fixtures.
   - _Requirements: FR-2, AC-1.2, AC-1.7_
   - _Design: Component 1, Implementation Step 2_
 
-- [ ] 1.7 Add `gate_verify_sequential` call line inside loop-control block
+- [x] 1.7 Add `gate_verify_sequential` call line inside loop-control block
   - **Do**:
     1. Add **one** call line inside the existing loop-control `if`-body, immediately before the BEGIN HOLD-GATE block: invoke `gate_verify_sequential`; on non-zero, `exit 0` (same shape as HOLD-GATE `exit 0`) — no continuation prompt.
     2. This is the only added line in existing flow; mirrors the existing in-block `source lib-signals.sh` precedent. Do not edit any other line.
