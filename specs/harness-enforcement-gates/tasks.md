@@ -29,7 +29,7 @@ verify with direct shell invocation against ad-hoc fixtures.
   - _Requirements: FR-5, AC-2.1_
   - _Design: Component 2, Implementation Step 1_
 
-- [ ] 1.2 Implement base-ref resolution in `verify-fix-present.sh`
+- [x] 1.2 Implement base-ref resolution in `verify-fix-present.sh`
   - **Do**:
     1. Compute `base=$(git merge-base HEAD origin/main)`.
     2. On failure, fall back to `.checkpoint.sha` from `<spec>/.ralph-state.json` (resolve spec via `RALPH_CWD`/current-spec); log WARN `origin/main unreachable, base=<sha>` to stderr.
