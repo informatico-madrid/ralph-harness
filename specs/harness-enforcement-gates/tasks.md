@@ -354,7 +354,7 @@ git-diff assertion and the E2E gate-integration task.
   - _Requirements: FR-1, FR-2, FR-3, AC-1.1..1.5, AC-1.7, NFR-6_
   - _Design: Test Coverage Table rows 1-3_
 
-- [ ] 3.5 Create `test-phase-exit-gate.bats` — task-planner emission
+- [x] 3.5 Create `test-phase-exit-gate.bats` — task-planner emission — 72c09eb
   - **Do**:
     1. Create the bats file; assert a generated multi-phase `tasks.md` fixture has exactly one `[VERIFY] Phase X exit gate` as the last task of each phase block.
   - **Files**: `plugins/ralphharness/tests/test-phase-exit-gate.bats`
