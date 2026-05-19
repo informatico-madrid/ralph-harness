@@ -248,7 +248,7 @@ verify with direct shell invocation against ad-hoc fixtures.
   - _Requirements: FR-8, AC-2.6_
   - _Design: Component 2 callers, Implementation Step 8_
 
-- [ ] 1.24 POC milestone — all 5 gates wired end-to-end
+- [x] 1.24 POC milestone — all 5 gates wired end-to-end
   - **Do**:
     1. Build a throwaway fixture spec dir with `tasks.md` (a skipped preceding `[VERIFY]`), `signals.jsonl`, `task_review.md`, `.ralph-state.json`.
     2. Run `stop-watcher.sh` against it; confirm `gate_verify_sequential` blocks (no continuation, DEADLOCK appended).
