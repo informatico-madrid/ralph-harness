@@ -113,6 +113,8 @@ When the reviewer must escalate an issue to the executor, it uses the structured
 **Expected Response**: Human resolves, then CONTINUE
 ```
 
+**DEADLOCK signal routing**: When writing a DEADLOCK, also append a `control` signal (`status:"active"`) to `signals.jsonl` via `append_signal`, not only to `chat.md`. This ensures the mechanical HOLD-GATE fires. The DEADLOCK control payload must carry `source:"external-reviewer"`, `reason` describing the deadlock, `taskIndex` set to the current task, and `status:"active"`.
+
 ## Section 1c — Human as Participant
 
 The human is a full participant in the review process with special privileges.

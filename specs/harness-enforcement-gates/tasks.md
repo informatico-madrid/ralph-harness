@@ -121,7 +121,7 @@ verify with direct shell invocation against ad-hoc fixtures.
   - _Requirements: FR-9, FR-10, AC-3.1, AC-3.4_
   - _Design: Component 3, Implementation Step 4_
 
-- [ ] 1.11 [VERIFY] Quality checkpoint: agent-file edits well-formed
+- [x] 1.11 [VERIFY] Quality checkpoint: agent-file edits well-formed
   - **Do**: Confirm `external-reviewer.md` and `task-planner.md` edits are syntactically valid markdown and reference real artifacts (`signals.jsonl`, `append_signal`, `[VERIFY]`).
   - **Verify**: `grep -q 'signals.jsonl' plugins/ralphharness/agents/external-reviewer.md && grep -qi 'exit gate' plugins/ralphharness/agents/task-planner.md && echo PASS`
   - **Done when**: Both edits present and consistent with design.
