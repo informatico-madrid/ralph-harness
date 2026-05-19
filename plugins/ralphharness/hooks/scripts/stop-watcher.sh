@@ -867,6 +867,9 @@ STOP_WATCHER_REASON_EOF
         "reason": $reason,
         "systemMessage": $msg
       }'
+
+    # Emit per-task metric for this advancement
+    emit_task_metric "$SPEC_PATH" "$STATE_FILE"
 fi
 
 # Cleanup orphaned temp progress files (from interrupted parallel batches)

@@ -139,7 +139,7 @@ verify with direct shell invocation against ad-hoc fixtures.
   - _Requirements: FR-11, AC-4.1, AC-4.2, AC-4.4, AC-4.5_
   - _Design: Component 4, Implementation Step 5_
 
-- [ ] 1.13 Add `emit_task_metric` call line inside loop-control block
+- [x] 1.13 Add `emit_task_metric` call line inside loop-control block
   - **Do**:
     1. Add **one** call line inside the existing loop-control `if`-body, after the continuation prompt is built, invoking `emit_task_metric`. Do not edit any other line.
   - **Files**: `plugins/ralphharness/hooks/scripts/stop-watcher.sh`
