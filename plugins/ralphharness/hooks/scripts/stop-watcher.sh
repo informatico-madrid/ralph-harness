@@ -699,6 +699,19 @@ if [ "$PHASE" = "execution" ] && [ "$TASK_INDEX" -lt "$TOTAL_TASKS" ]; then
         fi
     fi
 
+    # Also check spec-executor.md wasn't modified (only appended to)
+    local _executor_prev=$(git hash HEAD -- plugins/ralphharness/agents/spec-executor.md 2>/dev/null || true)
+    if [ -n "$_executor_prev" ]; then
+        local _executor_curr=$(git hash -- plugins/ralphharness/agents/spec-executor.md 2>/dev/null || true)
+        if [ "$_executor_prev" != "$_executor_curr" ]; then
+            local _executor_del=$(git diff HEAD -- plugins/ralphharness/agents/spec-executor.md | grep -c '^-' || true)
+            if [ "$_executor_del" -gt 0 ]; then
+                echo "APPEND-ONLY VIOLATION in spec-executor.md: $_executor_del deletions" >&2
+                exit 1
+            fi
+        fi
+    fi
+
     # Sequential VERIFY gate (FR-1, AC-1.1, AC-1.3)
     gate_verify_sequential "$SPEC_PATH" "$TASKS_FILE" "$TASK_INDEX"
     if [ $? -ne 0 ]; then
