@@ -210,6 +210,19 @@ Loading session before mcp-playwright fails silently with undefined appUrl.
 After implementation tasks: if new `data-testid` attributes added AND `ui-map.local.md` exists AND `allowWrite=true` → append selectors to ui-map following Incremental Update protocol.
 </ve_tasks>
 
+<task_mark_integrity>
+When the integrity gate (gate_task_mark_integrity) detects a task marked [x]->[ ] (un-mark):
+- DO NOT simply re-mark it as [x]. The gate has identified a potential issue.
+- Instead, follow this procedure:
+  (a) Log the un-mark event to `.progress.md` with task index and reason.
+  (b) Attempt Tier 2 consensus triage: invoke `bmad-consensus-party` skill via the Skill tool.
+  (c) If the skill is unavailable (no SKILL.md found), spawn 2-3 consensus subagents
+      via Task tool (external-reviewer + qa-engineer) and take a majority verdict.
+  (d) If the triage agent produces VERDICT: FALSE_POSITIVE — understand the problem,
+      resolve it if possible, and let the loop continue.
+  (e) If GENUINE_CONFLICT or triage cannot resolve — escalate to human with full context.
+</task_mark_integrity>
+
 <exit_code_gate>
 For test tasks: test runner exit code is single source of truth.
 

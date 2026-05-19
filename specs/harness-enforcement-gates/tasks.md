@@ -165,7 +165,7 @@ verify with direct shell invocation against ad-hoc fixtures.
   - **Done when**: No syntax errors; metric line appears on a smoke run.
   - **Commit**: `chore(stop-watcher): pass quality checkpoint` (only if fixes needed)
 
-- [ ] 1.16 Append `gate_task_mark_integrity()` — snapshot + detection
+- [x] 1.16 Append `gate_task_mark_integrity()` — snapshot + detection
   - **Do**:
     1. **Append** (end of file) `gate_task_mark_integrity <spec_path> <state_file>`.
     2. If `task_review.md` absent ⇒ WARN to `.progress.md`, return 0; read `taskMarkSnapshot` (`// null`) — on `null` take fresh snapshot, return 0.
@@ -178,7 +178,7 @@ verify with direct shell invocation against ad-hoc fixtures.
   - _Requirements: FR-13, FR-14, FR-18, AC-5.1, AC-5.2, AC-5.6, AC-5.7, AC-5.8, AC-5.9_
   - _Design: Component 5 (snapshot+detect), Implementation Step 6_
 
-- [ ] 1.17 Add Tier 1 DEADLOCK emission to `gate_task_mark_integrity()`
+  - [x] 1.17 Add Tier 1 DEADLOCK emission to `gate_task_mark_integrity()`
   - **Do**:
     1. On ≥1 illegitimate un-mark: `append_signal` a DEADLOCK control payload (`source:"gate_task_mark_integrity"`, `reason:"illegitimate un-mark of task <id>"`, `taskId`, `status:"active"`); `return 1`.
     2. Clean / legitimate ⇒ `return 0`.

@@ -731,6 +731,9 @@ if [ "$PHASE" = "execution" ] && [ "$TASK_INDEX" -lt "$TOTAL_TASKS" ]; then
     fi
     # END HOLD-GATE
 
+    # Task-mark integrity guard — detects illegitimate [x]->[ ] un-marks before delegation
+    gate_task_mark_integrity "$SPEC_PATH" "$STATE_FILE" 2>/dev/null || true
+
     # --- Context Middleware: Two-gate condensation check ---
     # Source shared context helpers (lib-context.sh, FR-1, FR-9)
     source "$CLAUDE_PLUGIN_ROOT/hooks/scripts/lib-context.sh" 2>/dev/null || true
