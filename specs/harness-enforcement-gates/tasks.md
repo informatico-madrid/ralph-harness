@@ -217,7 +217,7 @@ verify with direct shell invocation against ad-hoc fixtures.
   - _Requirements: FR-16, AC-5.4_
   - _Design: Component 5 Tier 2, Implementation Step 7_
 
-- [ ] 1.21 Wire Tier 2 resume + Tier 3 human escalation in `implement.md`
+- [x] 1.21 Wire Tier 2 resume + Tier 3 human escalation in `implement.md`
   - **Do**:
     1. On `FALSE_POSITIVE`: coordinator marks the DEADLOCK signal `status:"resolved"`, logs resolution to `.progress.md`, loop resumes.
     2. On `GENUINE_CONFLICT`: DEADLOCK stays `active`; emit a human-facing escalation block (same shape as existing ESCALATE blocks) describing the un-marked task, its PASS entry, and triage rationale; set `awaitingApproval=true`.

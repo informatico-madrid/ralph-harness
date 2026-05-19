@@ -686,15 +686,47 @@ fi
        truly is complete, or the PASS entry in task_review.md confirms the work.
      - `VERDICT: GENUINE_CONFLICT` — the subagents could not resolve the conflict; the un-mark
        represents a genuine disagreement that requires human intervention.
-  5. **Handle verdict:**
-     - **FALSE_POSITIVE**: set `awaitingApproval=false`; use `jq` to set the DEADLOCK signal's
-       `status` to `"resolved"` in `signals.jsonl` (under flock); log the resolution to
-       `.progress.md`; remove the HOLD so the loop continues.
-     - **GENUINE_CONFLICT**: leave the DEADLOCK signal `status:"active"`; emit a human-facing
-       escalation block inline (same shape as existing ESCALATE blocks) that describes the
-       un-marked task, its PASS entry content from `task_review.md`, and the triage rationale;
-       set `awaitingApproval=true` in `.ralph-state.json` to pause execution pending human
-       review.
+  5. **Handle verdict** — implement the two paths below based on the triage result:
+
+     **Path A — FALSE_POSITIVE (resume the loop):**
+     1. Resolve the DEADLOCK signal in `signals.jsonl` using `jq`:
+        ```bash
+        task_idx=$(jq -r '.task' "$deadlock_signal_file" 2>/dev/null || echo "$taskIndex")
+        (
+          exec 202>"${SPEC_PATH}/signals.jsonl.lock"
+          flock -x -w 5 202 || { echo "[triage] WARN: could not lock signals.jsonl, degradation" >> "$SPEC_PATH/.progress.md"; return 0; }
+          jq --argjson idx "$task_idx" \
+             '[.[] | if (.task == ($idx | tostring)) or (.taskIndex == $idx) then .status = "resolved" else . end]' \
+             "$SPEC_PATH/signals.jsonl" > "$SPEC_PATH/signals.jsonl.tmp" && \
+          mv "$SPEC_PATH/signals.jsonl.tmp" "$SPEC_PATH/signals.jsonl"
+        ) 202>"${SPEC_PATH}/signals.jsonl.lock"
+        ```
+     2. Log the resolution: append to `.progress.md`:
+        `Tier-2 integrity triage: FALSE POSITIVE — resumed on task <taskIndex>`
+     3. The DEADLOCK is now resolved (status:"resolved" → `active_signal_count` returns 0);
+        the loop continues to the next task automatically.
+
+     **Path B — GENUINE_CONFLICT (Tier-3 human escalation):**
+     1. Leave the DEADLOCK signal `status:"active"` in `signals.jsonl` — do NOT modify it.
+     2. Emit a human-facing escalation block inline (same shape as existing ESCALATE blocks):
+        ```text
+        ### ESCALATION: Genuine conflict in integrity-triage for task <taskIndex> — <task_name>
+        - **Triage source**: `gate_task_mark_integrity`
+        - **Triage verdict**: GENUINE_CONFLICT — subagents could not resolve the conflict
+        - **Un-marked task**: T<taskIndex> — <task_name from tasks.md>
+        - **PASS entry** (task_review.md): <pass_entry_content or "none found">
+        - **Triage rationale**: <brief summary of why subagents could not resolve>
+        - **Action required**: Human review needed. Set `awaitingApproval=false` in
+          `.ralph-state.json` to resume execution after review.
+        ```
+     3. Set `awaitingApproval=true` in `.ralph-state.json`:
+        ```bash
+        jq '.awaitingApproval = true' "$STATE_FILE" > "${STATE_FILE}.tmp" && \
+        mv "${STATE_FILE}.tmp" "$STATE_FILE"
+        ```
+     4. The coordinator outputs a block JSON (not continuation), halting execution pending
+        human intervention. The coordinator does NOT advance taskIndex while
+        `awaitingApproval=true`.
 
 - **MANDATORY: Read chat.md BEFORE delegating.** Before every task delegation, read `<basePath>/chat.md` for signals from external-reviewer. Obey HOLD, PENDING, DEADLOCK signals immediately—do not delegate if blocked.
 - **CRITICAL: Verify independently, never trust executor.** The executor may FABRICATE verification results (claimed tests passed when they failed, claimed coverage when coverage was 0%). 
