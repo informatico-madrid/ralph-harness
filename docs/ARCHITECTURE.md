@@ -44,6 +44,7 @@ plugins/ralphharness/
 │       ├── migrate-state.sh # One-shot legacy ciCommands migrator
 │       ├── replay-signals.sh # Incident review: signals.jsonl replay at iteration N
 │       └── lib-signals.sh # Shared signal helpers (append_signal, active_signal_count)
+│   └── verify-fix-present.sh # Three-state diff: committed ∪ staged ∪ working-tree (v5.7.0)
 ├── references/ # 20 internal reference documents
 │   ├── coordinator-pattern.md # Coordinator logic bible
 │   ├── failure-recovery.md # Recovery + repair loops
@@ -205,8 +206,10 @@ Autonomous task implementation. Receives a single task from tasks.md and execute
 **Rules:**
 - Max 5 task iterations before ESCALATE
 - Must commit after every task (commit message discipline)
+- Post-commit check: calls `verify-fix-present.sh <file>` for each file in task's Files list (non-zero → investigate before TASK_COMPLETE)
 - VE task failures: spec-executor itself calls qa-engineer for re-verification
 - No retries for same failing approach
+- Task-mark integrity: on illegitimate `[x]`→`[ ]` un-mark, runs Tier 2 subagent triage (bmad-consensus-party → subagent fallback) before escalating to human; never auto-reverts
 
 ### 3.2 qa-engineer (`agents/qa-engineer.md`)
 
@@ -238,6 +241,7 @@ POC-first task breakdown generator.
 - VE tasks inserted every 2-3 implementation tasks
 - VE = Verification Executive (Playwright E2E)
 - verify-fix-reverify loop: VE fail → fix → VE again → pass
+- **Phase Exit Gate**: Task-planner ALWAYS appends exactly one `[VERIFY] Phase X exit gate` task as the FINAL task of every phase block (even when the phase already ends with a `[VERIFY]` checkpoint). Enforced by `gate_verify_sequential` in stop-watcher.sh.
 
 **Task Format:**
 ```
@@ -328,6 +332,18 @@ Spec file refactorer. Incrementally updates spec files after spec changes.
 **Main loop controller.** Activated when spec-executor or coordinator outputs a signal.
 
 **Signal HOLD Gate**: Before delegation, coordinator checks `signals.jsonl` (not chat.md) for active HOLD/PENDING/DEADLOCK using jq: `jq -c 'select(.signal=="HOLD" or .signal=="PENDING" or .signal=="DEADLOCK") | select(.status=="active")'`. Count > 0 → blocks delegation. This is a mechanical check with no LLM interpretation. Legacy [HOLD] grep on chat.md is supported for backward compatibility (Phase 2 grace cycle).
+
+**Enforcement Gates (v5.7.0)**: The spec `harness-enforcement-gates` replaced 5 prose-only rules with deterministic shell gates:
+
+1. **Sequential VERIFY Gate** (`gate_verify_sequential`): Scans tasks.md for any `[VERIFY]` task at a lower index that is still `[ ]`. If found, logs `BLOCKED: preceding VERIFY task N unsatisfied`, emits a DEADLOCK control signal to `signals.jsonl`, and blocks advancement. This fixes the root cause of spec `mutation-score-ramp` where task 1.18 ([VERIFY]) was skipped and DEADLOCK in chat.md went unrespected.
+
+2. **Fix Presence Gate** (`verify-fix-present.sh`): Robust three-state diff — checks `git diff --quiet "$base" HEAD -- $file` (committed), `git diff --cached --quiet -- $file` (staged), and `git diff --quiet -- $file` (working-tree). Exit codes: 0 = fix present, 1 = file unchanged in all 3 states, 2 = file changed but pattern absent, 3 = base ref unresolvable (no `origin/main` and no checkpoint SHA). Replaces fragile `git diff HEAD` which only covers working-tree.
+
+3. **Phase Exit Gate**: Task-planner appends a `[VERIFY] Phase X exit gate` as the last task of each phase. The sequential VERIFY gate enforces this — phase advancement blocks until the exit gate task is completed. Fixes spec `mutation-score-ramp` where Phase A was not green before Phase B started.
+
+4. **Deterministic Metrics Gate** (`emit_task_metric`): Called after continuation prompt is built. Detects task advancement (`taskIndex > lastMetricTaskIndex` → `pass`, `taskIteration` increased without `taskIndex` advance → `fail`). Calls `write-metric.sh` to append one line to `.metrics.jsonl`. Idempotency guard via `lastMetricTaskIndex`/`lastMetricIteration` state fields prevents duplicate lines. Replaces the LLM-discretionary metrics block in `implement.md` which was frequently skipped.
+
+5. **Task-Mark Integrity Gate** (`gate_task_mark_integrity`): Detects illegitimate `[x]`→`[ ]` un-marks. Compares `taskMarkSnapshot` (stored in `.ralph-state.json`) against current tasks.md under `flock -e 201`. Classifies each un-mark: LEGITIMATE if `external_unmarks` counter increased, ILLEGITIMATE if the task has a PASS in `task_review.md` and `external_unmarks` didn't increase. On ILLEGITIMATE: emits DEADLOCK, triggers Tier 2 subagent triage (bmad-consensus-party skill → subagent fallback), only escalates to human on GENUINE_CONFLICT. Never auto-reverts.
 
 **Core Logic:**
 1. Read `.ralph-state.json`
@@ -674,4 +690,4 @@ Assembled from stop-watcher.sh detection logic and spec-executor.md output forma
 ---
 
 *Generated 2026-04-04 from codebase analysis, revised after counter-analysis review*
-*Updated 2026-05-19 — ALIVE/STILL heartbeat signals, reviewer-warmup skill (v5.6.0)*
+*Updated 2026-05-19 — ALIVE/STILL heartbeat signals (v5.6.0), enforcement gates (v5.7.0)*
