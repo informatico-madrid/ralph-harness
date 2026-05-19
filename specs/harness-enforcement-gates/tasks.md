@@ -18,7 +18,7 @@ Decision 3) plus one standalone helper script. Project type `cli` — verificati
 Focus: wire all 5 gates to a working state. Skip dedicated bats suites (Phase 3),
 verify with direct shell invocation against ad-hoc fixtures.
 
-- [ ] 1.1 Create `verify-fix-present.sh` helper script skeleton
+  - [x] 1.1 Create `verify-fix-present.sh` helper script skeleton
   - **Do**:
     1. Create `plugins/ralphharness/hooks/scripts/verify-fix-present.sh` with shebang `#!/usr/bin/env bash`, `set -euo pipefail`, arg parse `file=$1 pattern=${2:-}`, exit-code contract header comment (0 present / 1 unchanged / 2 pattern absent / 3 base unresolvable).
     2. `chmod +x` the file.
