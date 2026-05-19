@@ -289,13 +289,13 @@ match existing `stop-watcher.sh` / helper-script style. No behavior change.
   - **Commit**: `refactor(verify-fix): clarify exit-code paths`
   - _Design: Component 2_
 
-- [ ] 2.3 [VERIFY] Quality checkpoint: post-refactor syntax + append-only diff
+- [x] 2.3 [VERIFY] Quality checkpoint: post-refactor syntax + append-only diff
   - **Do**: `bash -n` both scripts; `git diff stop-watcher.sh` confirms zero deleted pre-existing lines.
   - **Verify**: `bash -n plugins/ralphharness/hooks/scripts/stop-watcher.sh && bash -n plugins/ralphharness/hooks/scripts/verify-fix-present.sh && echo PASS`
   - **Done when**: No syntax errors; append-only invariant intact.
   - **Commit**: `chore(harness): pass quality checkpoint` (only if fixes needed)
 
-- [ ] 2.4 Review `implement.md` edits for consistency and dead prose
+  - [x] 2.4 Review `implement.md` edits for consistency and dead prose
   - **Do**:
     1. Confirm the removed metrics block left no orphan references; the Tier-2/3 handler and Layer-3 re-point read consistently with surrounding coordinator prose; remove only dead prose this spec's changes created.
   - **Files**: `plugins/ralphharness/commands/implement.md`
@@ -304,7 +304,7 @@ match existing `stop-watcher.sh` / helper-script style. No behavior change.
   - **Commit**: `refactor(implement): clean up coordinator prose after gate wiring`
   - _Design: Component 4 FR-12, Component 5_
 
-- [ ] 2.5 [VERIFY] Phase 2 exit gate
+- [x] 2.5 [VERIFY] Phase 2 exit gate
   - **Do**: Confirm all preceding tasks and checkpoints of Phase 2 are complete and green.
   - **Verify**: All Phase 2 `[VERIFY]` tasks above are `[x]`; both scripts pass `bash -n`.
   - **Done when**: Phase 2 is fully satisfied; safe to advance to Phase 3.
