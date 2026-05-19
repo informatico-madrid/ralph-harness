@@ -94,13 +94,13 @@ verify with direct shell invocation against ad-hoc fixtures.
   - _Requirements: FR-1, AC-1.1, AC-6.2_
   - _Design: Component 1, Implementation Step 2_
 
-- [ ] 1.8 [VERIFY] Quality checkpoint: stop-watcher.sh syntax + append-only spot check
+- [x] 1.8 [VERIFY] Quality checkpoint: stop-watcher.sh syntax + append-only spot check
   - **Do**: `bash -n` the modified `stop-watcher.sh`; `git diff` it and confirm only appended function lines + the single call line are added.
   - **Verify**: `bash -n plugins/ralphharness/hooks/scripts/stop-watcher.sh && git diff plugins/ralphharness/hooks/scripts/stop-watcher.sh | grep -c '^-' | grep -qx 0 && echo PASS`
   - **Done when**: No syntax errors; zero deleted lines in the diff.
   - **Commit**: `chore(stop-watcher): pass quality checkpoint` (only if fixes needed)
 
-- [ ] 1.9 Modify `external-reviewer.md` — route DEADLOCK to `signals.jsonl`
+- [x] 1.9 Modify `external-reviewer.md` — route DEADLOCK to `signals.jsonl`
   - **Do**:
     1. In the DEADLOCK escalation section, add an instruction that the reviewer also appends a DEADLOCK `control` signal (`status:"active"`) to `signals.jsonl` via `append_signal`, not only to `chat.md`.
   - **Files**: `plugins/ralphharness/agents/external-reviewer.md`
@@ -189,7 +189,7 @@ verify with direct shell invocation against ad-hoc fixtures.
   - _Requirements: FR-15, AC-5.3_
   - _Design: Component 5 Tier 1, Implementation Step 6_
 
-- [ ] 1.18 Add `gate_task_mark_integrity` call line inside loop-control block
+- [x] 1.18 Add `gate_task_mark_integrity` call line inside loop-control block
   - **Do**:
     1. Add **one** call line inside the existing loop-control `if`-body, after the HOLD-GATE block and before continuation emission, invoking `gate_task_mark_integrity`; on non-zero ⇒ `exit 0` (halt, no continuation). Do not edit any other line.
   - **Files**: `plugins/ralphharness/hooks/scripts/stop-watcher.sh`
