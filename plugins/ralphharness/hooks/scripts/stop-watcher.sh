@@ -1049,3 +1049,130 @@ emit_task_metric() {
 
     return 0
 }
+
+# Task-mark integrity guard — detects illegitimate [x]->[ ] un-marks.
+# Reads taskMarkSnapshot from state, compares against current tasks.md,
+# classifies unmarked tasks using task_review.md PASS entries and
+# external_unmarks delta. Never writes external_unmarks; never re-marks.
+gate_task_mark_integrity() {
+    local spec_path="$1"
+    local state_file="$2"
+
+    # Resolve paths
+    local tasks_file="$CWD/$spec_path/tasks.md"
+    local review_file="$CWD/$spec_path/task_review.md"
+
+    # If task_review.md absent — skip guard (no review to check)
+    if [ ! -f "$review_file" ]; then
+        echo "[ralphharness] WARN: task_review.md absent from $spec_path; skipping task-mark integrity guard" >> "$CWD/$spec_path/.progress.md" 2>/dev/null
+        return 0
+    fi
+
+    # Read taskMarkSnapshot from state file
+    local snapshot
+    snapshot=$(jq -r '.taskMarkSnapshot // null' "$state_file" 2>/dev/null || echo "null")
+    if [ "$snapshot" = "null" ]; then
+        capture_task_marks "$spec_path" "$tasks_file" "$state_file" 2>/dev/null || true
+        return 0
+    fi
+
+    # Under flock on tasks.md.lock: read current checked IDs, detect un-marks, classify
+    (
+        exec 201>"${tasks_file}.lock"
+        flock -e 201 || exit 0
+
+        # Read current [x] task IDs from tasks.md (0-based indices)
+        local current_ids
+        current_ids=$(awk '
+            /^- \[x\]/ { printf "%d\n", idx; idx++; next }
+            /^- \[[ x]\]/ { idx++; next }
+            { next }
+        ' "$tasks_file" 2>/dev/null)
+
+        # Parse prior and current checked task IDs into arrays
+        local -a prior_ids=() current_ids_arr=()
+        while IFS= read -r id; do
+            [ -n "$id" ] && prior_ids+=("$id")
+        done <<< "$(echo "$snapshot" | jq -r '.checkedTaskIds // [] | .[]')"
+        while IFS= read -r id; do
+            [ -n "$id" ] && current_ids_arr+=("$id")
+        done <<< "$current_ids"
+
+        # Compute unmarked = prior - current
+        local -a unmarked=()
+        for pid in "${prior_ids[@]}"; do
+            local found=0
+            for cid in "${current_ids_arr[@]}"; do
+                if [ "$pid" = "$cid" ]; then found=1; break; fi
+            done
+            [ "$found" -eq 0 ] && unmarked+=("$pid")
+        done
+
+        # Classify each unmarked task: LEGITIMATE vs ILLEGITIMATE
+        local -a legitimate=() illegitimate=()
+        for tid in "${unmarked[@]}"; do
+            # hasPass = task_review.md has a PASS entry for this task
+            local grep_pattern="### \[task-${tid}\]"
+            local hasPass=0
+            if grep -q "$grep_pattern" "$review_file" 2>/dev/null; then
+                if awk -v pattern="$grep_pattern" '
+                    $0 ~ pattern { in_task=1; next }
+                    in_task && /^- status:/ { gsub(/^[[:space:]]*- status: */, ""); if (tolower($0) == "pass") print "1"; in_task=0 }
+                    in_task && /^### / { in_task=0 }
+                ' "$review_file" 2>/dev/null | grep -q .; then
+                    hasPass=1
+                fi
+            fi
+
+            # extInc = external_un_marks[tid] (current) > externalUnmarks[tid] (snapshot)
+            local extInc=0
+            local ext_current
+            ext_current=$(jq -r ".external_un_marks[\"$tid\"] // 0" "$state_file" 2>/dev/null || echo 0)
+            extInc=$(echo "$snapshot" | jq --arg tid "$tid" --argjson cur "$ext_current" '
+                ($cur > (if .externalUnmarks[$tid] then .externalUnmarks[$tid] else 0 end)) | if . then 1 else 0 end
+            ' 2>/dev/null || echo 0)
+
+            if [ "$hasPass" -eq 1 ] && [ "$extInc" -eq 0 ]; then
+                illegitimate+=("$tid")
+            else
+                legitimate+=("$tid")
+            fi
+        done
+
+        # Emit DEADLOCK for each illegitimate un-mark
+        for tid in "${illegitimate[@]}"; do
+            local payload
+            payload=$(jq -n \
+              --arg source "gate_task_mark_integrity" \
+              --arg reason "illegitimate un-mark of task ${tid}" \
+              --argjson taskId "$tid" \
+              --arg status "active" \
+              --arg timestamp "$(date -u +%FT%TZ)" \
+              '{type:"control",signal:"DEADLOCK",from:"gate_task_mark_integrity",to:"coordinator",taskId:$taskId,status:$status,timestamp:$timestamp,reason:$reason}')
+
+            if ! append_signal "$spec_path" "$payload"; then
+                echo "[ralphharness] WARN: signals.jsonl write failed, skipping DEADLOCK for task $tid" >> "$CWD/$spec_path/.progress.md" 2>/dev/null
+            fi
+        done
+
+        # Refresh taskMarkSnapshot under same lock
+        local captured_at
+        captured_at=$(date -u +%FT%TZ)
+        local ids_json
+        ids_json=$(printf '%s\n' "$current_ids" | jq -R 'tonumber' | jq -s '.')
+        local snap_payload
+        snap_payload=$(jq -n \
+          --argjson ids "$ids_json" \
+          --arg ts "$captured_at" \
+          '{checkedTaskIds: $ids, capturedAt: $ts}')
+
+        if [ -f "$state_file" ]; then
+            local tmp="${state_file}.tmp"
+            if jq --argjson snap "$snap_payload" '.taskMarkSnapshot = $snap' "$state_file" > "$tmp" 2>/dev/null; then
+                mv "$tmp" "$state_file"
+            else
+                rm -f "$tmp"
+            fi
+        fi
+    ) 201>"${tasks_file}.lock"
+}

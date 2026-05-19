@@ -159,7 +159,7 @@ verify with direct shell invocation against ad-hoc fixtures.
   - _Requirements: FR-12, AC-4.3_
   - _Design: Component 4 FR-12, Implementation Step 5_
 
-- [ ] 1.15 [VERIFY] Quality checkpoint: metrics wiring syntax + smoke
+- [x] 1.15 [VERIFY] Quality checkpoint: metrics wiring syntax + smoke
   - **Do**: `bash -n stop-watcher.sh`; smoke `emit_task_metric` against a throwaway fixture spec dir + state file, assert one `.metrics.jsonl` line written.
   - **Verify**: `bash -n plugins/ralphharness/hooks/scripts/stop-watcher.sh && echo PASS`
   - **Done when**: No syntax errors; metric line appears on a smoke run.
