@@ -733,6 +733,7 @@ fi
   - **Rule**: NEVER trust pasted verification output from spec-executor. ALWAYS run the verify command independently.
   - Extract verify command from tasks.md → run it yourself → compare actual result with claimed result.
   - If executor claimed "PASSED" but command exits non-zero → REJECT, increment taskIteration, log "FABRICATION detected".
+  - **Verify claimed fix presence** (FR-8, AC-2.6): for each file in the task's **Files** list, call `verify-fix-present.sh <file> [<pattern>]`; non-zero exit → FIX NOT PRESENT → REJECT as FABRICATION, increment taskIteration.
   - This is non-negotiable: executor has fabricated results multiple times in past.
 - **CI snapshot separation.** Task Verify commands (task-scoped) and global CI commands (project-wide linting, type-checking) must be reported separately. Both must pass. If task Verify passes but global CI fails: log `"TASK VERIFY PASS but GLOBAL CI FAIL"` to `.progress.md`, do NOT advance taskIndex. **Note**: Specific CI command discovery is deferred to Spec 4. The coordinator should check for available project CI commands if they exist.
 - **Completion check.** If taskIndex >= totalTasks, verify all [x] marks, delete state file, output ALL_TASKS_COMPLETE.

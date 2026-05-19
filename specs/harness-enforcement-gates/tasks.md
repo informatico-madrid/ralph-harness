@@ -238,7 +238,7 @@ verify with direct shell invocation against ad-hoc fixtures.
   - _Requirements: FR-7, AC-2.5_
   - _Design: Component 2 callers, Implementation Step 8_
 
-- [ ] 1.23 Re-point `implement.md` Layer 3 review to `verify-fix-present.sh`
+- [x] 1.23 Re-point `implement.md` Layer 3 review to `verify-fix-present.sh`
   - **Do**:
     1. In the Layer 3 anti-fabrication review, replace bare `git diff HEAD` with `verify-fix-present.sh <file> [<pattern>]`; non-zero ⇒ FABRICATION → REJECT.
   - **Files**: `plugins/ralphharness/commands/implement.md`
