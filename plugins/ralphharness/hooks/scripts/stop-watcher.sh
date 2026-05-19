@@ -685,6 +685,20 @@ if [ "$PHASE" = "execution" ] && [ "$TASK_INDEX" -lt "$TOTAL_TASKS" ]; then
     RECOVERY_MODE=$(jq -r '.recoveryMode // false' "$STATE_FILE" 2>/dev/null || echo "false")
     MAX_TASK_ITER=$(jq -r '.maxTaskIterations // 5' "$STATE_FILE" 2>/dev/null || echo "5")
 
+    # Append-only invariant: check that no existing lines were modified
+    local _prev_hash=$(git hash HEAD -- plugins/ralphharness/hooks/scripts/stop-watcher.sh 2>/dev/null || true)
+    if [ -n "$_prev_hash" ]; then
+        local _curr_hash=$(git hash -- plugins/ralphharness/hooks/scripts/stop-watcher.sh 2>/dev/null || true)
+        if [ "$_prev_hash" != "$_curr_hash" ]; then
+            # Count deletions — any deletion = policy violation
+            local _deletion_count=$(git diff HEAD -- plugins/ralphharness/hooks/scripts/stop-watcher.sh | grep -c '^-' || true)
+            if [ "$_deletion_count" -gt 0 ]; then
+                echo "APPEND-ONLY VIOLATION: $_deletion_count line(s) deleted" >&2
+                exit 1
+            fi
+        fi
+    fi
+
     # Sequential VERIFY gate (FR-1, AC-1.1, AC-1.3)
     gate_verify_sequential "$SPEC_PATH" "$TASKS_FILE" "$TASK_INDEX"
     if [ $? -ne 0 ]; then
