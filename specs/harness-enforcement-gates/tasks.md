@@ -507,7 +507,7 @@ Continuous PR validation — CI monitoring, review-comment resolution, final ver
   - **Done when**: All suites green; zero deleted lines in `stop-watcher.sh`; no regressions.
   - **Commit**: None
 
-- [ ] 5.G [VERIFY] Phase 5 exit gate
+- [x] 5.G [VERIFY] Phase 5 exit gate
   - **Do**: Confirm all preceding tasks and checkpoints of Phase 5 are complete and green; PR is mergeable, CI green, reviews resolved.
   - **Verify**: All Phase 5 `[VERIFY]` tasks above are `[x]`; `gh pr checks` green; `gh pr view --json mergeable -q .mergeable` is `MERGEABLE`.
   - **Done when**: Phase 5 fully satisfied; PR ready for merge (merge requires explicit user permission).
