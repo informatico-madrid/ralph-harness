@@ -402,7 +402,7 @@ git-diff assertion and the E2E gate-integration task.
   - _Requirements: FR-18, AC-5.8, AC-5.9, NFR-3, NFR-4, NFR-6_
   - _Design: Test Coverage Table rows 17-18_
 
-- [ ] 3.10 [VERIFY] Quality checkpoint: metrics + integrity suites green
+- [x] 3.10 [VERIFY] Quality checkpoint: metrics + integrity suites green
   - **Do**: Run `test-task-metrics.bats` and `test-mark-integrity-gate.bats`.
   - **Verify**: `bats plugins/ralphharness/tests/test-task-metrics.bats && bats plugins/ralphharness/tests/test-mark-integrity-gate.bats`
   - **Done when**: Both suites pass.
