@@ -110,7 +110,7 @@ verify with direct shell invocation against ad-hoc fixtures.
   - _Requirements: FR-4, AC-1.6_
   - _Design: external-reviewer DEADLOCK→signals, Implementation Step 3_
 
-- [ ] 1.10 Modify `task-planner.md` — add phase exit-gate emission rule
+- [x] 1.10 Modify `task-planner.md` — add phase exit-gate emission rule
   - **Do**:
     1. Add a mandatory rule: as the FINAL task of every phase block, task-planner ALWAYS appends exactly one `[VERIFY] Phase X exit gate` task, even when the phase already ends with a `[VERIFY]` checkpoint.
     2. Include the canonical task template (Do/Verify/Done when) from design Component 3.
