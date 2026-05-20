@@ -265,7 +265,7 @@ signal emission with the `phase` field. No new functionality.
   - _Requirements: FR-9_
   - _Design: Component 7, Decision #11_
 
-- [ ] 2.2 Add `SecurityLayer` with allowlist sanitisation
+- [x] 2.2 Add `SecurityLayer` with allowlist sanitisation
   > **REOPEN — Audit fix #B9** (ver `/home/malka/.claude/plans/haz-un-plan-para-sorted-grove.md` sección 6.A punto 10)
   > Motivo: `SecurityLayer` ignora `security_allowlist.yaml` y usa patrones hardcodeados sin `severity`/`id`. El YAML jamás se carga. El [VERIFY] anterior testeó un AWS key hardcodeado en código — no validó que el YAML se respete.
   > Criterios añadidos:

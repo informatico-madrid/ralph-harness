@@ -29,9 +29,9 @@ class Chunk:
     source_path: str
     spec_name: str
 
-    # Computed fields
-    id: str = field(init=False)
-    content_hash: str = field(init=False)
+    # Computed fields (optional override for tests / construction)
+    id: str = ""
+    content_hash: str = ""
 
     # Retrieval result fields (set by VectorDBProvider)
     score: float = 0.0
@@ -48,7 +48,9 @@ class Chunk:
     embedder_model: str = ""
 
     def __post_init__(self):
-        """Compute id and content_hash from content and source_path."""
-        raw = f"{self.source_path}:{self.source_line_start}:{self.content}"
-        self.content_hash = sha256(raw.encode()).hexdigest()
-        self.id = f"{self.spec_name}:{self.content_hash}"
+        """Compute id and content_hash from content and source_path, unless already set."""
+        if not self.content_hash:
+            raw = f"{self.source_path}:{self.source_line_start}:{self.content}"
+            self.content_hash = sha256(raw.encode()).hexdigest()
+        if not self.id:
+            self.id = f"{self.spec_name}:{self.content_hash}"
