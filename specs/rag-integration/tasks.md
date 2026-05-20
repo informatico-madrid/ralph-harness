@@ -100,7 +100,7 @@ except EmbedderError: print('PASS')" | grep -q PASS && echo PASS`
   - _Requirements: FR-3_
   - _Design: Component 5, Decision #5_
 
-- [ ] 1.8 Implement `AzureOpenAIEmbedder` (stub if endpoint unset)
+- [x] 1.8 Implement `AzureOpenAIEmbedder` (stub if endpoint unset)
   - **Do**:
     1. `rag/embedder/azure.py` — `AzureOpenAIEmbedder(endpoint, deployment_name, api_key)`.
     2. If `endpoint == ""`, `embed()` raises `EmbedderError("azure not configured")` immediately (fallback chain skips it silently).
