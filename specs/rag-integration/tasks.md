@@ -62,7 +62,7 @@ with direct shell smoke tests against ad-hoc fixtures.
   - **Done when**: All six subcommands exit 0.
   - **Commit**: `chore(rag): pass phase 1.A checkpoint`
 
-- [ ] 1.5 Define ABCs (`VectorDBProvider`, `Embedder`) and `Chunk` type
+- [x] 1.5 Define ABCs (`VectorDBProvider`, `Embedder`) and `Chunk` type
   - **Do**:
     1. `rag/providers/base.py` — `VectorDBProvider` ABC with `retrieve`, `index`, `health_check`.
     2. `rag/embedder/base.py` — `Embedder` ABC with `embed`, `embed_batch`, `dimensions` property; `EmbedderError` class.
@@ -74,7 +74,7 @@ with direct shell smoke tests against ad-hoc fixtures.
   - _Requirements: FR-2, FR-3, FR-9_
   - _Design: Components 4, 5_
 
-- [ ] 1.6 Implement `LocalEmbedder` over sentence-transformers
+- [x] 1.6 Implement `LocalEmbedder` over sentence-transformers
   - **Do**:
     1. `rag/embedder/local.py` — `LocalEmbedder` with lazy import of `sentence_transformers`.
     2. Default model `BAAI/bge-small-en-v1.5` (384-dim).
