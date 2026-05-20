@@ -130,7 +130,7 @@ If you've already created planning documents in BMAD, skip the research phase an
 /ralph-bmad:import ../bmad-projects/my-feature feature-name
 ```
 
-The import command converts BMAD's structured planning (PRD, epics, architecture) into smart-ralph's executable format. No manual reformatting needed — specs are ready to execute immediately.
+The import command converts BMAD's structured planning (PRD, epics, architecture) into RalphHarness's executable format. No manual reformatting needed — specs are ready to execute immediately.
 
 ---
 

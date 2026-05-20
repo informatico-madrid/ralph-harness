@@ -352,10 +352,10 @@ If yes:
    1. Open a second Claude Code session in the worktree directory (cd to the worktree first)
    2. Load the agent: @external-reviewer
    3. Tell it: "Review spec <specName> while spec-executor implements"
-   4. The reviewer will read and write to specs/<specName>/task_review.md and chat.md (FLOC-based coordination in real time)
+   4. The reviewer will read and write to specs/<specName>/task_review.md and chat.md (flock-based coordination in real time)
 
    The spec-executor is already configured to read task_review.md before each task.
-   The reviewer will also read and write chat.md (FLOC coordination in real time).
+   The reviewer will also read and write chat.md (flock coordination in real time).
    When the reviewer marks an item as FAIL, the spec-executor will stop and apply the fix.
    ```
 
