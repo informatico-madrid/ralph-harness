@@ -246,7 +246,7 @@ except EmbedderError: print('PASS')" | grep -q PASS && echo PASS`
 Goal: clean up the POC. Extract chunker, add security layer, centralise
 signal emission with the `phase` field. No new functionality.
 
-- [ ] 2.1 Extract `rag/chunker.py` with per-artifact strategies
+- [x] 2.1 Extract `rag/chunker.py` with per-artifact strategies
   > **REOPEN — Audit fix #M7, #M8** (ver `/home/malka/.claude/plans/haz-un-plan-para-sorted-grove.md` sección 6.C puntos 22, 23)
   > Motivo: `_chunk_python` no usa AST (split textual incorrecto que parte clases); `_chunk_markdown` no respeta `^##`/`^###` correctamente — `len(match.group(1))` puede valer 1 (h1) o 4+ (h4+) y rompe el target 800-token. El [VERIFY] anterior solo contó `len(chunks) >= 1`, no validó la estrategia.
   > Criterios añadidos:

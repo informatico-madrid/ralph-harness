@@ -6,6 +6,7 @@ Concrete embedders: LocalEmbedder, OpenAIEmbedder, AzureOpenAIEmbedder.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from collections.abc import Iterable
 from typing import Any
 
 
@@ -25,12 +26,21 @@ class Embedder(ABC):
     """
 
     @property
+    def tokenizer(self) -> Iterable[str] | None:
+        """Tokenizer for approximate token counting.
+
+        Returns an iterable of token strings, or None if unavailable.
+        Subclasses (e.g. LocalEmbedder) populate this after model load.
+        """
+        return None
+
+    @property
     @abstractmethod
     def dimensions(self) -> int:
         """Number of dimensions in the embedding vector."""
 
     @abstractmethod
-    async def embed(self, text: str) -> list[float]:
+    def embed(self, text: str) -> list[float]:
         """Embed a single text string.
 
         Args:
@@ -44,7 +54,7 @@ class Embedder(ABC):
         """
 
     @abstractmethod
-    async def embed_batch(self, texts: list[str]) -> list[list[float]]:
+    def embed_batch(self, texts: list[str]) -> list[list[float]]:
         """Embed a batch of text strings.
 
         Args:
@@ -58,7 +68,7 @@ class Embedder(ABC):
         """
 
     @abstractmethod
-    async def health_check(self) -> dict[str, Any]:
+    def health_check(self) -> dict[str, Any]:
         """Check the health of the embedder.
 
         Returns:

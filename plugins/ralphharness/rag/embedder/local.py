@@ -42,6 +42,13 @@ class LocalEmbedder(Embedder):
             return 384  # Default for bge-small-en-v1.5
         return self._dimensions
 
+    @property
+    def tokenizer(self) -> object | None:
+        """Tokenizer for approximate token counting."""
+        if not self._initialized:
+            return None
+        return self._tokenizer
+
     def _ensure_loaded(self) -> None:
         """Load the model lazily on first use."""
         if self._initialized:
