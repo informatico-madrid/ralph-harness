@@ -33,8 +33,56 @@ def cmd_index_all(args):
 
 
 def cmd_doctor(args):
-    """Stub doctor command."""
-    _print_stub(command="doctor")
+    """Doctor command: print tiered health report."""
+    from plugins.ralphharness.rag.config import RAGConfig
+
+    config = RAGConfig.load()
+
+    checks = []
+
+    # enabled
+    if config.enabled:
+        checks.append("OK     enabled: true")
+    else:
+        checks.append("WARN   enabled: false (RAG is disabled)")
+
+    # provider
+    checks.append(f"OK     provider: {config.provider}")
+
+    # embedder
+    embedder_status = "OK"
+    if config.embedder.provider == "local":
+        checks.append(f"OK     embeddings.provider: local (sentence-transformers)")
+    elif config.embedder.provider == "openai":
+        if config.embedder.api_key:
+            checks.append(f"OK     embeddings.provider: openai (key configured)")
+        else:
+            embedder_status = "WARN"
+            checks.append(f"WARN   embeddings.provider: openai (no API key configured)")
+    elif config.embedder.provider == "azure":
+        if config.embedder.azure_endpoint:
+            checks.append(f"OK     embeddings.provider: azure (endpoint configured)")
+        else:
+            embedder_status = "WARN"
+            checks.append(f"WARN   embeddings.provider: azure (no endpoint configured)")
+    else:
+        checks.append(f"WARN   embeddings.provider: unknown ({config.embedder.provider})")
+
+    # endpoints
+    if config.provider == "qdrant":
+        if config.vector_db.endpoint:
+            checks.append(f"OK     vector_db.endpoint: {config.vector_db.endpoint}")
+        else:
+            checks.append("WARN   vector_db.endpoint: not configured (will use default)")
+    elif config.provider == "faiss":
+        if config.vector_db.faiss_index_path:
+            checks.append(f"OK     faiss.index_path: {config.vector_db.faiss_index_path}")
+        else:
+            checks.append("WARN   faiss.index_path: not configured")
+
+    report = "\n".join(checks)
+    print(report)
+    sys.exit(0)
 
 
 def cmd_search(args):
