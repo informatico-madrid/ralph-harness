@@ -484,7 +484,7 @@ stop-watcher hook, and a real Ralph Loop iteration with RAG enabled.
   - **Done when**: All three commands exit 0 under disabled config (graceful empty output).
   - **Commit**: `chore(rag): pass phase 4.B checkpoint`
 
-- [ ] 4.7 Implement `OnboardingStep` framework + 7 concrete steps
+- [x] 4.7 Implement `OnboardingStep` framework + 7 concrete steps
   > **REOPEN — Audit fix #B3** (ver `/home/malka/.claude/plans/haz-un-plan-para-sorted-grove.md` sección 6.A punto 7)
   > Motivo: aparte del framework de onboarding, `cmd_index` (`__main__.py:75-77`) sigue siendo un stub que imprime `{"stub": true}` y nunca llama a `Chunker → SecurityLayer → service.index`. Esto bloquea CI use cases del FR-6 (manual reindex single source). El [VERIFY] anterior solo verificó las clases del framework — no `cmd_index` end-to-end.
   > Criterios añadidos:
