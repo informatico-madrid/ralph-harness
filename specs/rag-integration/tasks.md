@@ -126,7 +126,7 @@ except EmbedderError: print('PASS')" | grep -q PASS && echo PASS`
   - _Requirements: FR-3, NFR-5_
   - _Design: Component 5, Decision #5_
 
-- [ ] 1.10 [VERIFY] Phase 1.B checkpoint: embedder fallback chain works
+- [x] 1.10 [VERIFY] Phase 1.B checkpoint: embedder fallback chain works
   - **Do**: Import chain, assert exhaustion raises.
   - **Verify**: `cd /mnt/bunker_data/ai/smart-ralph && PYTHONPATH=. python -c "from plugins.ralphharness.rag.embedder.chain import EmbedderChain; from plugins.ralphharness.rag.embedder.base import EmbedderError
 try: EmbedderChain([]).embed('x')
@@ -134,7 +134,7 @@ except EmbedderError: print('PASS')" | grep -q PASS && echo PASS`
   - **Done when**: Empty chain raises `EmbedderError`.
   - **Commit**: `chore(rag): pass phase 1.B checkpoint`
 
-- [ ] 1.11 Implement `QdrantProvider` (health_check first)
+- [x] 1.11 Implement `QdrantProvider` (health_check first)
   - **Do**:
     1. `rag/providers/qdrant.py` — `QdrantProvider(endpoint, api_key, prefix)`.
     2. `health_check()` performs `qdrant_client.QdrantClient.get_collections()`; True on success, False on any exception.

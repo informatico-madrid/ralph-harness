@@ -14,8 +14,17 @@ from ..types import Chunk
 class VectorDBProvider(ABC):
     """Abstract base class for vector database providers.
 
-    All providers must implement retrieve, index, and health_check.
+    health_check is synchronous (simple connectivity check).
+    retrieve and index are async (can involve network I/O).
     """
+
+    @abstractmethod
+    def health_check(self) -> bool:
+        """Check if the vector database is reachable.
+
+        Returns:
+            True if reachable, False otherwise.
+        """
 
     @abstractmethod
     async def retrieve(self, query: str, collection: str, top_k: int = 3) -> list[Chunk]:
@@ -40,12 +49,4 @@ class VectorDBProvider(ABC):
 
         Returns:
             Number of chunks successfully indexed.
-        """
-
-    @abstractmethod
-    async def health_check(self) -> dict[str, Any]:
-        """Check the health of the vector database.
-
-        Returns:
-            Dict with status, latency_ms, and provider-specific details.
         """
