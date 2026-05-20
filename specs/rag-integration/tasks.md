@@ -22,7 +22,7 @@ running Qdrant, returning a chunk; with FAISS fallback and the
 embedder fallback chain in place. Skip dedicated test suites — verify
 with direct shell smoke tests against ad-hoc fixtures.
 
-- [ ] 1.1 Scaffold `plugins/ralphharness/rag/` Python module
+- [x] 1.1 Scaffold `plugins/ralphharness/rag/` Python module
   - **Do**:
     1. Create directory `plugins/ralphharness/rag/` with `__init__.py` (empty) and `__main__.py` (argparse skeleton with `retrieve`, `index`, `index-all`, `doctor`, `search`, `onboard` subcommands that each print `{"stub": true}` and exit 0).
     2. Add module docstring referencing `specs/rag-integration/design.md` (Components 1–9).
@@ -33,7 +33,7 @@ with direct shell smoke tests against ad-hoc fixtures.
   - _Requirements: FR-1_
   - _Design: Component 2_
 
-- [ ] 1.2 Implement `rag/config.py` with `RAGConfig.load()`
+- [x] 1.2 Implement `rag/config.py` with `RAGConfig.load()`
   - **Do**:
     1. `RAGConfig` dataclass mirroring the YAML schema in design.md (Interfaces section).
     2. `RAGConfig.load(path: Path | None) -> RAGConfig` parses the YAML frontmatter from `.ralphharness.local.md`; returns default-disabled config if file absent or no `rag:` block.
@@ -45,7 +45,7 @@ with direct shell smoke tests against ad-hoc fixtures.
   - _Requirements: FR-1, NFR-6_
   - _Design: Component 3, Interfaces — Configuration_
 
-- [ ] 1.3 Wire `doctor` subcommand to print real config
+- [x] 1.3 Wire `doctor` subcommand to print real config
   - **Do**:
     1. In `__main__.py doctor`, instantiate `RAGConfig.load()` and print a tiered YAML report (`OK`/`WARN`/`FAIL` per check) covering `enabled`, `provider`, `embeddings.provider`, `endpoints_present`.
     2. Exit 0 always (doctor is informational).
@@ -56,7 +56,7 @@ with direct shell smoke tests against ad-hoc fixtures.
   - _Requirements: FR-10_
   - _Design: Component 2_
 
-- [ ] 1.4 [VERIFY] Phase 1.A checkpoint: Python module bootstraps clean
+- [x] 1.4 [VERIFY] Phase 1.A checkpoint: Python module bootstraps clean
   - **Do**: Run `python -m … doctor`, `retrieve`, `index`, `index-all`, `search`, `onboard` once each; confirm all exit 0 and produce parseable output.
   - **Verify**: `cd /mnt/bunker_data/ai/smart-ralph && for cmd in doctor "retrieve --query x --collection y --top-k 1" "index --source /dev/null --collection y --spec-name z" "index-all --dry-run" "search --query x" "onboard --non-interactive"; do PYTHONPATH=. python -m plugins.ralphharness.rag $cmd >/dev/null || exit 1; done && echo PASS`
   - **Done when**: All six subcommands exit 0.
