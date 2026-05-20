@@ -323,11 +323,13 @@ def _load_config_from_env() -> dict[str, Any]:
     """
     result: dict[str, Any] = {}
 
-    enabled = os.environ.get("RALPH_RAG_ENABLED", "false")
-    result["enabled"] = enabled.lower() in ("true", "yes", "1")
+    enabled = os.environ.get("RALPH_RAG_ENABLED")
+    if enabled is not None:
+        result["enabled"] = enabled.lower() in ("true", "yes", "1")
 
-    provider = os.environ.get("RALPH_RAG_PROVIDER", "qdrant")
-    result["provider"] = provider
+    provider = os.environ.get("RALPH_RAG_PROVIDER")
+    if provider:
+        result["provider"] = provider
 
     endpoint = os.environ.get("RALPH_RAG_ENDPOINT")
     if endpoint:
@@ -337,8 +339,9 @@ def _load_config_from_env() -> dict[str, Any]:
     if api_key:
         result["api_key"] = api_key
 
-    embedder_provider = os.environ.get("RALPH_RAG_EMBEDDING_PROVIDER", "local")
-    result["embedding"] = {"provider": embedder_provider}
+    embedder_provider = os.environ.get("RALPH_RAG_EMBEDDING_PROVIDER")
+    if embedder_provider is not None:
+        result.setdefault("embedding", {})["provider"] = embedder_provider
 
     openai_key = os.environ.get("RALPH_RAG_OPENAI_API_KEY")
     if openai_key:
@@ -347,6 +350,10 @@ def _load_config_from_env() -> dict[str, Any]:
     azure_endpoint = os.environ.get("RALPH_RAG_AZURE_ENDPOINT")
     if azure_endpoint:
         result.setdefault("embedding", {})["azure_endpoint"] = azure_endpoint
+
+    openai_key = os.environ.get("RALPH_RAG_OPENAI_API_KEY")
+    if openai_key:
+        result.setdefault("embedding", {})["api_key"] = openai_key
 
     return result
 

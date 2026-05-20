@@ -886,6 +886,7 @@ STOP_WATCHER_REASON_EOF
 
     # Emit per-task metric for this advancement
     emit_task_metric "$SPEC_PATH" "$STATE_FILE"
+    [ -f "$SCRIPT_DIR/post-task-rag.sh" ] && bash "$SCRIPT_DIR/post-task-rag.sh" "$SPEC_NAME" "$TASKS_FILE" &
 fi
 
 # Cleanup orphaned temp progress files (from interrupted parallel batches)

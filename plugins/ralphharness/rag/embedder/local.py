@@ -59,8 +59,8 @@ class LocalEmbedder(Embedder):
         except ImportError as e:
             self._import_error = e
             raise EmbedderError(
-                f"sentence-transformers is not installed. "
-                f"Install with: pip install sentence-transformers"
+                "sentence-transformers is not installed. "
+                "Install with: pip install sentence-transformers"
             ) from e
         except Exception as e:
             self._import_error = e

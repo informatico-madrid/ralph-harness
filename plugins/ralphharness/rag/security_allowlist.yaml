@@ -1,0 +1,26 @@
+# security_allowlist.yaml — Patterns that trigger chunk rejection.
+#
+# If any chunk content matches these patterns, the chunk is rejected
+# and logged to sanitization-rejections.log (NEVER written to stdout
+# or signals.jsonl).
+#
+# Format: each line is a regex pattern.
+
+# AWS credentials
+- "AKIA[0-9A-Z]{16}"
+- "AWS_ACCESS_KEY_ID\\s*="
+- "aws_secret_access_key\\s*="
+
+# SSH keys
+- "ssh-(rsa|dsa|ed25519)\\s+"
+- "BEGIN.*OPENSSH.*PRIVATE KEY"
+- "BEGIN.*RSA.*PRIVATE KEY"
+
+# API tokens
+- "Bearer\\s+[A-Za-z0-9\\-_\\.]+"
+- "ghp_[A-Za-z0-9]{36}"  # GitHub PAT
+- "slack-[A-Za-z0-9\\-]+"  # Slack token
+
+# Generic secrets
+- "password\\s*[:=]\\s*['\\\"]?[A-Za-z0-9!@#$%^&*]{8,}"
+- "api_key\\s*[:=]\\s*['\\\"]?[A-Za-z0-9]{16,}"

@@ -7,7 +7,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from hashlib import sha256
-from typing import Optional
 
 
 def _now_iso() -> str:
