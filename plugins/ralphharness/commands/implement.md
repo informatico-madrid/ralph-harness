@@ -349,7 +349,7 @@ If yes:
    External reviewer configured.
 
    To launch the reviewer in parallel:
-   1. Open a second Claude Code session in the same repository
+   1. Open a second Claude Code session in the worktree directory (cd to the worktree first)
    2. Load the agent: @external-reviewer
    3. Tell it: "Review spec <specName> while spec-executor implements"
    4. The reviewer will read and write to specs/<specName>/task_review.md and chat.md (FLOC-based coordination in real time)
