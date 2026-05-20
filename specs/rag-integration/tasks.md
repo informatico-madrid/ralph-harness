@@ -4,7 +4,10 @@ basePath: specs/rag-integration
 phase: tasks
 created: 2026-05-20
 granularity: fine
-total_tasks: 54
+total_tasks: 74
+revision: 2
+revision_date: 2026-05-20
+audit_plan: /home/malka/.claude/plans/haz-un-plan-para-sorted-grove.md
 ---
 
 # Tasks: rag-integration
@@ -33,7 +36,10 @@ with direct shell smoke tests against ad-hoc fixtures.
   - _Requirements: FR-1_
   - _Design: Component 2_
 
-- [x] 1.2 Implement `rag/config.py` with `RAGConfig.load()`
+- [ ] 1.2 Implement `rag/config.py` with `RAGConfig.load()`
+  > **REOPEN — Audit fix #M1** (ver `/home/malka/.claude/plans/haz-un-plan-para-sorted-grove.md` sección 6.C punto 16)
+  > Motivo: parser YAML casero aplasta config anidada; la sintaxis `rag:\n  vector_db:\n    endpoint: …` documentada en CLAUDE.md/README NO funciona porque el loader es plano y no consume `pyyaml`.
+  > Criterios añadidos: cargar `pyyaml` lazy con fallback warning; soportar frontmatter `---…---` y bloque ```yaml; assert `cfg.vector_db.endpoint == "x"` cuando YAML anidado; deduplicar lectura `RALPH_RAG_OPENAI_API_KEY` (M2). El [VERIFY] anterior solo comprobó `enabled == False` por defecto — no testeó la anidación real.
   - **Do**:
     1. `RAGConfig` dataclass mirroring the YAML schema in design.md (Interfaces section).
     2. `RAGConfig.load(path: Path | None) -> RAGConfig` parses the YAML frontmatter from `.ralphharness.local.md`; returns default-disabled config if file absent or no `rag:` block.
@@ -86,7 +92,10 @@ with direct shell smoke tests against ad-hoc fixtures.
   - _Requirements: FR-3_
   - _Design: Component 5_
 
-- [x] 1.7 Implement `OpenAIEmbedder`
+- [ ] 1.7 Implement `OpenAIEmbedder`
+  > **REOPEN — Audit fix #M9, #M14** (ver `/home/malka/.claude/plans/haz-un-plan-para-sorted-grove.md` sección 6.C puntos 18, 20)
+  > Motivo: cliente `openai` se instancia en cada `embed()` (sin cache) y `embed_batch` descarta silentemente cuando `len(output) != len(input)` — degrada throughput y oculta corrupciones.
+  > Criterios añadidos: `self._client` cacheado con lazy init; `embed_batch` debe `raise EmbedderError("len mismatch: in=N out=M")` si las longitudes no coinciden; verify mock-based que invoca `embed_batch(["a","b"])` con stub que devuelve `[v]` y asserta excepción.
   - **Do**:
     1. `rag/embedder/openai.py` — `OpenAIEmbedder(api_key, model)` with lazy import of `openai`.
     2. Default model `text-embedding-3-small` (1536-dim).
@@ -100,7 +109,10 @@ except EmbedderError: print('PASS')" | grep -q PASS && echo PASS`
   - _Requirements: FR-3_
   - _Design: Component 5, Decision #5_
 
-- [x] 1.8 Implement `AzureOpenAIEmbedder` (stub if endpoint unset)
+- [ ] 1.8 Implement `AzureOpenAIEmbedder` (stub if endpoint unset)
+  > **REOPEN — Audit fix #M9, #M14** (ver `/home/malka/.claude/plans/haz-un-plan-para-sorted-grove.md` sección 6.C puntos 18, 20)
+  > Motivo: cliente `openai.AzureOpenAI` se instancia en cada `embed()`; `embed_batch` también descarta silentemente en len mismatch.
+  > Criterios añadidos: `self._client` cacheado lazy; `embed_batch` raise `EmbedderError` en mismatch (mismo contrato que 1.7).
   - **Do**:
     1. `rag/embedder/azure.py` — `AzureOpenAIEmbedder(endpoint, deployment_name, api_key)`.
     2. If `endpoint == ""`, `embed()` raises `EmbedderError("azure not configured")` immediately (fallback chain skips it silently).
@@ -114,7 +126,10 @@ except EmbedderError: print('PASS')" | grep -q PASS && echo PASS`
   - _Requirements: FR-3_
   - _Design: Component 5, Decision #5_
 
-- [x] 1.9 Implement `EmbedderChain` (fallback per `[local, openai, azure]`)
+- [ ] 1.9 Implement `EmbedderChain` (fallback per `[local, openai, azure]`)
+  > **REOPEN — Audit fix #M11** (ver `/home/malka/.claude/plans/haz-un-plan-para-sorted-grove.md` sección 6.C punto 19)
+  > Motivo: `from_config` ignora `config.embedder.fallback_order` — siempre añade `[local, openai, azure]` en orden fijo. Si la config dice `fallback_order: [openai]` no se respeta.
+  > Criterios añadidos: leer la lista exacta de `config.embedder.fallback_order`, construir solo los embedders listados, en el orden dado; nunca añadir uno no listado. Verify: config con `fallback_order: ["openai"]` produce chain con un único embedder OpenAI (assert `len(chain.embedders) == 1` e `isinstance(chain.embedders[0], OpenAIEmbedder)`).
   - **Do**:
     1. `rag/embedder/chain.py` — `EmbedderChain(order: list[Embedder])`.
     2. `embed`/`embed_batch` try each embedder in order; on `EmbedderError`, log WARN and try next; all exhausted raises `EmbedderError("chain exhausted")`.
@@ -159,7 +174,18 @@ except EmbedderError: print('PASS')" | grep -q PASS && echo PASS`
   - _Requirements: FR-2, NFR-5_
   - _Design: Component 4, Decision #4_
 
-- [x] 1.13 Implement `RAGService` facade with graceful retrieve
+- [ ] 1.13 Implement `RAGService` facade with graceful retrieve
+  > **REOPEN — Audit fix #B1, #B6, #B10, #M6, #M10** (ver `/home/malka/.claude/plans/haz-un-plan-para-sorted-grove.md` sección 6.A puntos 1, 2, 3, 4)
+  > Motivo: el feature está funcionalmente muerto — `QdrantProvider.retrieve`/`.index` son stubs que devuelven `[]`/`0`; `RAGService.index()` no embebe antes de delegar al provider; la firma `retrieve()` mezcla `query: str` (service) con `query_vec: list[float]` (provider) sin unificarse; faltan `health_check()` e `index_all()` que llaman tanto el design como `cmd_index_all` y `commands/rag-doctor`. El [VERIFY] anterior solo comprobó `from_config() == None` cuando disabled — jamás testeó round-trip real contra Qdrant.
+  > Criterios añadidos:
+  >   1. **QdrantProvider.retrieve real**: usar `qdrant_client.QdrantClient.search(collection_name=…, query_vector=…, limit=top_k)` → mapear `ScoredPoint.payload` a `Chunk` con `score` poblado.
+  >   2. **QdrantProvider.index real**: `client.upsert(PointStruct(id, vector, payload))`; crear colección on-demand con `VectorParams(size=embedder.dimensions, distance=Distance.COSINE)`.
+  >   3. **Helper `_collection_name(project, collection)`** → `{prefix}{project}-{collection}` (resuelve M10).
+  >   4. **Firma unificada** (B10): `VectorDBProvider.retrieve(query_vec: list[float], collection, top_k)` en `providers/base.py`; `QdrantProvider` acepta vector ya embebido.
+  >   5. **RAGService.index** (B6): embeber chunks con `embedder.embed_batch([c.content for c in chunks])` antes de pasar al provider; pasar tupla `(chunk, vector)` o atributo transitorio.
+  >   6. **RAGService.health_check()** (M6): llama `provider.health_check()` + intento embed trivial → `{provider, embedder, ok}`.
+  >   7. **RAGService.index_all()** (B4 parcial): walk `specs/*/` con `Chunker`, dispatch por collection_id según design.md tabla L204-211, pasa por `SecurityLayer`, indexa por colección.
+  - **Verify (audit-strict)**: con Qdrant Docker up: `cd /mnt/bunker_data/ai/smart-ralph && export QDRANT_URL=http://localhost:6333 && export RALPH_RAG_ENABLED=true && PYTHONPATH=. python -c "from plugins.ralphharness.rag.service import RAGService; from plugins.ralphharness.rag.config import RAGConfig; cfg = RAGConfig(enabled=True); svc = RAGService.from_config(cfg); print(svc.health_check())" | grep -q '"ok": true' && echo PASS_AUDIT`
   - **Do**:
     1. `rag/service.py` — `RAGService(config)` builds provider (Qdrant primary; falls back to FAISS on Qdrant `health_check==False`) + embedder chain.
     2. `retrieve(query, collection, top_k)` — embed → `provider.retrieve` → return list. Catch ALL exceptions, log WARN, return `[]`.
@@ -220,7 +246,13 @@ except EmbedderError: print('PASS')" | grep -q PASS && echo PASS`
 Goal: clean up the POC. Extract chunker, add security layer, centralise
 signal emission with the `phase` field. No new functionality.
 
-- [x] 2.1 Extract `rag/chunker.py` with per-artifact strategies
+- [ ] 2.1 Extract `rag/chunker.py` with per-artifact strategies
+  > **REOPEN — Audit fix #M7, #M8** (ver `/home/malka/.claude/plans/haz-un-plan-para-sorted-grove.md` sección 6.C puntos 22, 23)
+  > Motivo: `_chunk_python` no usa AST (split textual incorrecto que parte clases); `_chunk_markdown` no respeta `^##`/`^###` correctamente — `len(match.group(1))` puede valer 1 (h1) o 4+ (h4+) y rompe el target 800-token. El [VERIFY] anterior solo contó `len(chunks) >= 1`, no validó la estrategia.
+  > Criterios añadidos:
+  >   1. `_chunk_python`: `ast.parse(content)` y emitir un chunk por `FunctionDef`/`ClassDef` top-level; mantener clase entera (sin split a mid-class).
+  >   2. `_chunk_markdown`: condición `len(match.group(1)) in (2, 3)` para `##` y `###` exclusivos; target 800-token usando `embedder._tokenizer` si disponible, fallback `len(text)//4`.
+  >   3. Verify: chunkear `plugins/ralphharness/rag/service.py` y asserta cada chunk contiene una `def`/`class` completa (parse cada chunk con `ast.parse` → no `SyntaxError`).
   - **Do**:
     1. `Chunker.chunk(source_path, content) -> list[Chunk]` dispatches by file extension / name (design.md Component 7 table).
     2. Markdown chunker splits on `^## ` and `^### ` boundaries, 800-token target, 100-token overlap, **using the active embedder's tokenizer** (per Decision #11).
@@ -233,7 +265,14 @@ signal emission with the `phase` field. No new functionality.
   - _Requirements: FR-9_
   - _Design: Component 7, Decision #11_
 
-- [x] 2.2 Add `SecurityLayer` with allowlist sanitisation
+- [ ] 2.2 Add `SecurityLayer` with allowlist sanitisation
+  > **REOPEN — Audit fix #B9** (ver `/home/malka/.claude/plans/haz-un-plan-para-sorted-grove.md` sección 6.A punto 10)
+  > Motivo: `SecurityLayer` ignora `security_allowlist.yaml` y usa patrones hardcodeados sin `severity`/`id`. El YAML jamás se carga. El [VERIFY] anterior testeó un AWS key hardcodeado en código — no validó que el YAML se respete.
+  > Criterios añadidos:
+  >   1. `SecurityLayer.__init__(allowlist_path=Path("rag/security_allowlist.yaml"))` carga el YAML con `pyyaml`.
+  >   2. Soportar formato lista plana actual **y** formato rico: `[{id: aws_key, regex: "AKIA[0-9A-Z]{16}", severity: block}, …]`.
+  >   3. `severity: warn` → `accepted=True` con flag `warnings: [id]`; `severity: block` → `accepted=False`.
+  >   4. Verify: añadir un pattern nuevo al YAML (`{id: canary, regex: "CANARY-LEAKAGE-TOKEN", severity: block}`) y assert que un chunk con `"CANARY-LEAKAGE-TOKEN"` es rechazado por ese ID concreto (assert `result.rejected_by == "canary"`).
   - **Do**:
     1. `rag/security_allowlist.yaml` — initial patterns from design Component 6 (AWS, SSH, Bearer, Slack, GitHub PAT).
     2. `rag/security.py` — `SecurityLayer.sanitize(chunk) -> SanitizationResult`.
@@ -245,7 +284,16 @@ signal emission with the `phase` field. No new functionality.
   - _Requirements: FR-8, NFR-7_
   - _Design: Component 6_
 
-- [x] 2.3 Centralise signal emission in `rag/signals.py` (with `phase` field)
+- [ ] 2.3 Centralise signal emission in `rag/signals.py` (with `phase` field)
+  > **REOPEN — Audit fix #B7, #B8** (ver `/home/malka/.claude/plans/haz-un-plan-para-sorted-grove.md` sección 6.A puntos 5, 6 — además cierra FAIL en `task_review.md:39`)
+  > Motivo: (B7) `signals.emit` y `observability.record_metric` JAMÁS se ejecutan en producción — `service.retrieve`/`service.index` no los llaman; solo los tests los invocan. (B8) `signals.emit` escribe a `~/.cache/smart-ralph/signals.jsonl` en vez de `./specs/<spec>/signals.jsonl` (que es lo que el HOLD-gate del coordinator lee con `jq`). El review marcó FAIL crítico (`task_review.md:39`) porque `emit_retrieval_failed` ni siquiera está exportado.
+  > Criterios añadidos:
+  >   1. `signals.py` exporta `emit_retrieval_request`, `emit_retrieval_complete`, `emit_retrieval_failed(spec_path: Path, reason: str, phase: Literal["retrieval","indexing"])`, `emit_indexing_queued(spec_path, spec_name, chunk_count)`.
+  >   2. Todos escriben a `spec_path / "signals.jsonl"` (NUNCA a `~/.cache`). Reusar el formato JSON de `hooks/scripts/lib-signals.sh:append_signal` (shell out a `bash -c "source lib-signals.sh && append_signal …"`).
+  >   3. `RAGService.retrieve()` llama `emit_retrieval_request` al inicio, `emit_retrieval_complete` al éxito, `emit_retrieval_failed(..., phase="retrieval")` en exception path.
+  >   4. `RAGService.index()` llama `emit_indexing_queued` al éxito y `emit_retrieval_failed(..., phase="indexing")` en failure.
+  >   5. Cablear `observability.record_metric` (decorador o helper) en `retrieve`/`index` con `latency_ms`, `outcome`, `query_sha256`.
+  - **Verify (audit-strict)**: `cd /mnt/bunker_data/ai/smart-ralph && tmpspec=$(mktemp -d)/specs/foo && mkdir -p "$tmpspec" && PYTHONPATH=. python -c "from pathlib import Path; from plugins.ralphharness.rag.signals import emit_retrieval_failed; emit_retrieval_failed(Path('$tmpspec'), 'test', 'retrieval')" && test -f "$tmpspec/signals.jsonl" && grep -q '"phase":"retrieval"' "$tmpspec/signals.jsonl" && echo PASS_AUDIT`
   - **Do**:
     1. `rag/signals.py` — `emit_retrieval_failed(spec_path, reason, phase)` where `phase: Literal["retrieval", "indexing"]`; and `emit_indexing_queued(spec_path, spec_name, chunk_count)`.
     2. Both shell out to `bash -c "source lib-signals.sh && append_signal …"` to reuse the existing helper.
@@ -298,7 +346,10 @@ the post-task helper.
   - **Verify**: `cd /mnt/bunker_data/ai/smart-ralph && PYTHONPATH=. python -m pytest plugins/ralphharness/rag/tests/test_security.py -q && echo PASS`
   - **Commit**: `test(rag): SecurityLayer rejection coverage + log path assertion`
 
-- [x] 3.5 Unit tests for `RAGService` (graceful + telemetry + signal phase)
+- [ ] 3.5 Unit tests for `RAGService` (graceful + telemetry + signal phase)
+  > **REOPEN — Audit: tests cosméticos** (ver `/home/malka/.claude/plans/haz-un-plan-para-sorted-grove.md` sección 6.D punto 32)
+  > Motivo: el test pasó en verde pero el audit confirmó que `service.retrieve` jamás llama `record_metric` ni `signals.emit` en código de producción — los tests stub-only enmascaran el bug (B7). El test no patcheaba `record_metric` para asserta que se invocó; solo testeaba `retrieve() -> []`.
+  > Criterios añadidos: añadir test que `patch('plugins.ralphharness.rag.observability.record_metric')` antes de `service.retrieve("hello", "execution_memory", 3)` y asserta que `mock.assert_called_once()` con `outcome="ok"` y `query_sha256=hashlib.sha256(b"hello").hexdigest()` (NO raw `"hello"`). Análogo para `signals.emit_retrieval_*`.
   - **Do**: `rag/tests/test_service.py` — `retrieve()` returns `[]` on `ProviderError`/`EmbedderError`/`TimeoutError`; success path emits NO `signals.jsonl` entry; failure path emits exactly one `RETRIEVAL_FAILED` with correct `phase` field; per-call telemetry written to `retrieval-metrics.log` with `query_sha256` (not raw query); `from_config()` returns None when disabled.
   - **Files**: `rag/tests/test_service.py`
   - **Verify**: `cd /mnt/bunker_data/ai/smart-ralph && PYTHONPATH=. python -m pytest plugins/ralphharness/rag/tests/test_service.py -q && echo PASS`
@@ -386,7 +437,14 @@ stop-watcher hook, and a real Ralph Loop iteration with RAG enabled.
   - **Verify**: `cd /mnt/bunker_data/ai/smart-ralph && ruff check plugins/ralphharness/rag/ && mypy plugins/ralphharness/rag/ && echo PASS`
   - **Commit**: `chore(rag): ruff + mypy clean`
 
-- [x] 4.3 Implement `/ralphharness:index-all` command + flock rate limit
+- [ ] 4.3 Implement `/ralphharness:index-all` command + flock rate limit
+  > **REOPEN — Audit fix #B4, #M5** (ver `/home/malka/.claude/plans/haz-un-plan-para-sorted-grove.md` sección 6.A puntos 4, 9)
+  > Motivo: `cmd_index_all` tiene **dos bugs ejecutables**: (a) `time()` se llama como módulo (no como función → `TypeError: 'module' object is not callable` en línea ~101); (b) `service.index_all()` no existe (cubierto por reopen 1.13). Además, el lock-stealing por mtime permite a dos procesos pisarse si el segundo decide robar tras 60s sin validar PID. El [VERIFY] anterior solo testeó `--dry-run` que cortocircuita antes del bug.
+  > Criterios añadidos:
+  >   1. `from time import time` **dentro de la función** (replicar patrón ya usado en `cmd_retrieve`).
+  >   2. Llamar al nuevo `service.index_all()` definido en 1.13.
+  >   3. Lock con `LOCK_EX` bloqueante; o si se mantiene `LOCK_NB`, escribir PID al fichero y validar via `kill -0 $PID` antes de robar (rechazar steal si PID vivo).
+  > - **Verify (audit-strict)**: `cd /mnt/bunker_data/ai/smart-ralph && export QDRANT_URL=http://localhost:6333 && PYTHONPATH=. python -m plugins.ralphharness.rag index-all 2>&1 | grep -vqE "TypeError|AttributeError" && echo PASS_AUDIT`
   - **Do**:
     1. `commands/index-all.md` — slash command that shells `python -m plugins.ralphharness.rag index-all "$@"`.
     2. In `__main__.py index-all`: acquire flock on `~/.cache/smart-ralph/rag/index-all.lock` with `LOCK_EX | LOCK_NB`; if locked, exit 1 with `another index-all is in progress`. Additionally reject if lock-mtime is < 60 s old (soft rate limit, NFR-8).
@@ -426,7 +484,13 @@ stop-watcher hook, and a real Ralph Loop iteration with RAG enabled.
   - **Done when**: All three commands exit 0 under disabled config (graceful empty output).
   - **Commit**: `chore(rag): pass phase 4.B checkpoint`
 
-- [x] 4.7 Implement `OnboardingStep` framework + 7 concrete steps
+- [ ] 4.7 Implement `OnboardingStep` framework + 7 concrete steps
+  > **REOPEN — Audit fix #B3** (ver `/home/malka/.claude/plans/haz-un-plan-para-sorted-grove.md` sección 6.A punto 7)
+  > Motivo: aparte del framework de onboarding, `cmd_index` (`__main__.py:75-77`) sigue siendo un stub que imprime `{"stub": true}` y nunca llama a `Chunker → SecurityLayer → service.index`. Esto bloquea CI use cases del FR-6 (manual reindex single source). El [VERIFY] anterior solo verificó las clases del framework — no `cmd_index` end-to-end.
+  > Criterios añadidos:
+  >   1. Implementar `cmd_index` en `__main__.py`: leer `--source` (path o `-` stdin), llamar `Chunker.chunk()`, pasar por `SecurityLayer.sanitize()`, llamar `service.index(spec_name, collection, chunks)`.
+  >   2. Output JSON: `{indexed: N, rejected: M, collection: …, latency_ms: …}`.
+  >   3. Verify-strict: `echo "hello world" | PYTHONPATH=. python -m plugins.ralphharness.rag index --source - --collection test --spec-name foo` produce JSON con `"indexed": 1`.
   - **Do**:
     1. `rag/onboarding.py` — `DetectionState` enum (`OK` / `MISSING` / `UNKNOWN`), `DetectionResult` dataclass `{state, detail}`, `OnboardingStep` ABC with `detect() -> DetectionResult`, `explain() -> str`, `install_command() -> list[str] | None` (argv LIST, NEVER a string), `verify() -> bool`.
     2. Concrete steps in order: `PythonStep` (`install_command()` returns `None` per NFR-9), `PythonDepsStep` (returns `["pip", "install", "qdrant-client", "faiss-cpu", "pyyaml"]`), `VectorDBStep` (Qdrant + docker → `["docker", "run", "-d", "--name", "smart-ralph-qdrant", "-p", "6333:6333", "qdrant/qdrant:1.7.0"]`; FAISS or no-docker → `None`), `EmbedderStep` (local → `["pip", "install", "sentence-transformers"]`; openai/azure → `None`, prints env-var hint; **NEVER writes keys to disk**), `ConfigStep` (`install_command() == None`; writes via dedicated `_append_with_flock()` under advisory `flock` on `.ralphharness.local.md`, aborts if mtime changed since `detect()`), `IndexBootstrapStep` (first `["python", "-m", "rag", "index-all", "--dry-run"]`, then `["python", "-m", "rag", "index-all"]`; rate-limit error → `verify()` False with `detail` "rate-limited; rerun in <N>s"), `DoctorStep` (`install_command() == None`; runs `rag-doctor`).
@@ -445,7 +509,13 @@ print('PASS')" | grep -q PASS && echo PASS`
   - _Requirements: FR-11, FR-12, AC-6.1, AC-6.2, AC-6.3, AC-6.6, NFR-9_
   - _Design: Component 9_
 
-- [x] 4.8 Wire `onboard` subcommand + `/ralphharness:rag-onboard` slash command
+- [ ] 4.8 Wire `onboard` subcommand + `/ralphharness:rag-onboard` slash command
+  > **REOPEN — Audit fix #B5** (ver `/home/malka/.claude/plans/haz-un-plan-para-sorted-grove.md` sección 6.A punto 8 — cierra FAIL en `task_review.md` entrada `4.8`)
+  > Motivo: `cmd_onboard` (`__main__.py:201-203`) imprime `{"stub": true}` y exit 0 — NO ejecuta los 7 steps, NO produce el summary block con 4 counters. El review lo marcó FAIL crítico.
+  > Criterios añadidos:
+  >   1. Añadir `onboarding.run(steps: list[OnboardingStep], interactive: bool) -> dict` en `onboarding.py` que itera detect→explain→confirm→install→verify y devuelve summary `{installed, already_present, skipped, failed}`.
+  >   2. `cmd_onboard` instancia los 7 steps en orden, llama `onboarding.run(steps, interactive=not args.non_interactive)`, imprime el summary block con los 4 counters textualmente.
+  >   3. Verify (audit-strict): `cd /mnt/bunker_data/ai/smart-ralph && out=$(PYTHONPATH=. python -m plugins.ralphharness.rag onboard --non-interactive 2>&1); for k in 'installed:' 'already_present:' 'skipped:' 'failed:'; do echo "$out" | grep -q "$k" || { echo "MISSING: $k"; exit 1; }; done && echo PASS_AUDIT`
   - **Do**:
     1. `__main__.py onboard` — instantiate the seven steps in order; for each: print the structured block (`[i/7] name`, `Detect:`, `Why:`, `Would run:`), read stdin for `y`/`n`/`r`/`a`, dispatch, record outcome. Accumulate a summary block at the end and run `rag-doctor`.
     2. Add a `--non-interactive` flag (read-only mode: prints the plan without prompting; used by 1.4 smoke and CI). In non-interactive mode all `MISSING` steps are recorded as `skipped`.
@@ -545,3 +615,257 @@ Goal: docs, version bump, autonomous E2E verification (VE1/VE2/VE3), PR.
   - **Verify**: `gh pr checks --watch && echo PASS`
   - **Done when**: All CI checks green; PR ready for review.
   - **Commit**: `chore(rag): pass phase 5 exit gate`
+
+## Phase 6 — PRD wiring gaps (audit-driven, 2026-05-20)
+
+Auditoría post-implementación (ver `/home/malka/.claude/plans/haz-un-plan-para-sorted-grove.md`)
+detectó que 8 trigger points definidos en `_bmad-output/planning-artifacts/prd.md` FR-2
+NUNCA se cablearon, además de gaps de test que escondieron los bloqueantes. Cada `[VERIFY]`
+de Phase 6 debe tocar runtime real (Qdrant Docker up, sentence-transformers cargado),
+NUNCA mocks. Las verify-tasks que dependen de Qdrant llevan en cabecera:
+`if [ -z "${QDRANT_URL:-}" ]; then echo "SKIP (no QDRANT_URL)"; exit 77; fi`.
+
+### Phase 6.B — Wiring al harness (FR-2, cierra B2)
+
+- [ ] 6.B.1 stop-watcher.sh pre-task `rag_retrieve` injection (Flow 4)
+  > **NEW — Audit FR-2 wiring gap** (ver `/home/malka/.claude/plans/haz-un-plan-para-sorted-grove.md` sección 6.B punto 11)
+  > Motivo: `stop-watcher.sh` nunca llamó `lib-rag.sh` para pre-task retrieval pese a estar en Flow 4 del design (líneas 847-870). El loop del harness ignora completamente el RAG en el pre-task path. Sin esto, FR-2 está incumplido.
+  - **Do**:
+    1. En `stop-watcher.sh` ~líneas 847-870 (antes de construir `REASON` para spec-executor): `source "$SCRIPT_DIR/lib-rag.sh"`.
+    2. `CHUNKS=$(rag_retrieve "$NEXT_TASK_DESC" "specs_tasks" 5)`.
+    3. Si `$CHUNKS` no vacío, inyectar bajo `## Relevant context (RAG)` en `systemMessage`.
+    4. Zero overhead si `rag_enabled` retorna 1 (cubierto por guard existente en lib-rag.sh).
+  - **Files**: `plugins/ralphharness/hooks/scripts/stop-watcher.sh`
+  - **Done when**: Con `RALPH_RAG_ENABLED=true` y Qdrant up, una iteración del loop registra una línea `op=retrieve outcome=ok` en `~/.cache/smart-ralph/rag/retrieval-metrics.log`.
+  - **Verify**: `cd /mnt/bunker_data/ai/smart-ralph && grep -q 'source.*lib-rag.sh' plugins/ralphharness/hooks/scripts/stop-watcher.sh && grep -q 'rag_retrieve.*NEXT_TASK_DESC.*specs_tasks' plugins/ralphharness/hooks/scripts/stop-watcher.sh && bash -n plugins/ralphharness/hooks/scripts/stop-watcher.sh && echo PASS`
+  - **Commit**: `feat(rag): wire pre-task retrieval into stop-watcher (FR-2)`
+  - _Requirements: FR-2_
+  - _Design: Flow 4_
+
+- [ ] 6.B.2 stop-watcher.sh post-task indexing real (no stub)
+  > **NEW — Audit FR-2 wiring gap** (ver `/home/malka/.claude/plans/haz-un-plan-para-sorted-grove.md` sección 6.B punto 12)
+  > Motivo: en `stop-watcher.sh:889` se invoca `bash post-task-rag.sh "$SPEC_NAME" "$TASKS_FILE"` pero el helper interpreta los args como índice/path antiguos — el design pide pasar `$SPEC_PATH` y el bloque de la tarea recién completada.
+  - **Do**:
+    1. Cambiar la línea de invocación a `post_task_rag_hook "$SPEC_PATH" "$COMPLETED_TASK_BLOCK"`.
+    2. Extraer `COMPLETED_TASK_BLOCK` del `tasks.md` por índice (`awk` entre `- [` líneas).
+    3. Actualizar `post-task-rag.sh` para aceptar `(spec_path, task_block)`.
+  - **Files**: `plugins/ralphharness/hooks/scripts/stop-watcher.sh`, `plugins/ralphharness/hooks/scripts/post-task-rag.sh`
+  - **Done when**: Tras completar una tarea con RAG enabled, `specs/<spec>/signals.jsonl` contiene un `INDEXING_QUEUED` con `chunk_count > 0`.
+  - **Verify**: `cd /mnt/bunker_data/ai/smart-ralph && grep -q 'post_task_rag_hook.*SPEC_PATH' plugins/ralphharness/hooks/scripts/stop-watcher.sh && bash -n plugins/ralphharness/hooks/scripts/post-task-rag.sh && echo PASS`
+  - **Commit**: `feat(rag): wire post-task indexing with SPEC_PATH + task block`
+  - _Requirements: FR-2, FR-4_
+  - _Design: Flow 4_
+
+- [ ] 6.B.3 commands/research.md pre-phase retrieval
+  > **NEW — Audit FR-2 wiring gap** (ver `/home/malka/.claude/plans/haz-un-plan-para-sorted-grove.md` sección 6.B punto 13)
+  > Motivo: `commands/research.md` jamás invoca retrieval antes de delegar al `research-analyst`. Design FR-2 lista pre-research como trigger point obligatorio.
+  - **Do**:
+    1. Antes del `Task` delegation block en `commands/research.md`, añadir un bloque `bash` que ejecute `python -m plugins.ralphharness.rag retrieve --query "<phase context>" --collection past_research --top-k 5`.
+    2. Inyectar output en el `progressMessage` del prompt como `## Prior research (RAG)`.
+    3. Mapeo collection según design.md tabla L204-211.
+  - **Files**: `plugins/ralphharness/commands/research.md`
+  - **Done when**: El markdown contiene literal `python -m plugins.ralphharness.rag retrieve` y collection `past_research`.
+  - **Verify**: `cd /mnt/bunker_data/ai/smart-ralph && grep -q 'python -m plugins.ralphharness.rag retrieve' plugins/ralphharness/commands/research.md && grep -q 'past_research' plugins/ralphharness/commands/research.md && echo PASS`
+  - **Commit**: `feat(rag): pre-research retrieval in research command (FR-2)`
+  - _Requirements: FR-2_
+  - _Design: Flows 1-2_
+
+- [ ] 6.B.4 commands/requirements.md pre-phase retrieval
+  > **NEW — Audit FR-2 wiring gap** (ver `/home/malka/.claude/plans/haz-un-plan-para-sorted-grove.md` sección 6.B punto 13)
+  > Motivo: ídem 6.B.3 para pre-requirements (mapeo: collection `requirements_patterns`).
+  - **Do**:
+    1. Añadir bloque retrieval previo al `Task` block en `commands/requirements.md`.
+    2. Query: el goal del spec; collection: `requirements_patterns`; top_k=5.
+    3. Inyectar bajo `## Similar requirements (RAG)`.
+  - **Files**: `plugins/ralphharness/commands/requirements.md`
+  - **Done when**: Markdown invoca `retrieve --collection requirements_patterns`.
+  - **Verify**: `cd /mnt/bunker_data/ai/smart-ralph && grep -q 'requirements_patterns' plugins/ralphharness/commands/requirements.md && echo PASS`
+  - **Commit**: `feat(rag): pre-requirements retrieval in requirements command`
+  - _Requirements: FR-2_
+
+- [ ] 6.B.5 commands/design.md pre-phase retrieval
+  > **NEW — Audit FR-2 wiring gap** (ver `/home/malka/.claude/plans/haz-un-plan-para-sorted-grove.md` sección 6.B punto 13)
+  > Motivo: ídem 6.B.3 para pre-design (collection `architecture_decisions`).
+  - **Do**:
+    1. Añadir bloque retrieval previo en `commands/design.md`.
+    2. Query: requirements summary; collection: `architecture_decisions`; top_k=5.
+    3. Inyectar bajo `## Past architecture decisions (RAG)`.
+  - **Files**: `plugins/ralphharness/commands/design.md`
+  - **Done when**: Markdown invoca `retrieve --collection architecture_decisions`.
+  - **Verify**: `cd /mnt/bunker_data/ai/smart-ralph && grep -q 'architecture_decisions' plugins/ralphharness/commands/design.md && echo PASS`
+  - **Commit**: `feat(rag): pre-design retrieval in design command`
+  - _Requirements: FR-2_
+
+- [ ] 6.B.6 commands/tasks.md pre-phase retrieval
+  > **NEW — Audit FR-2 wiring gap** (ver `/home/malka/.claude/plans/haz-un-plan-para-sorted-grove.md` sección 6.B punto 13)
+  > Motivo: ídem 6.B.3 para pre-tasks (collection `specs_tasks`).
+  - **Do**:
+    1. Añadir bloque retrieval previo en `commands/tasks.md`.
+    2. Query: design summary; collection: `specs_tasks`; top_k=10.
+    3. Inyectar bajo `## Similar task plans (RAG)`.
+  - **Files**: `plugins/ralphharness/commands/tasks.md`
+  - **Done when**: Markdown invoca `retrieve --collection specs_tasks`.
+  - **Verify**: `cd /mnt/bunker_data/ai/smart-ralph && grep -q 'specs_tasks' plugins/ralphharness/commands/tasks.md && echo PASS`
+  - **Commit**: `feat(rag): pre-tasks retrieval in tasks command`
+  - _Requirements: FR-2_
+
+- [ ] 6.B.7 [VERIFY] Phase 6.B partial checkpoint: command wiring lint clean
+  - **Do**: Validar que todos los markdown editados parsean y los bash blocks son sintácticamente válidos.
+  - **Verify**: `cd /mnt/bunker_data/ai/smart-ralph && for f in research requirements design tasks; do grep -A20 '^```bash' plugins/ralphharness/commands/$f.md | bash -n 2>&1 | grep -vqE 'syntax error' || { echo "FAIL $f"; exit 1; }; done && echo PASS`
+  - **Done when**: 4 markdowns con bash blocks válidos.
+  - **Commit**: `chore(rag): pass phase 6.B partial checkpoint`
+
+- [ ] 6.B.8 on-error retrieval en retry path
+  > **NEW — Audit FR-2 wiring gap** (ver `/home/malka/.claude/plans/haz-un-plan-para-sorted-grove.md` sección 6.B punto 14)
+  > Motivo: cuando spec-executor reporta failure, el retry path en `stop-watcher.sh` no consulta `execution_memory` con el `last_error`. PRD UC-7 lo requiere.
+  - **Do**:
+    1. Localizar el branch de retry en `stop-watcher.sh` (post-failure).
+    2. Añadir `RECOVERY_CONTEXT=$(rag_retrieve "$LAST_ERROR" "execution_memory" 3)`.
+    3. Inyectar `$RECOVERY_CONTEXT` en el retry prompt bajo `## Similar past failures (RAG)`.
+  - **Files**: `plugins/ralphharness/hooks/scripts/stop-watcher.sh`
+  - **Done when**: Grep confirma que el retry path usa `rag_retrieve.*execution_memory`.
+  - **Verify**: `cd /mnt/bunker_data/ai/smart-ralph && grep -q 'rag_retrieve.*LAST_ERROR.*execution_memory' plugins/ralphharness/hooks/scripts/stop-watcher.sh && echo PASS`
+  - **Commit**: `feat(rag): on-error retrieval in retry path (UC-7)`
+  - _Requirements: FR-2_
+
+- [ ] 6.B.9 on-review retrieval en external-reviewer
+  > **NEW — Audit FR-2 wiring gap** (ver `/home/malka/.claude/plans/haz-un-plan-para-sorted-grove.md` sección 6.B punto 15)
+  > Motivo: el `external-reviewer` agent no consulta la collection `reviews` con el contexto del task — perdemos memoria institucional de reviews previos.
+  - **Do**:
+    1. Localizar el path donde se arranca `external-reviewer` (probablemente `agents/external-reviewer.md` system prompt o un command wrapper).
+    2. Inyectar retrieval call: `python -m plugins.ralphharness.rag retrieve --query "<task summary>" --collection reviews --top-k 5`.
+    3. Output va al `systemMessage` bajo `## Prior reviews (RAG)`.
+  - **Files**: `plugins/ralphharness/agents/external-reviewer.md` (o el wrapper command, según ubicación real)
+  - **Done when**: El system prompt del reviewer contiene `retrieve --collection reviews`.
+  - **Verify**: `cd /mnt/bunker_data/ai/smart-ralph && (grep -r 'retrieve --collection reviews' plugins/ralphharness/agents/ plugins/ralphharness/commands/ 2>/dev/null | head -1 | grep -q reviews) && echo PASS`
+  - **Commit**: `feat(rag): on-review retrieval for external-reviewer (UC-8)`
+  - _Requirements: FR-2_
+
+- [ ] 6.B.10 [VERIFY] Phase 6.B exit gate: end-to-end wiring con Qdrant real
+  - **Do**:
+    1. `if [ -z "${QDRANT_URL:-}" ]; then echo "SKIP (no QDRANT_URL)"; exit 77; fi`.
+    2. Crear spec dummy con `/ralphharness:start rag-smoke-test "verify RAG wiring"`.
+    3. Setear `RALPH_RAG_ENABLED=true`.
+    4. Una iteración de `/ralphharness:implement`.
+    5. Inspeccionar `specs/rag-smoke-test/signals.jsonl` por `RETRIEVAL_REQUEST`/`RETRIEVAL_COMPLETE`/`INDEXING_QUEUED`.
+  - **Verify**: `cd /mnt/bunker_data/ai/smart-ralph && if [ -z "${QDRANT_URL:-}" ]; then echo "SKIP"; exit 77; fi; test -f specs/rag-smoke-test/signals.jsonl && grep -qE 'RETRIEVAL_(REQUEST|COMPLETE)' specs/rag-smoke-test/signals.jsonl && grep -q 'INDEXING_QUEUED' specs/rag-smoke-test/signals.jsonl && echo PASS`
+  - **Done when**: Signals RETRIEVAL_* + INDEXING_QUEUED presentes en spec dummy.
+  - **Commit**: `chore(rag): pass phase 6.B exit gate (wiring e2e)`
+
+### Phase 6.D — Test reinforcement (cierra agujero de verificación)
+
+- [ ] 6.D.1 Integration test con Qdrant real en Docker
+  > **NEW — Audit gap** (ver `/home/malka/.claude/plans/haz-un-plan-para-sorted-grove.md` sección 6.D punto 29)
+  > Motivo: `test_qdrant_integration.py` actual stub-only — siempre skip o `if svc is not None`. No prueba el round-trip real index→retrieve.
+  - **Do**:
+    1. Crear nuevo `plugins/ralphharness/rag/tests/test_integration_qdrant.py`.
+    2. `if not os.environ.get("QDRANT_URL"): pytest.skip("QDRANT_URL required")`.
+    3. Test: enable RAG, instanciar `RAGService`, indexar 3 chunks dummy (`"alpha", "beta", "gamma"`), retrieve query `"alpha"`, assert primer resultado tiene `content == "alpha"` y `score > 0.5`.
+    4. Teardown: delete test collection.
+  - **Files**: `plugins/ralphharness/rag/tests/test_integration_qdrant.py`
+  - **Done when**: Test corre verde con `QDRANT_URL=http://localhost:6333`.
+  - **Verify**: `cd /mnt/bunker_data/ai/smart-ralph && if [ -z "${QDRANT_URL:-}" ]; then echo "SKIP"; exit 77; fi; PYTHONPATH=. python -m pytest plugins/ralphharness/rag/tests/test_integration_qdrant.py -q && echo PASS`
+  - **Commit**: `test(rag): integration test against real Qdrant`
+  - _Requirements: FR-2, NFR-5_
+
+- [ ] 6.D.2 bats e2e test del wiring del harness
+  > **NEW — Audit gap** (ver `/home/malka/.claude/plans/haz-un-plan-para-sorted-grove.md` sección 6.D punto 30)
+  > Motivo: el bats actual sólo testea `rag_retrieve` aislado — no testea el path `RALPH_RAG_ENABLED=true` end-to-end con Qdrant.
+  - **Do**:
+    1. Añadir caso a `plugins/ralphharness/tests/test_lib_rag.bats`: con `RALPH_RAG_ENABLED=true` y `QDRANT_URL=http://localhost:6333`, `rag_retrieve "test query" specs_tasks 3` emite TSV no vacío.
+    2. Skip si `QDRANT_URL` ausente (`skip "needs Qdrant"`).
+  - **Files**: `plugins/ralphharness/tests/test_lib_rag.bats`
+  - **Done when**: Bats suite verde y test nuevo activo cuando Qdrant up.
+  - **Verify**: `cd /mnt/bunker_data/ai/smart-ralph && bats plugins/ralphharness/tests/test_lib_rag.bats && echo PASS`
+  - **Commit**: `test(rag): bats e2e enabled path with real Qdrant`
+
+- [ ] 6.D.3 Test per-spec signal emission
+  > **NEW — Audit gap** (ver `/home/malka/.claude/plans/haz-un-plan-para-sorted-grove.md` sección 6.D punto 31)
+  > Motivo: `signals.emit` escribía al sitio incorrecto (`~/.cache/...`) y los tests no detectaron porque no aserción la ruta exacta.
+  - **Do**:
+    1. Crear `plugins/ralphharness/rag/tests/test_signals_per_spec.py`.
+    2. Fixture `tmp_path / "specs/foo"`, llamar `emit_retrieval_failed(spec_path=tmp_path/"specs/foo", reason="x", phase="retrieval")`.
+    3. Assert `(tmp_path/"specs/foo/signals.jsonl").exists()` y contiene `"phase":"retrieval"`.
+    4. Negativo: assert NO se escribe a `~/.cache/smart-ralph/signals.jsonl`.
+  - **Files**: `plugins/ralphharness/rag/tests/test_signals_per_spec.py`
+  - **Done when**: Test pasa, ruta correcta y la ruta incorrecta NO crece.
+  - **Verify**: `cd /mnt/bunker_data/ai/smart-ralph && PYTHONPATH=. python -m pytest plugins/ralphharness/rag/tests/test_signals_per_spec.py -q && echo PASS`
+  - **Commit**: `test(rag): per-spec signal emission with negative assertion`
+
+- [ ] 6.D.4 Test métrica registrada en service.retrieve
+  > **NEW — Audit gap** (ver `/home/malka/.claude/plans/haz-un-plan-para-sorted-grove.md` sección 6.D punto 32)
+  > Motivo: `record_metric` jamás fue llamado en producción; los tests existentes no aserción la invocación.
+  - **Do**:
+    1. Añadir test en `test_service.py` (o nuevo `test_observability_wiring.py`).
+    2. `patch("plugins.ralphharness.rag.observability.record_metric")`, llamar `service.retrieve("hello", "execution_memory", 3)`.
+    3. Assert `mock.assert_called_once()` con kwargs `outcome="ok"` y `query_sha256=hashlib.sha256(b"hello").hexdigest()`.
+    4. Assert kwargs NO contienen literal `"hello"`.
+  - **Files**: `plugins/ralphharness/rag/tests/test_observability_wiring.py`
+  - **Done when**: Test pasa demostrando wiring real.
+  - **Verify**: `cd /mnt/bunker_data/ai/smart-ralph && PYTHONPATH=. python -m pytest plugins/ralphharness/rag/tests/test_observability_wiring.py -q && echo PASS`
+  - **Commit**: `test(rag): assert record_metric is wired into service.retrieve`
+
+- [ ] 6.D.5 Test YAML loader anidado
+  > **NEW — Audit gap** (ver `/home/malka/.claude/plans/haz-un-plan-para-sorted-grove.md` sección 6.D punto 33)
+  > Motivo: el parser plano se "comió" la anidación sin que el test lo notara.
+  - **Do**:
+    1. Añadir test en `test_config.py`.
+    2. Escribir fixture `tmp_path/.ralphharness.local.md` con frontmatter YAML anidado: `rag:\n  vector_db:\n    endpoint: http://test:6333`.
+    3. `cfg = RAGConfig.load(tmp_path/".ralphharness.local.md")`.
+    4. Assert `cfg.vector_db.endpoint == "http://test:6333"`.
+  - **Files**: `plugins/ralphharness/rag/tests/test_config.py` (añadir test)
+  - **Done when**: Test pasa.
+  - **Verify**: `cd /mnt/bunker_data/ai/smart-ralph && PYTHONPATH=. python -m pytest plugins/ralphharness/rag/tests/test_config.py::test_yaml_nested -q && echo PASS`
+  - **Commit**: `test(rag): YAML loader handles nested rag.* keys`
+
+- [ ] 6.D.6 [VERIFY] Phase 6.D exit gate: suite completa con runtime real
+  - **Do**:
+    1. `if [ -z "${QDRANT_URL:-}" ]; then echo "SKIP (no QDRANT_URL)"; exit 77; fi`.
+    2. Correr `pytest` completo + `bats` completo.
+    3. Asserción extra: `pytest --collect-only` muestra ≥ 24 tests (los 18 originales + 6 nuevos).
+  - **Verify**: `cd /mnt/bunker_data/ai/smart-ralph && if [ -z "${QDRANT_URL:-}" ]; then echo "SKIP"; exit 77; fi; PYTHONPATH=. python -m pytest plugins/ralphharness/rag/tests/ -q && bats plugins/ralphharness/tests/*.bats && count=$(PYTHONPATH=. python -m pytest --collect-only -q plugins/ralphharness/rag/tests/ 2>/dev/null | grep -cE '::test_'); test "$count" -ge 24 && echo PASS`
+  - **Done when**: Todos verdes, ≥24 tests, ningún skip por "stub".
+  - **Commit**: `chore(rag): pass phase 6.D exit gate (real-runtime coverage)`
+
+### Phase 6.E — Ship
+
+- [ ] 6.E.1 Cerrar entrada FAIL en task_review.md
+  > **NEW — Audit cierre** (ver `/home/malka/.claude/plans/haz-un-plan-para-sorted-grove.md` sección 6.E punto 34)
+  - **Do**:
+    1. Editar `specs/rag-integration/task_review.md` línea 39 (entry `2.3 FAIL critical`).
+    2. Cambiar `status: FAIL` → `RESOLVED`, añadir `resolved_at: 2026-05-20Tnn:nnZ`, evidence con commit-sha del fix de 2.3.
+    3. Idem línea 47 (entry `4.8 FAIL critical`).
+  - **Files**: `specs/rag-integration/task_review.md`
+  - **Done when**: `grep -c "| FAIL " specs/rag-integration/task_review.md` retorna 0.
+  - **Verify**: `cd /mnt/bunker_data/ai/smart-ralph && test "$(grep -c '| FAIL ' specs/rag-integration/task_review.md)" = "0" && echo PASS`
+  - **Commit**: `docs(rag): close FAIL entries 2.3 and 4.8 in task_review`
+
+- [ ] 6.E.2 Bump plugin version 5.8.0 → 5.9.0
+  > **NEW — Audit cierre** (ver `/home/malka/.claude/plans/haz-un-plan-para-sorted-grove.md` sección 6.E punto 36)
+  > Motivo: la feature ahora es funcional (no estaba); minor bump correcto.
+  - **Do**:
+    1. `plugins/ralphharness/.claude-plugin/plugin.json`: `"version": "5.8.0"` → `"5.9.0"`.
+    2. `.claude-plugin/marketplace.json`: entrada ralphharness, idem.
+  - **Files**: `plugins/ralphharness/.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json`
+  - **Done when**: Ambos ficheros tienen `"5.9.0"`.
+  - **Verify**: `cd /mnt/bunker_data/ai/smart-ralph && grep -q '"version": "5.9.0"' plugins/ralphharness/.claude-plugin/plugin.json && grep -q '"version": "5.9.0"' .claude-plugin/marketplace.json && echo PASS`
+  - **Commit**: `chore: bump plugin to 5.9.0 (RAG audit fixes)`
+
+- [ ] 6.E.3 PR único con cuerpo tabulado bug→commit
+  > **NEW — Audit cierre** (ver `/home/malka/.claude/plans/haz-un-plan-para-sorted-grove.md` sección 6.E punto 37)
+  - **Do**:
+    1. `gh pr create --title "fix(rag): wire feature end-to-end + close audit findings"`.
+    2. Body: tabla markdown `| bug_id | commit_sha | task_id |` cubriendo B1..B10, M1..M14, FR-2 wiring (6.B.*).
+    3. Link al audit plan en cuerpo.
+  - **Verify**: `cd /mnt/bunker_data/ai/smart-ralph && gh pr view --json url,body -q '.body' | grep -qE 'B1|FR-2' && echo PASS`
+  - **Done when**: PR creado, body contiene tabla bug→commit.
+  - **Commit**: (no commit — gh action)
+
+- [ ] 6.E.4 [VERIFY] Phase 6 exit gate: CI verde + audit findings cerrados
+  - **Do**:
+    1. `gh pr checks --watch` esperar CI.
+    2. Assert que `task_review.md` no tiene `FAIL`.
+    3. Assert que `signals.jsonl` del spec rag-smoke-test (creado en 6.B.10) contiene los 3 tipos de signal RAG.
+  - **Verify**: `cd /mnt/bunker_data/ai/smart-ralph && gh pr checks 2>&1 | grep -qE 'pass|✓' && test "$(grep -c '| FAIL ' specs/rag-integration/task_review.md)" = "0" && echo PASS`
+  - **Done when**: CI verde, cero FAILs abiertos, audit cerrado.
+  - **Commit**: `chore(rag): pass phase 6 exit gate (audit closed)`
