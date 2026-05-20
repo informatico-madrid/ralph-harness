@@ -114,7 +114,7 @@ except EmbedderError: print('PASS')" | grep -q PASS && echo PASS`
   - _Requirements: FR-3_
   - _Design: Component 5, Decision #5_
 
-- [ ] 1.9 Implement `EmbedderChain` (fallback per `[local, openai, azure]`)
+- [x] 1.9 Implement `EmbedderChain` (fallback per `[local, openai, azure]`)
   - **Do**:
     1. `rag/embedder/chain.py` — `EmbedderChain(order: list[Embedder])`.
     2. `embed`/`embed_batch` try each embedder in order; on `EmbedderError`, log WARN and try next; all exhausted raises `EmbedderError("chain exhausted")`.
