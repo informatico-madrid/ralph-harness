@@ -199,8 +199,30 @@ def cmd_search(args):
 
 
 def cmd_onboard(args):
-    """Stub onboard command."""
-    _print_stub(command="onboard")
+    """Onboard subcommand: run the 7-step installer."""
+    from .onboarding import (
+        ConfigStep,
+        DoctorStep,
+        EmbedderStep,
+        IndexBootstrapStep,
+        PythonDepsStep,
+        PythonStep,
+        VectorDBStep,
+        run,
+    )
+
+    steps = [
+        PythonStep(),
+        PythonDepsStep(),
+        VectorDBStep(),
+        EmbedderStep(),
+        ConfigStep(),
+        IndexBootstrapStep(),
+        DoctorStep(),
+    ]
+
+    interactive = not getattr(args, "non_interactive", False)
+    run(steps, interactive=interactive)
 
 
 def main():

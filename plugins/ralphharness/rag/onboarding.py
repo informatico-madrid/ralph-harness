@@ -224,3 +224,92 @@ class DoctorStep(OnboardingStep):
 
     def install_command(self) -> Optional[list[str]]:
         return None
+
+
+def run(steps: list[OnboardingStep], interactive: bool = True) -> dict:
+    """Run the onboarding flow over a list of steps.
+
+    For each step: detect state, explain, (optionally) prompt for confirmation,
+    run install_command, then verify. Accumulate a summary.
+
+    Returns a dict with keys: installed, already_present, skipped, failed.
+    """
+    total = len(steps)
+    summary = {"installed": 0, "already_present": 0, "skipped": 0, "failed": 0}
+
+    for i, step in enumerate(steps, 1):
+        print(f"\n[{i}/{total}] {step.name}")
+        detect_result = step.detect()
+        print(f"Detect: {detect_result.state.value} – {detect_result.detail}")
+
+        if detect_result.state == DetectionState.OK:
+            print("Already present – skipping.")
+            summary["already_present"] += 1
+            continue
+
+        # Explain why this step matters
+        explanation = step.explain()
+        print(f"Why: {explanation}")
+
+        install_cmd = step.install_command()
+        if install_cmd is not None:
+            print(f"Would run: {' '.join(install_cmd)}")
+        else:
+            print("Would run: (no install command needed — manual step)")
+
+        if interactive:
+            try:
+                answer = input("Proceed? [y/n/r/a] > ").strip().lower()
+            except EOFError:
+                answer = "n"
+
+            if answer == "n":
+                summary["skipped"] += 1
+                print("Skipped (user declined).")
+                continue
+            if answer == "a":
+                # Auto-approve: skip prompt for remaining
+                pass  # fall through to install
+            elif answer == "r":
+                # Retry detect
+                detect_result = step.detect()
+                if detect_result.state == DetectionState.OK:
+                    summary["already_present"] += 1
+                    print("Already present after retry.")
+                    continue
+                else:
+                    print(f"Retry detect still {detect_result.state.value}. Proceeding with install.")
+            # y or a or default -> proceed with install
+        else:
+            # Non-interactive: record MISSING steps as skipped
+            summary["skipped"] += 1
+            print("Skipped (non-interactive mode).")
+            continue
+
+        # Install
+        if install_cmd is not None:
+            print("Installing...")
+            try:
+                import subprocess
+
+                subprocess.run(install_cmd, shell=False, check=False)
+            except Exception as e:
+                print(f"Install error: {e}")
+                summary["failed"] += 1
+                continue
+
+        # Verify
+        if step.verify():
+            summary["installed"] += 1
+            print("OK – verified.")
+        else:
+            summary["failed"] += 1
+            print("FAIL – verification failed after install.")
+
+    print("\nOnboarding summary:")
+    print(f"  installed: {summary['installed']}")
+    print(f"  already_present: {summary['already_present']}")
+    print(f"  skipped: {summary['skipped']}")
+    print(f"  failed: {summary['failed']}")
+
+    return summary

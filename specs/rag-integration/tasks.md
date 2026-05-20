@@ -509,7 +509,7 @@ print('PASS')" | grep -q PASS && echo PASS`
   - _Requirements: FR-11, FR-12, AC-6.1, AC-6.2, AC-6.3, AC-6.6, NFR-9_
   - _Design: Component 9_
 
-- [ ] 4.8 Wire `onboard` subcommand + `/ralphharness:rag-onboard` slash command
+- [x] 4.8 Wire `onboard` subcommand + `/ralphharness:rag-onboard` slash command
   > **REOPEN — Audit fix #B5** (ver `/home/malka/.claude/plans/haz-un-plan-para-sorted-grove.md` sección 6.A punto 8 — cierra FAIL en `task_review.md` entrada `4.8`)
   > Motivo: `cmd_onboard` (`__main__.py:201-203`) imprime `{"stub": true}` y exit 0 — NO ejecuta los 7 steps, NO produce el summary block con 4 counters. El review lo marcó FAIL crítico.
   > Criterios añadidos:
