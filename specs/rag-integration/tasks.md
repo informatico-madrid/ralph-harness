@@ -194,7 +194,7 @@ except EmbedderError: print('PASS')" | grep -q PASS && echo PASS`
   - _Requirements: FR-1, NFR-5_
   - _Design: Component 2, Flow 2_
 
-- [ ] 1.16 Create `lib-rag.sh` with `rag_enabled` + `rag_retrieve` + disabled-path metrics
+- [x] 1.16 Create `lib-rag.sh` with `rag_enabled` + `rag_retrieve` + disabled-path metrics
   - **Do**:
     1. `plugins/ralphharness/hooks/scripts/lib-rag.sh` — shebang, `set -euo pipefail`.
     2. `rag_enabled()` caches result in `RAG_ENABLED_CACHE` env var; reads `.ralphharness.local.md` once per shell.
