@@ -733,9 +733,9 @@ if [ "$PHASE" = "execution" ] && [ "$TASK_INDEX" -lt "$TOTAL_TASKS" ]; then
       active_count=$(grep -c '"status":"active"' "$SPEC_PATH/signals.jsonl" 2>/dev/null || echo 0)
       echo "[ralphharness] WARN: jq unavailable, using grep fallback" >> "$SPEC_PATH/.progress.md"
     fi
-    # Legacy [HOLD] grace fallback (AC-3.6, NFR-6) — one release cycle only.
-    if [ "$active_count" = "0" ] && grep -qE '^\[HOLD\]$|^\[PENDING\]$|^\[URGENT\]$' "${SPEC_PATH}/chat.md" 2>/dev/null; then
-      echo "[ralphharness] WARN: legacy [HOLD] marker in chat.md — migrate to signals.jsonl" >> "${SPEC_PATH}/.progress.md"
+    # Legacy [HOLD]/[PENDING]/[URGENT]/[DEADLOCK] grace fallback (AC-3.6, NFR-6) — one release cycle only.
+    if [ "$active_count" = "0" ] && grep -qE '^\[HOLD\]$|^\[PENDING\]$|^\[URGENT\]$|^\[DEADLOCK\]$' "${SPEC_PATH}/chat.md" 2>/dev/null; then
+      echo "[ralphharness] WARN: legacy control signal in chat.md — migrate to signals.jsonl" >> "${SPEC_PATH}/.progress.md"
       active_count=1
     fi
     if [ "$active_count" -gt 0 ]; then

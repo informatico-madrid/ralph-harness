@@ -817,7 +817,7 @@ Control signals go to `signals.jsonl`; collaboration markers stay in `chat.md`.
 | `SPEC-DEFICIENCY` | `signals.jsonl` | Spec criterion impossible — human arbitration required |
 
 **All control signals are appended via the canonical atomic-append pattern** (fd 202, `signals.jsonl.lock`).
-Collaboration signals (ACK, CONTINUE, OVER, CLOSE, ALIVE, DEADLOCK) continue to be written to `chat.md` via fd 200.
+Legacy fallback: control signals written to `chat.md` via fd 200 are detected by the HOLD-GATE regex fallback (one release cycle). **Canonical: `signals.jsonl` via fd 202.**
 
 ## Section 8 — Never Do
 

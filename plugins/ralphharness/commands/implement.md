@@ -640,7 +640,7 @@ fi
 
   # BEGIN HOLD-GATE
   # Mechanical active-signal gate (Layer 2). Source of truth: signals.jsonl.
-  # Legacy chat.md [HOLD] markers are honoured for one release cycle (NFR-6, AC-3.6)
+  # Legacy chat.md [HOLD]/[PENDING]/[URGENT]/[DEADLOCK] markers honoured for one release cycle (NFR-6, AC-3.6)
   # via the grep fallback below — emits WARN; removed in next release.
   [ ! -f "$SPEC_PATH/signals.jsonl" ] && cp plugins/ralphharness/templates/signals.jsonl "$SPEC_PATH/signals.jsonl"
   # Source shared signal helpers (lib-signals.sh, FR-10)
@@ -651,9 +651,9 @@ fi
     active_count=$(grep -c '"status":"active"' "$SPEC_PATH/signals.jsonl" 2>/dev/null || echo 0)
     echo "[ralphharness] WARN: jq unavailable, using grep fallback" >> "$SPEC_PATH/.progress.md"
   fi
-  # Legacy [HOLD] grace fallback (AC-3.6, NFR-6) — one release cycle only.
-  if [ "$active_count" = "0" ] && grep -qE '^\[HOLD\]$|^\[PENDING\]$|^\[URGENT\]$' "$SPEC_PATH/chat.md" 2>/dev/null; then
-    echo "[ralphharness] WARN: legacy [HOLD] marker in chat.md — migrate to signals.jsonl" >> "$SPEC_PATH/.progress.md"
+  # Legacy [HOLD]/[PENDING]/[URGENT]/[DEADLOCK] grace fallback (AC-3.6, NFR-6) — one release cycle only.
+  if [ "$active_count" = "0" ] && grep -qE '^\[HOLD\]$|^\[PENDING\]$|^\[URGENT\]$|^\[DEADLOCK\]$' "$SPEC_PATH/chat.md" 2>/dev/null; then
+    echo "[ralphharness] WARN: legacy control signal in chat.md — migrate to signals.jsonl" >> "$SPEC_PATH/.progress.md"
     active_count=1
   fi
   if [ "$active_count" -gt 0 ]; then

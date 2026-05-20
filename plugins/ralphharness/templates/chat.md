@@ -35,7 +35,7 @@ Collaboration markers are written as `**Signal**: <NAME>` in chat.md message bod
 | FIX_PROPOSAL | A concrete suggested fix derived from the root cause |
 | BUG_DISCOVERY | A bug found via investigation; mirrored as a task_review.md row by reviewer |
 
-> **Migration Note**: Legacy `[HOLD]` markers in chat.md continue to work for one release cycle (grep fallback). New control signals must use signals.jsonl — see `references/coordinator-pattern.md` §Signal Protocol.
+> **Migration Note**: Legacy `[HOLD]`/`[PENDING]`/`[URGENT]`/`[DEADLOCK]` markers in chat.md continue to work for one release cycle (grep fallback). New control signals must use signals.jsonl — see `references/coordinator-pattern.md` §Signal Protocol.
 
 ## Message Format
 

@@ -404,7 +404,7 @@ Control signals go to `signals.jsonl`; collaboration markers stay in `chat.md`.
 | `ALIVE` / `STILL` | `signals.jsonl` | Heartbeat: on entering Do-steps, before/around long Explore or design-doc read, once per executor turn. `ALIVE` = progressed this turn; `STILL` = alive but no progress. |
 
 **All control signals are appended via the canonical atomic-append pattern** (fd 202, `signals.jsonl.lock`).
-Collaboration signals (ACK, HOLD, PENDING, CONTINUE, OVER, CLOSE, ALIVE, STILL, URGENT, DEADLOCK) continue to be written to `chat.md` via fd 200.
+Legacy fallback: control signals written to `chat.md` via fd 200 are detected by the HOLD-GATE regex fallback (one release cycle). **Canonical: `signals.jsonl` via fd 202.**
 
 ### Heartbeat JSON Shape
 
