@@ -3,15 +3,15 @@
 Auto-generated summary of all specs across configured directories.
 See [index-state.json](./index-state.json) for machine-readable data.
 
-**Last updated:** 2026-05-19T10:52:52Z
+**Last updated:** 2026-05-20T11:33:46Z
 
 ## Directories (1)
 
 | Directory | Specs | Default |
 |-----------|-------|---------|
-| ./specs | 55 | Yes |
+| ./specs | 56 | Yes |
 
-## All Specs (55)
+## All Specs (56)
 
 | Spec | Directory | Phase | Status |
 |------|-----------|-------|--------|
@@ -70,6 +70,7 @@ See [index-state.json](./index-state.json) for machine-readable data.
 | context-middleware | ./specs | complete |  |
 | reviewer-warmup | ./specs | execution | 1/19 tasks |
 | harness-enforcement-gates | ./specs | tasks | awaiting approval |
+| rag-integration | ./specs | tasks | 0/35 tasks |
 
 ---
 
