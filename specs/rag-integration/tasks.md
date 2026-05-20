@@ -209,7 +209,7 @@ except EmbedderError: print('PASS')" | grep -q PASS && echo PASS`
   - _Requirements: FR-7, NFR-1, NFR-5, AC-1.4_
   - _Design: Component 1, Observability section_
 
-- [ ] 1.17 [VERIFY] Phase 1 exit gate: end-to-end disabled path, zero signals
+- [x] 1.17 [VERIFY] Phase 1 exit gate: end-to-end disabled path, zero signals
   - **Do**: Confirm a full Ralph Loop iteration with NO `.ralphharness.local.md` makes zero `python -m rag` subprocess calls and zero new signals.
   - **Verify**: `cd /mnt/bunker_data/ai/smart-ralph && bash -c 'source plugins/ralphharness/hooks/scripts/lib-rag.sh && start_sig=$(wc -l < specs/rag-integration/signals.jsonl 2>/dev/null || echo 0); for i in 1 2 3; do rag_retrieve "q$i" specs_tasks 5 >/dev/null; done; end_sig=$(wc -l < specs/rag-integration/signals.jsonl 2>/dev/null || echo 0); test "$start_sig" = "$end_sig" && echo PASS'`
   - **Done when**: Zero signals emitted; all retrievals return empty.
@@ -220,7 +220,7 @@ except EmbedderError: print('PASS')" | grep -q PASS && echo PASS`
 Goal: clean up the POC. Extract chunker, add security layer, centralise
 signal emission with the `phase` field. No new functionality.
 
-- [ ] 2.1 Extract `rag/chunker.py` with per-artifact strategies
+- [x] 2.1 Extract `rag/chunker.py` with per-artifact strategies
   - **Do**:
     1. `Chunker.chunk(source_path, content) -> list[Chunk]` dispatches by file extension / name (design.md Component 7 table).
     2. Markdown chunker splits on `^## ` and `^### ` boundaries, 800-token target, 100-token overlap, **using the active embedder's tokenizer** (per Decision #11).
@@ -233,7 +233,7 @@ signal emission with the `phase` field. No new functionality.
   - _Requirements: FR-9_
   - _Design: Component 7, Decision #11_
 
-- [ ] 2.2 Add `SecurityLayer` with allowlist sanitisation
+- [x] 2.2 Add `SecurityLayer` with allowlist sanitisation
   - **Do**:
     1. `rag/security_allowlist.yaml` — initial patterns from design Component 6 (AWS, SSH, Bearer, Slack, GitHub PAT).
     2. `rag/security.py` — `SecurityLayer.sanitize(chunk) -> SanitizationResult`.
@@ -245,7 +245,7 @@ signal emission with the `phase` field. No new functionality.
   - _Requirements: FR-8, NFR-7_
   - _Design: Component 6_
 
-- [ ] 2.3 Centralise signal emission in `rag/signals.py` (with `phase` field)
+- [x] 2.3 Centralise signal emission in `rag/signals.py` (with `phase` field)
   - **Do**:
     1. `rag/signals.py` — `emit_retrieval_failed(spec_path, reason, phase)` where `phase: Literal["retrieval", "indexing"]`; and `emit_indexing_queued(spec_path, spec_name, chunk_count)`.
     2. Both shell out to `bash -c "source lib-signals.sh && append_signal …"` to reuse the existing helper.
@@ -257,7 +257,7 @@ signal emission with the `phase` field. No new functionality.
   - _Requirements: FR-5_
   - _Design: Component 3, Decision #8, Flow 1, Flow 2_
 
-- [ ] 2.4 [VERIFY] Phase 2 exit gate: refactor leaves disabled path unchanged
+- [x] 2.4 [VERIFY] Phase 2 exit gate: refactor leaves disabled path unchanged
   - **Do**: Re-run Phase 1.17 smoke. Confirm `lib-rag.sh` still emits 0 signals when disabled and the metrics log still records `"disabled"`.
   - **Verify**: `cd /mnt/bunker_data/ai/smart-ralph && bash -c 'source plugins/ralphharness/hooks/scripts/lib-rag.sh && rag_retrieve x y 1; PYTHONPATH=. python -m plugins.ralphharness.rag retrieve --query x --collection y --top-k 1 | grep -q "^\[\]$" && echo PASS'`
   - **Done when**: Disabled path still returns `[]` instantly; zero signals.
@@ -269,7 +269,7 @@ Goal: unit tests for each component, an integration test against a real
 Qdrant (skipped if unavailable), and bats suites for `lib-rag.sh` and
 the post-task helper.
 
-- [ ] 3.1 Create `conftest.py` with shared fixtures
+- [x] 3.1 Create `conftest.py` with shared fixtures
   - **Do**:
     1. `rag/tests/conftest.py` with fixtures: `fake_qdrant_client` (in-memory dict-backed fake matching `QdrantClient`'s `get_collections`, `recreate_collection`, `upsert`, `search`); `stub_embedder` (hash-derived deterministic vector); `sample_chunks` (5 per collection); `sample_signals_jsonl` (one of each signal type + `RETRIEVAL_FAILED` placeholder); `xdg_cache_tmp` (autouse, redirects `XDG_CACHE_HOME` to `tmp_path`).
   - **Files**: `rag/tests/__init__.py`, `rag/tests/conftest.py`
@@ -278,7 +278,7 @@ the post-task helper.
   - **Commit**: `test(rag): conftest.py with shared fixtures`
   - _Design: Test Strategy — Fixtures_
 
-- [ ] 3.2 Unit tests for `RAGConfig`
+- [x] 3.2 Unit tests for `RAGConfig`
   - **Do**: `rag/tests/test_config.py` — default-disabled when no config, partial config merge, malformed YAML raises `ConfigurationError`, `enabled` property single source of truth.
   - **Files**: `rag/tests/test_config.py`
   - **Done when**: 4+ test cases, all pass.
@@ -286,57 +286,57 @@ the post-task helper.
   - **Commit**: `test(rag): RAGConfig coverage`
   - _Design: Test Strategy — Test Coverage Table_
 
-- [ ] 3.3 Unit tests for `Chunker`
+- [x] 3.3 Unit tests for `Chunker`
   - **Do**: `rag/tests/test_chunker.py` — per-artifact strategies produce non-empty chunks; line ranges accurate; JSONL emits one chunk per line; markdown splits at 800-token boundary using embedder tokenizer.
   - **Files**: `rag/tests/test_chunker.py`
   - **Verify**: `cd /mnt/bunker_data/ai/smart-ralph && PYTHONPATH=. python -m pytest plugins/ralphharness/rag/tests/test_chunker.py -q && echo PASS`
   - **Commit**: `test(rag): Chunker coverage`
 
-- [ ] 3.4 Unit tests for `SecurityLayer`
+- [x] 3.4 Unit tests for `SecurityLayer`
   - **Do**: `rag/tests/test_security.py` — each allowlist pattern matches a known-bad fixture; secret content NEVER appears in return value or stdout; rejection log written to `XDG_CACHE_HOME/smart-ralph/rag/sanitization-rejections.log` (uses `xdg_cache_tmp` fixture).
   - **Files**: `rag/tests/test_security.py`
   - **Verify**: `cd /mnt/bunker_data/ai/smart-ralph && PYTHONPATH=. python -m pytest plugins/ralphharness/rag/tests/test_security.py -q && echo PASS`
   - **Commit**: `test(rag): SecurityLayer rejection coverage + log path assertion`
 
-- [ ] 3.5 Unit tests for `RAGService` (graceful + telemetry + signal phase)
+- [x] 3.5 Unit tests for `RAGService` (graceful + telemetry + signal phase)
   - **Do**: `rag/tests/test_service.py` — `retrieve()` returns `[]` on `ProviderError`/`EmbedderError`/`TimeoutError`; success path emits NO `signals.jsonl` entry; failure path emits exactly one `RETRIEVAL_FAILED` with correct `phase` field; per-call telemetry written to `retrieval-metrics.log` with `query_sha256` (not raw query); `from_config()` returns None when disabled.
   - **Files**: `rag/tests/test_service.py`
   - **Verify**: `cd /mnt/bunker_data/ai/smart-ralph && PYTHONPATH=. python -m pytest plugins/ralphharness/rag/tests/test_service.py -q && echo PASS`
   - **Commit**: `test(rag): RAGService graceful-degradation + telemetry + phase coverage`
   - _Design: Test Strategy, Observability_
 
-- [ ] 3.6 [VERIFY] Phase 3.B checkpoint: core-module unit tests green
+- [x] 3.6 [VERIFY] Phase 3.B checkpoint: core-module unit tests green
   - **Do**: Run pytest across the config/chunker/security/service test cluster; all must pass.
   - **Verify**: `cd /mnt/bunker_data/ai/smart-ralph && PYTHONPATH=. python -m pytest plugins/ralphharness/rag/tests/test_config.py plugins/ralphharness/rag/tests/test_chunker.py plugins/ralphharness/rag/tests/test_security.py plugins/ralphharness/rag/tests/test_service.py -q && echo PASS`
   - **Done when**: Four test files pass; rollback granularity intact before adding provider/embedder/bats tests.
   - **Commit**: `chore(rag): pass phase 3.B checkpoint (core-module coverage green)`
 
-- [ ] 3.7 Unit tests for providers (`Qdrant`, `FAISS`)
+- [x] 3.7 Unit tests for providers (`Qdrant`, `FAISS`)
   - **Do**: `rag/tests/test_providers.py` — Against `fake_qdrant_client`: `retrieve` round-trips vectors, `index` writes chunks with metadata, `health_check` returns False on connection error. Dimension mismatch raises `ProviderError` with remediation hint. FAISS: read-only `index()` raises `NotImplementedError` unless `allow_write=True`; `retrieve` against a tmp index returns top-k by cosine.
   - **Files**: `rag/tests/test_providers.py`
   - **Verify**: `cd /mnt/bunker_data/ai/smart-ralph && PYTHONPATH=. python -m pytest plugins/ralphharness/rag/tests/test_providers.py -q && echo PASS`
   - **Commit**: `test(rag): QdrantProvider + FAISSProvider coverage`
 
-- [ ] 3.8 Unit tests for embedders + fallback chain
+- [x] 3.8 Unit tests for embedders + fallback chain
   - **Do**: `rag/tests/test_embedder.py` — `LocalEmbedder` with stubbed `SentenceTransformer` batches 32, dim 384. `OpenAIEmbedder` with stubbed `openai` returns 1536-dim; rate-limit triggers fallback. `AzureOpenAIEmbedder` raises immediately when endpoint empty. `EmbedderChain([local, openai, azure])` — first failure tries next; all exhausted raises `EmbedderError`.
   - **Files**: `rag/tests/test_embedder.py`
   - **Verify**: `cd /mnt/bunker_data/ai/smart-ralph && PYTHONPATH=. python -m pytest plugins/ralphharness/rag/tests/test_embedder.py -q && echo PASS`
   - **Commit**: `test(rag): embedders + fallback chain coverage`
 
-- [ ] 3.9 bats suite for `lib-rag.sh`
+- [x] 3.9 bats suite for `lib-rag.sh`
   - **Do**: `plugins/ralphharness/tests/test_lib_rag.bats` — disabled path emits no subprocess but writes one `"disabled"` line to metrics log; enabled-but-no-python is graceful; 2s timeout enforced with a slow Python stub; JSON envelope parsed into TSV.
   - **Files**: `plugins/ralphharness/tests/test_lib_rag.bats`
   - **Verify**: `cd /mnt/bunker_data/ai/smart-ralph && bats plugins/ralphharness/tests/test_lib_rag.bats && echo PASS`
   - **Commit**: `test(rag): bats suite for lib-rag.sh`
 
-- [ ] 3.10 bats suite for `post-task-rag.sh` integration
+- [x] 3.10 bats suite for `post-task-rag.sh` integration
   - **Do**: `plugins/ralphharness/tests/test_post_task_rag.bats` — when `rag_enabled=false`, helper is a no-op; when true, the backgrounded invocation does NOT block `stop-watcher.sh` for more than **20 ms**. (Threshold per design Test Coverage Table.)
   - **Files**: `plugins/ralphharness/tests/test_post_task_rag.bats`
   - **Verify**: `cd /mnt/bunker_data/ai/smart-ralph && bats plugins/ralphharness/tests/test_post_task_rag.bats && echo PASS`
   - **Commit**: `test(rag): bats suite for post-task-rag.sh (20 ms threshold)`
   - _Design: Test Strategy — Test Coverage Table_
 
-- [ ] 3.11 Unit tests for `OnboardingStep` framework
+- [x] 3.11 Unit tests for `OnboardingStep` framework
   - **Do**: `rag/tests/test_onboarding.py` — for each concrete step (`PythonStep`, `PythonDepsStep`, `VectorDBStep`, `EmbedderStep`, `ConfigStep`, `IndexBootstrapStep`, `DoctorStep`):
     1. `detect()` returns each `DetectionState` value (`OK`, `MISSING`, `UNKNOWN`) under controlled fixtures (mocked `subprocess.run` for `pip show`, mocked `curl` for Qdrant healthz, etc.).
     2. `PythonStep.install_command()` is `None` (NFR-9). `ConfigStep.install_command()` and `DoctorStep.install_command()` are `None` (write via `_append_with_flock()` / read-only doctor pass).
@@ -351,19 +351,19 @@ the post-task helper.
   - _Requirements: AC-6.2, AC-6.3, AC-6.5, AC-6.6, NFR-9_
   - _Design: Component 9, Test Strategy — Test Coverage Table_
 
-- [ ] 3.12 [VERIFY] Phase 3.C checkpoint: all unit + bats tests green
+- [x] 3.12 [VERIFY] Phase 3.C checkpoint: all unit + bats tests green
   - **Do**: Run pytest + both bats suites together; all must pass.
   - **Verify**: `cd /mnt/bunker_data/ai/smart-ralph && PYTHONPATH=. python -m pytest plugins/ralphharness/rag/tests/ -q && bats plugins/ralphharness/tests/test_lib_rag.bats plugins/ralphharness/tests/test_post_task_rag.bats && echo PASS`
   - **Done when**: All suites green.
   - **Commit**: `chore(rag): pass phase 3.C checkpoint`
 
-- [ ] 3.13 Integration test: real Qdrant (skipped if no `QDRANT_URL`)
+- [x] 3.13 Integration test: real Qdrant (skipped if no `QDRANT_URL`)
   - **Do**: `rag/tests/test_qdrant_integration.py` — `pytest.skip` if `QDRANT_URL` missing; else create test collection, index 3 chunks, retrieve top-1, assert content match, clean up in `teardown`.
   - **Files**: `rag/tests/test_qdrant_integration.py`
   - **Verify**: `cd /mnt/bunker_data/ai/smart-ralph && PYTHONPATH=. python -m pytest plugins/ralphharness/rag/tests/test_qdrant_integration.py -q && echo PASS`
   - **Commit**: `test(rag): Qdrant integration (skippable)`
 
-- [ ] 3.14 [VERIFY] Phase 3 exit gate: coverage + skip-marker discipline
+- [x] 3.14 [VERIFY] Phase 3 exit gate: coverage + skip-marker discipline
   - **Do**: Verify ≥18 individually collected test items exist across the suite; integration test correctly skips when `QDRANT_URL` absent (does not error).
   - **Verify**: `cd /mnt/bunker_data/ai/smart-ralph && count=$(PYTHONPATH=. python -m pytest --collect-only -q plugins/ralphharness/rag/tests/ 2>/dev/null | grep -cE '::test_'); test "$count" -ge 18 && echo PASS`
   - **Done when**: ≥18 collected `::test_*` items; integration test skips cleanly.
@@ -374,19 +374,19 @@ the post-task helper.
 Goal: lint, type-check, slash commands (including onboarding), surgical
 stop-watcher hook, and a real Ralph Loop iteration with RAG enabled.
 
-- [ ] 4.1 Shellcheck `lib-rag.sh` and (placeholder) `post-task-rag.sh`
+- [x] 4.1 Shellcheck `lib-rag.sh` and (placeholder) `post-task-rag.sh`
   - **Do**: Fix any shellcheck SC errors; add `# shellcheck disable=` only with a comment explaining why.
   - **Files**: `plugins/ralphharness/hooks/scripts/lib-rag.sh`, `plugins/ralphharness/hooks/scripts/post-task-rag.sh`
   - **Verify**: `shellcheck plugins/ralphharness/hooks/scripts/lib-rag.sh plugins/ralphharness/hooks/scripts/post-task-rag.sh && echo PASS`
   - **Commit**: `chore(rag): shellcheck clean`
 
-- [ ] 4.2 `ruff` + `mypy` clean on `rag/`
+- [x] 4.2 `ruff` + `mypy` clean on `rag/`
   - **Do**: `ruff check plugins/ralphharness/rag/` and `mypy plugins/ralphharness/rag/`; fix until clean. Type-annotate every public function.
   - **Files**: any in `rag/` that fail.
   - **Verify**: `cd /mnt/bunker_data/ai/smart-ralph && ruff check plugins/ralphharness/rag/ && mypy plugins/ralphharness/rag/ && echo PASS`
   - **Commit**: `chore(rag): ruff + mypy clean`
 
-- [ ] 4.3 Implement `/ralphharness:index-all` command + flock rate limit
+- [x] 4.3 Implement `/ralphharness:index-all` command + flock rate limit
   - **Do**:
     1. `commands/index-all.md` — slash command that shells `python -m plugins.ralphharness.rag index-all "$@"`.
     2. In `__main__.py index-all`: acquire flock on `~/.cache/smart-ralph/rag/index-all.lock` with `LOCK_EX | LOCK_NB`; if locked, exit 1 with `another index-all is in progress`. Additionally reject if lock-mtime is < 60 s old (soft rate limit, NFR-8).
@@ -397,7 +397,7 @@ stop-watcher hook, and a real Ralph Loop iteration with RAG enabled.
   - _Requirements: FR-6, NFR-8_
   - _Design: Component 8, Flow 3, Edge Cases_
 
-- [ ] 4.4 Implement `/ralphharness:rag-doctor` command
+- [x] 4.4 Implement `/ralphharness:rag-doctor` command
   - **Do**:
     1. `commands/rag-doctor.md` — slash command that shells `python -m plugins.ralphharness.rag doctor`.
     2. `doctor` subcommand performs: config valid, embedder reachable, vector DB reachable, last index time per collection, **embedder dimension match per collection** (Edge Cases).
@@ -408,7 +408,7 @@ stop-watcher hook, and a real Ralph Loop iteration with RAG enabled.
   - _Requirements: FR-10_
   - _Design: Component 8, Edge Cases_
 
-- [ ] 4.5 Implement `/ralphharness:rag-search` command (US-4 triage)
+- [x] 4.5 Implement `/ralphharness:rag-search` command (US-4 triage)
   - **Do**:
     1. `commands/rag-search.md` — slash command that shells `python -m plugins.ralphharness.rag search --query "$@"`.
     2. In `__main__.py search`: default `--all-collections`, `--top-k 10`; runs `RAGService.retrieve()` per collection (`specs_tasks`, `execution_memory`, `reviews`); merges + reranks by score.
@@ -420,13 +420,13 @@ stop-watcher hook, and a real Ralph Loop iteration with RAG enabled.
   - _Requirements: AC-4.1, AC-4.2, AC-4.3_
   - _Design: Component 8, Flow 5_
 
-- [ ] 4.6 [VERIFY] Phase 4.B checkpoint: all three retrieval-side slash commands green
+- [x] 4.6 [VERIFY] Phase 4.B checkpoint: all three retrieval-side slash commands green
   - **Do**: Smoke-run each of `rag-doctor`, `index-all --dry-run`, `rag-search "x"` end-to-end; assert each exits 0.
   - **Verify**: `cd /mnt/bunker_data/ai/smart-ralph && PYTHONPATH=. python -m plugins.ralphharness.rag doctor >/dev/null && PYTHONPATH=. python -m plugins.ralphharness.rag index-all --dry-run >/dev/null && PYTHONPATH=. python -m plugins.ralphharness.rag search --query x --all-collections --top-k 1 >/dev/null && echo PASS`
   - **Done when**: All three commands exit 0 under disabled config (graceful empty output).
   - **Commit**: `chore(rag): pass phase 4.B checkpoint`
 
-- [ ] 4.7 Implement `OnboardingStep` framework + 7 concrete steps
+- [x] 4.7 Implement `OnboardingStep` framework + 7 concrete steps
   - **Do**:
     1. `rag/onboarding.py` — `DetectionState` enum (`OK` / `MISSING` / `UNKNOWN`), `DetectionResult` dataclass `{state, detail}`, `OnboardingStep` ABC with `detect() -> DetectionResult`, `explain() -> str`, `install_command() -> list[str] | None` (argv LIST, NEVER a string), `verify() -> bool`.
     2. Concrete steps in order: `PythonStep` (`install_command()` returns `None` per NFR-9), `PythonDepsStep` (returns `["pip", "install", "qdrant-client", "faiss-cpu", "pyyaml"]`), `VectorDBStep` (Qdrant + docker → `["docker", "run", "-d", "--name", "smart-ralph-qdrant", "-p", "6333:6333", "qdrant/qdrant:1.7.0"]`; FAISS or no-docker → `None`), `EmbedderStep` (local → `["pip", "install", "sentence-transformers"]`; openai/azure → `None`, prints env-var hint; **NEVER writes keys to disk**), `ConfigStep` (`install_command() == None`; writes via dedicated `_append_with_flock()` under advisory `flock` on `.ralphharness.local.md`, aborts if mtime changed since `detect()`), `IndexBootstrapStep` (first `["python", "-m", "rag", "index-all", "--dry-run"]`, then `["python", "-m", "rag", "index-all"]`; rate-limit error → `verify()` False with `detail` "rate-limited; rerun in <N>s"), `DoctorStep` (`install_command() == None`; runs `rag-doctor`).
@@ -445,7 +445,7 @@ print('PASS')" | grep -q PASS && echo PASS`
   - _Requirements: FR-11, FR-12, AC-6.1, AC-6.2, AC-6.3, AC-6.6, NFR-9_
   - _Design: Component 9_
 
-- [ ] 4.8 Wire `onboard` subcommand + `/ralphharness:rag-onboard` slash command
+- [x] 4.8 Wire `onboard` subcommand + `/ralphharness:rag-onboard` slash command
   - **Do**:
     1. `__main__.py onboard` — instantiate the seven steps in order; for each: print the structured block (`[i/7] name`, `Detect:`, `Why:`, `Would run:`), read stdin for `y`/`n`/`r`/`a`, dispatch, record outcome. Accumulate a summary block at the end and run `rag-doctor`.
     2. Add a `--non-interactive` flag (read-only mode: prints the plan without prompting; used by 1.4 smoke and CI). In non-interactive mode all `MISSING` steps are recorded as `skipped`.
@@ -457,7 +457,7 @@ print('PASS')" | grep -q PASS && echo PASS`
   - _Requirements: FR-11, AC-6.1, AC-6.4, AC-6.5_
   - _Design: Component 8 (commands table), Component 9, Flow 6_
 
-- [ ] 4.9 Create `post-task-rag.sh` helper (separate file)
+- [x] 4.9 Create `post-task-rag.sh` helper (separate file)
   - **Do**:
     1. New file `plugins/ralphharness/hooks/scripts/post-task-rag.sh`.
     2. Sources `lib-rag.sh`; defines a single function `post_task_rag_hook <spec> <task_index>` that calls `rag_index_task` in the background (`& disown`).
@@ -469,7 +469,7 @@ print('PASS')" | grep -q PASS && echo PASS`
   - _Requirements: FR-7_
   - _Design: Internal Dependencies, File Structure_
 
-- [ ] 4.10 Surgically wire `post-task-rag.sh` into `stop-watcher.sh` (2 lines)
+- [x] 4.10 Surgically wire `post-task-rag.sh` into `stop-watcher.sh` (2 lines)
   - **Do**: Add exactly two lines to `stop-watcher.sh` at the end of the existing post-`TASK_COMPLETE` block: one to `source` the helper, one to invoke `post_task_rag_hook` behind `if rag_enabled; then …; fi`. **No edits to any existing line.** Per CLAUDE.md "Surgical Changes".
   - **Files**: `plugins/ralphharness/hooks/scripts/stop-watcher.sh`
   - **Done when**: `git diff HEAD --` on stop-watcher.sh shows ≤4 added lines and 0 removed lines.
@@ -478,7 +478,7 @@ print('PASS')" | grep -q PASS && echo PASS`
   - _Requirements: FR-7_
   - _Design: Internal Dependencies (CLAUDE.md Surgical Changes)_
 
-- [ ] 4.11 [VERIFY] Phase 4 exit gate: real Ralph Loop iteration with RAG enabled
+- [x] 4.11 [VERIFY] Phase 4 exit gate: real Ralph Loop iteration with RAG enabled
   - **Do**: Create a minimal `.ralphharness.local.md` with `rag.enabled: true` + `provider: faiss` and a writable FAISS path; run one synthetic spec-executor task end-to-end. Assert: `INDEXING_QUEUED` signal appears after task completes.
   - **Verify**: `cd /mnt/bunker_data/ai/smart-ralph && mkdir -p /tmp/rag-e2e-$$ && bash -c 'printf -- "---\nrag:\n  enabled: true\n  provider: faiss\n  faiss:\n    index_dir: /tmp/rag-e2e-'$$'\n    allow_write: true\n---\n" > .ralphharness.local.md.test && source plugins/ralphharness/hooks/scripts/post-task-rag.sh && SPEC=rag-integration; start_sig=$(grep -c INDEXING_QUEUED "specs/$SPEC/signals.jsonl" 2>/dev/null || echo 0); post_task_rag_hook "$SPEC" 0; sleep 2; end_sig=$(grep -c INDEXING_QUEUED "specs/$SPEC/signals.jsonl" 2>/dev/null || echo 0); rm -f .ralphharness.local.md.test; test "$end_sig" -gt "$start_sig" && echo PASS'`
   - **Done when**: At least one `INDEXING_QUEUED` signal appended after the hook fires.
@@ -488,7 +488,7 @@ print('PASS')" | grep -q PASS && echo PASS`
 
 Goal: docs, version bump, autonomous E2E verification (VE1/VE2/VE3), PR.
 
-- [ ] 5.1 [VE1] Startup: prepare autonomous E2E test environment
+- [x] 5.1 [VE1] Startup: prepare autonomous E2E test environment
   - **Do**:
     1. Ensure Python deps installed (`pip install -e ./plugins/ralphharness/rag/`) and `bats` available.
     2. Start an ephemeral Qdrant container if `docker` is available (`docker run -d --name rag-e2e-qdrant -p 6333:6333 qdrant/qdrant:1.7.0`); else skip integration.
@@ -498,14 +498,14 @@ Goal: docs, version bump, autonomous E2E verification (VE1/VE2/VE3), PR.
   - **Verify**: `cd /mnt/bunker_data/ai/smart-ralph && python -c "import qdrant_client, pytest" >/dev/null 2>&1 && bats --version >/dev/null 2>&1 && echo PASS`
   - **Commit**: (no commit — runtime setup; record outcome in `.progress.md`)
 
-- [ ] 5.2 [VE2] Check: run full E2E suite (pytest + bats + integration)
+- [x] 5.2 [VE2] Check: run full E2E suite (pytest + bats + integration)
   - **Do**: Run pytest (unit + integration if `QDRANT_URL` set) + both bats suites; assert all green. On failure, surface output to `.progress.md`.
   - **Files**: (test files exercised, not edited)
   - **Done when**: Both pytest and bats exit 0; ≥18 pytest tests collected; ≥6 bats tests collected.
   - **Verify**: `cd /mnt/bunker_data/ai/smart-ralph && PYTHONPATH=. python -m pytest plugins/ralphharness/rag/tests/ -q && bats plugins/ralphharness/tests/test_lib_rag.bats plugins/ralphharness/tests/test_post_task_rag.bats && echo PASS`
   - **Commit**: `chore(rag): VE2 autonomous E2E green`
 
-- [ ] 5.3 [VE3] Cleanup: tear down ephemeral E2E environment
+- [x] 5.3 [VE3] Cleanup: tear down ephemeral E2E environment
   - **Do**:
     1. Remove ephemeral Qdrant container if started in VE1 (`docker rm -f rag-e2e-qdrant`).
     2. Clean up `XDG_CACHE_HOME` temp dirs.
@@ -515,19 +515,19 @@ Goal: docs, version bump, autonomous E2E verification (VE1/VE2/VE3), PR.
   - **Verify**: `cd /mnt/bunker_data/ai/smart-ralph && ! docker ps 2>/dev/null | grep -q rag-e2e-qdrant && ! test -f .ralphharness.local.md.test && echo PASS`
   - **Commit**: (no commit — runtime cleanup; record outcome in `.progress.md`)
 
-- [ ] 5.4 Update `CLAUDE.md` with RAG configuration section
+- [x] 5.4 Update `CLAUDE.md` with RAG configuration section
   - **Do**: Add a `## RAG (optional)` section under "Architecture" explaining the opt-in model, the four new commands (rag-doctor, index-all, rag-search, **rag-onboard**), how `signals.jsonl` is extended (RETRIEVAL_FAILED with phase, INDEXING_QUEUED), and the `retrieval-metrics.log` telemetry file. Reference design.md for full detail.
   - **Files**: `CLAUDE.md`
   - **Verify**: `grep -q '## RAG' CLAUDE.md && grep -q rag-onboard CLAUDE.md && grep -q rag-search CLAUDE.md && echo PASS`
   - **Commit**: `docs: RAG configuration overview in CLAUDE.md`
 
-- [ ] 5.5 Update plugin README with RAG section (including onboarding entry point)
+- [x] 5.5 Update plugin README with RAG section (including onboarding entry point)
   - **Do**: Add `## RAG Integration (opt-in)` to `plugins/ralphharness/README.md`. Cover: enable flag, **`/ralphharness:rag-onboard` as the recommended way to enable**, the other three commands, providers (Qdrant + FAISS), embedder fallback chain, security model.
   - **Files**: `plugins/ralphharness/README.md`
   - **Verify**: `grep -q 'RAG Integration' plugins/ralphharness/README.md && grep -q rag-onboard plugins/ralphharness/README.md && grep -q rag-search plugins/ralphharness/README.md && echo PASS`
   - **Commit**: `docs(rag): README section`
 
-- [ ] 5.6 Bump plugin version (minor)
+- [x] 5.6 Bump plugin version (minor)
   - **Do**:
     1. Bump `plugins/ralphharness/.claude-plugin/plugin.json` version: `5.7.0` → `5.8.0` (new feature).
     2. Bump matching entry in `.claude-plugin/marketplace.json`.
@@ -535,12 +535,12 @@ Goal: docs, version bump, autonomous E2E verification (VE1/VE2/VE3), PR.
   - **Verify**: `grep -q '"version": "5.8.0"' plugins/ralphharness/.claude-plugin/plugin.json && grep -q '"version": "5.8.0"' .claude-plugin/marketplace.json && echo PASS`
   - **Commit**: `chore: bump plugin to 5.8.0 (RAG integration)`
 
-- [ ] 5.7 Open PR via `gh pr create`
+- [x] 5.7 Open PR via `gh pr create`
   - **Do**: Create PR titled `feat: opt-in RAG integration (Qdrant + FAISS, sentence-transformers + OpenAI, interactive onboarding)`. Body links to this spec, the BMAD PRD, and the design doc.
   - **Verify**: `gh pr view --json url -q .url | grep -q github && echo PASS`
   - **Commit**: (no commit — gh action)
 
-- [ ] 5.8 [VERIFY] Phase 5 exit gate: CI green, ready for review
+- [x] 5.8 [VERIFY] Phase 5 exit gate: CI green, ready for review
   - **Do**: Wait for CI; confirm all checks pass. If lint/type/test fail, fix and push.
   - **Verify**: `gh pr checks --watch && echo PASS`
   - **Done when**: All CI checks green; PR ready for review.
