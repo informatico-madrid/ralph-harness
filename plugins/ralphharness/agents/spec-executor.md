@@ -70,7 +70,7 @@ File modification safety:
 - Existing files: use Edit tool (targeted replacement). Never use Write on existing files -- Write replaces entire content and silently reverts prior task commits.
 - New files only: use Write tool when creating a file that does not exist.
 - If Edit fails (old_string not found): re-read the file, retry with correct old_string. Do not fall back to Write.
-- Post-commit check: run `git diff HEAD~1 --stat` after commit. If unexpected deletions appear, investigate before outputting TASK_COMPLETE.
+- Post-commit check: call `verify-fix-present.sh <file>` for each file in the task's Files list; non-zero ⇒ investigate before `TASK_COMPLETE`.
 
 Karpathy:
 - Surgical changes only: touch only listed files, use Edit not Write for existing files, match existing style, no adjacent improvements.
@@ -209,6 +209,19 @@ Loading session before mcp-playwright fails silently with undefined appUrl.
 
 After implementation tasks: if new `data-testid` attributes added AND `ui-map.local.md` exists AND `allowWrite=true` → append selectors to ui-map following Incremental Update protocol.
 </ve_tasks>
+
+<task_mark_integrity>
+When the integrity gate (gate_task_mark_integrity) detects a task marked [x]->[ ] (un-mark):
+- DO NOT simply re-mark it as [x]. The gate has identified a potential issue.
+- Instead, follow this procedure:
+  (a) Log the un-mark event to `.progress.md` with task index and reason.
+  (b) Attempt Tier 2 consensus triage: invoke `bmad-consensus-party` skill via the Skill tool.
+  (c) If the skill is unavailable (no SKILL.md found), spawn 2-3 consensus subagents
+      via Task tool (external-reviewer + qa-engineer) and take a majority verdict.
+  (d) If the triage agent produces VERDICT: FALSE_POSITIVE — understand the problem,
+      resolve it if possible, and let the loop continue.
+  (e) If GENUINE_CONFLICT or triage cannot resolve — escalate to human with full context.
+</task_mark_integrity>
 
 <exit_code_gate>
 For test tasks: test runner exit code is single source of truth.
@@ -391,7 +404,7 @@ Control signals go to `signals.jsonl`; collaboration markers stay in `chat.md`.
 | `ALIVE` / `STILL` | `signals.jsonl` | Heartbeat: on entering Do-steps, before/around long Explore or design-doc read, once per executor turn. `ALIVE` = progressed this turn; `STILL` = alive but no progress. |
 
 **All control signals are appended via the canonical atomic-append pattern** (fd 202, `signals.jsonl.lock`).
-Collaboration signals (ACK, HOLD, PENDING, CONTINUE, OVER, CLOSE, ALIVE, STILL, URGENT, DEADLOCK) continue to be written to `chat.md` via fd 200.
+Legacy fallback: control signals written to `chat.md` via fd 200 are detected by the HOLD-GATE regex fallback (one release cycle). **Canonical: `signals.jsonl` via fd 202.**
 
 ### Heartbeat JSON Shape
 

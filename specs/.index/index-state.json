@@ -1,10 +1,10 @@
 {
   "version": "1.0",
-  "updated": "2026-05-17T21:11:26Z",
+  "updated": "2026-05-19T10:52:52Z",
   "directories": [
     {
       "path": "./specs",
-      "specsCount": 54,
+      "specsCount": 55,
       "isDefault": true
     }
   ],
@@ -375,9 +375,16 @@
     {
       "name": "reviewer-warmup",
       "path": "./specs/reviewer-warmup",
+      "phase": "execution",
+      "taskIndex": 1,
+      "totalTasks": 19
+    },
+    {
+      "name": "harness-enforcement-gates",
+      "path": "./specs/harness-enforcement-gates",
       "phase": "tasks",
       "taskIndex": 0,
-      "totalTasks": 19,
+      "totalTasks": 52,
       "awaitingApproval": true
     }
   ]

@@ -109,7 +109,8 @@ Update `.ralph-state.json` by merging these fields into the existing object:
   "awaitingApproval": false,
   "nativeTaskMap": {},
   "nativeSyncEnabled": true,
-  "nativeSyncFailureCount": 0
+  "nativeSyncFailureCount": 0,
+  "taskMarkSnapshot": null
 }
 ```
 
@@ -143,6 +144,7 @@ jq --argjson taskIndex <first_incomplete> \
      nativeTaskMap: {},
      nativeSyncEnabled: true,
      nativeSyncFailureCount: 0,
+     taskMarkSnapshot: null,
      circuitBreaker: {
        state: "closed",
        consecutiveFailures: 0,
@@ -347,13 +349,13 @@ If yes:
    External reviewer configured.
 
    To launch the reviewer in parallel:
-   1. Open a second Claude Code session in the same repository
+   1. Open a second Claude Code session in the worktree directory (cd to the worktree first)
    2. Load the agent: @external-reviewer
    3. Tell it: "Review spec <specName> while spec-executor implements"
-   4. The reviewer will read and write to specs/<specName>/task_review.md and chat.md (FLOC-based coordination in real time)
+   4. The reviewer will read and write to specs/<specName>/task_review.md and chat.md (flock-based coordination in real time)
 
    The spec-executor is already configured to read task_review.md before each task.
-   The reviewer will also read and write chat.md (FLOC coordination in real time).
+   The reviewer will also read and write chat.md (flock coordination in real time).
    When the reviewer marks an item as FAIL, the spec-executor will stop and apply the fix.
    ```
 
@@ -638,7 +640,7 @@ fi
 
   # BEGIN HOLD-GATE
   # Mechanical active-signal gate (Layer 2). Source of truth: signals.jsonl.
-  # Legacy chat.md [HOLD] markers are honoured for one release cycle (NFR-6, AC-3.6)
+  # Legacy chat.md [HOLD]/[PENDING]/[URGENT]/[DEADLOCK] markers honoured for one release cycle (NFR-6, AC-3.6)
   # via the grep fallback below — emits WARN; removed in next release.
   [ ! -f "$SPEC_PATH/signals.jsonl" ] && cp plugins/ralphharness/templates/signals.jsonl "$SPEC_PATH/signals.jsonl"
   # Source shared signal helpers (lib-signals.sh, FR-10)
@@ -649,9 +651,9 @@ fi
     active_count=$(grep -c '"status":"active"' "$SPEC_PATH/signals.jsonl" 2>/dev/null || echo 0)
     echo "[ralphharness] WARN: jq unavailable, using grep fallback" >> "$SPEC_PATH/.progress.md"
   fi
-  # Legacy [HOLD] grace fallback (AC-3.6, NFR-6) — one release cycle only.
-  if [ "$active_count" = "0" ] && grep -qE '^\[HOLD\]$|^\[PENDING\]$|^\[URGENT\]$' "$SPEC_PATH/chat.md" 2>/dev/null; then
-    echo "[ralphharness] WARN: legacy [HOLD] marker in chat.md — migrate to signals.jsonl" >> "$SPEC_PATH/.progress.md"
+  # Legacy [HOLD]/[PENDING]/[URGENT]/[DEADLOCK] grace fallback (AC-3.6, NFR-6) — one release cycle only.
+  if [ "$active_count" = "0" ] && grep -qE '^\[HOLD\]$|^\[PENDING\]$|^\[URGENT\]$|^\[DEADLOCK\]$' "$SPEC_PATH/chat.md" 2>/dev/null; then
+    echo "[ralphharness] WARN: legacy control signal in chat.md — migrate to signals.jsonl" >> "$SPEC_PATH/.progress.md"
     active_count=1
   fi
   if [ "$active_count" -gt 0 ]; then
@@ -661,11 +663,77 @@ fi
   # END HOLD-GATE
   ```
 
+- **DEADLOCK handler for integrity-triage (`source:"gate_task_mark_integrity"`).**
+  When HOLD-GATE blocks because an active DEADLOCK signal has `source:"gate_task_mark_integrity"`,
+  run the Tier 2 integrity-triage procedure BEFORE halting execution:
+  1. **Read the DEADLOCK payload** from `signals.jsonl` — extract `taskId`/`task` (un-marked task index),
+     `reason` (which task was illegitimately un-marked), and `timestamp`.
+  2. **Gather triage inputs:**
+     - Read the original task block from `tasks.md` (the un-marked task's full description).
+     - Read `task_review.md` for the PASS entry for that task (if any).
+     - Read `.ralph-state.json` for `external_unmarks` state delta (how many external un-marks
+       vs the prior snapshot).
+  3. **Invoke consensus triage** (choose ONE path):
+     - **Primary**: check if `[ -f "$CWD/.claude/skills/bmad-consensus-party/SKILL.md" ]`. If the
+       skill file exists, run `Skill bmad-consensus-party` with the triage inputs and a prompt
+       asking the BMAD Party to reach consensus on whether the un-mark is legitimate.
+     - **Fallback**: if the skill file does NOT exist, spawn 2-3 subagents via Task tool
+       (e.g., `external-reviewer` + `qa-engineer`) with the same triage inputs and the question:
+       "Is the un-mark of task <taskId> a false positive or a genuine conflict?" Each subagent
+       returns its verdict. Take the majority verdict.
+  4. **Output contract — verdict:** the consensus triage MUST return one of:
+     - `VERDICT: FALSE_POSITIVE` — the subagents determined the un-mark was spurious, the task
+       truly is complete, or the PASS entry in task_review.md confirms the work.
+     - `VERDICT: GENUINE_CONFLICT` — the subagents could not resolve the conflict; the un-mark
+       represents a genuine disagreement that requires human intervention.
+  5. **Handle verdict** — implement the two paths below based on the triage result:
+
+     **Path A — FALSE_POSITIVE (resume the loop):**
+     1. Resolve the DEADLOCK signal in `signals.jsonl` using `jq`:
+        ```bash
+        task_idx=$(jq -r '.task' "$deadlock_signal_file" 2>/dev/null || echo "$taskIndex")
+        (
+          exec 202>"${SPEC_PATH}/signals.jsonl.lock"
+          flock -x -w 5 202 || { echo "[triage] WARN: could not lock signals.jsonl, degradation" >> "$SPEC_PATH/.progress.md"; return 0; }
+          jq --argjson idx "$task_idx" \
+             '[.[] | if (.task == ($idx | tostring)) or (.taskIndex == $idx) then .status = "resolved" else . end]' \
+             "$SPEC_PATH/signals.jsonl" > "$SPEC_PATH/signals.jsonl.tmp" && \
+          mv "$SPEC_PATH/signals.jsonl.tmp" "$SPEC_PATH/signals.jsonl"
+        ) 202>"${SPEC_PATH}/signals.jsonl.lock"
+        ```
+     2. Log the resolution: append to `.progress.md`:
+        `Tier-2 integrity triage: FALSE POSITIVE — resumed on task <taskIndex>`
+     3. The DEADLOCK is now resolved (status:"resolved" → `active_signal_count` returns 0);
+        the loop continues to the next task automatically.
+
+     **Path B — GENUINE_CONFLICT (Tier-3 human escalation):**
+     1. Leave the DEADLOCK signal `status:"active"` in `signals.jsonl` — do NOT modify it.
+     2. Emit a human-facing escalation block inline (same shape as existing ESCALATE blocks):
+        ```text
+        ### ESCALATION: Genuine conflict in integrity-triage for task <taskIndex> — <task_name>
+        - **Triage source**: `gate_task_mark_integrity`
+        - **Triage verdict**: GENUINE_CONFLICT — subagents could not resolve the conflict
+        - **Un-marked task**: T<taskIndex> — <task_name from tasks.md>
+        - **PASS entry** (task_review.md): <pass_entry_content or "none found">
+        - **Triage rationale**: <brief summary of why subagents could not resolve>
+        - **Action required**: Human review needed. Set `awaitingApproval=false` in
+          `.ralph-state.json` to resume execution after review.
+        ```
+     3. Set `awaitingApproval=true` in `.ralph-state.json`:
+        ```bash
+        jq '.awaitingApproval = true' "$STATE_FILE" > "${STATE_FILE}.tmp" && \
+        mv "${STATE_FILE}.tmp" "$STATE_FILE"
+        ```
+     4. The coordinator outputs a block JSON (not continuation), halting execution pending
+        human intervention. The coordinator does NOT advance taskIndex while
+        `awaitingApproval=true`.
+
 - **MANDATORY: Read chat.md BEFORE delegating.** Before every task delegation, read `<basePath>/chat.md` for signals from external-reviewer. Obey HOLD, PENDING, DEADLOCK signals immediately—do not delegate if blocked.
 - **CRITICAL: Verify independently, never trust executor.** The executor may FABRICATE verification results (claimed tests passed when they failed, claimed coverage when coverage was 0%). 
   - **Rule**: NEVER trust pasted verification output from spec-executor. ALWAYS run the verify command independently.
   - Extract verify command from tasks.md → run it yourself → compare actual result with claimed result.
   - If executor claimed "PASSED" but command exits non-zero → REJECT, increment taskIteration, log "FABRICATION detected".
+  - **Verify claimed fix presence** (FR-8, AC-2.6): for each file in the task's **Files** list, call `verify-fix-present.sh <file> [<pattern>]`; non-zero exit → FIX NOT PRESENT → REJECT as FABRICATION, increment taskIteration.
   - This is non-negotiable: executor has fabricated results multiple times in past.
 - **CI snapshot separation.** Task Verify commands (task-scoped) and global CI commands (project-wide linting, type-checking) must be reported separately. Both must pass. If task Verify passes but global CI fails: log `"TASK VERIFY PASS but GLOBAL CI FAIL"` to `.progress.md`, do NOT advance taskIndex. **Note**: Specific CI command discovery is deferred to Spec 4. The coordinator should check for available project CI commands if they exist.
 - **Completion check.** If taskIndex >= totalTasks, verify all [x] marks, delete state file, output ALL_TASKS_COMPLETE.
@@ -677,35 +745,6 @@ fi
       Generate a fix task to populate the Skills: field, then re-run this task. If unable to generate the fix task, halt with error.
     - **Why**: qa-engineer loads skills from the `Skills:` field. Without it, the agent runs with no E2E context and will produce incorrect verifications.
 - **After TASK_COMPLETE.** Run all 5 verification layers, then update state (advance taskIndex, reset taskIteration).
-- **After TASK_COMPLETE — write metrics.** Record per-task metric before advancing state:
-  ```bash
-  # Source write-metric infrastructure
-  source "$CLAUDE_PLUGIN_ROOT/hooks/scripts/write-metric.sh"
-
-  # Determine actual verify exit code (coordinator runs verify independently)
-  VERIFY_EXIT=0  # default if verify not yet run this iteration
-
-  # Determine metric status from verification outcome
-  WRITE_METRIC_STATUS=$([ "$VERIFY_EXIT" -eq 0 ] && echo "pass" || echo "fail")
-
-  # Extract task title and id from the delegated task block
-  TASK_TITLE="$(sed -n "/^## Task $CURRENT_INDEX:/,/^-/p" "$SPEC_PATH/tasks.md" | head -1 | sed 's/^## Task [0-9]*: //')"
-  TASK_TYPE="$(grep '^\- \[.\] [0-9]' "$SPEC_PATH/tasks.md" | sed -n "${CURRENT_INDEX}p" | grep -oiE '\[(implementation|test|refactor|quality)\]' | tr -d '[]' || echo 'implementation')"
-  TASK_ID="$(jq -r '.taskIndex' "$STATE_FILE")"
-
-  # Get commit SHA from last git commit
-  COMMIT_SHA="$(git log -1 --format='%H' 2>/dev/null || echo '00000000')"
-
-  # Get current task iteration from state
-  TASK_ITERATION="$(jq '.taskIteration // 1' "$STATE_FILE")"
-  TASK_ITERATION=$((TASK_ITERATION - 1))
-
-  # Call write_metric — use status from verification outcome
-  if ! write_metric "$SPEC_PATH" "$WRITE_METRIC_STATUS" "$TASK_ID" "$TASK_ITERATION" "$VERIFY_EXIT" "$TASK_TITLE" "$TASK_TYPE" "$COMMIT_SHA"; then
-    echo "[ralphharness] WARN: write_metric failed (non-fatal)" >&2
-  fi
-  ```
-  Set `$WRITE_METRIC_STATUS` to `pass` if verify command exited 0, `fail` if non-0.
 - **After TASK_COMPLETE — circuit breaker state.** Update circuit breaker in state file based on task outcome:
   - **Task pass** (verify command exits 0): reset `consecutiveFailures` to 0
     ```bash

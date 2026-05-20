@@ -533,6 +533,17 @@ Insert quality gate checkpoints throughout the task list to catch issues early:
 - Make debugging easier by limiting scope of potential issues
 </mandatory>
 
+## Phase Exit Gates
+
+<mandatory>
+**3. Phase Exit Gates: At the END of every phase, always append a synthetic `[VERIFY] Phase <name> exit gate` task.** (Template: `[VERIFY] Phase X exit gate` where X is the phase identifier)
+
+- This task enforces that the phase's quality gate was actually met before advancing to the next phase.
+- The task name should be `<phase> exit gate` (e.g., "Phase A exit gate", "Phase 3 exit gate").
+- This task MUST be `[VERIFY]` type to trigger the `gate_verify_sequential()` mechanism.
+- Example emission: `- [VERIFY] 3.14 [VERIFY] Phase 3 exit gate`
+</mandatory>
+
 ## [VERIFY] Task Format
 
 <mandatory>

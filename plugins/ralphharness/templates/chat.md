@@ -35,7 +35,7 @@ Collaboration markers are written as `**Signal**: <NAME>` in chat.md message bod
 | FIX_PROPOSAL | A concrete suggested fix derived from the root cause |
 | BUG_DISCOVERY | A bug found via investigation; mirrored as a task_review.md row by reviewer |
 
-> **Migration Note**: Legacy `[HOLD]` markers in chat.md continue to work for one release cycle (grep fallback). New control signals must use signals.jsonl — see `references/coordinator-pattern.md` §Signal Protocol.
+> **Migration Note**: Legacy `[HOLD]`/`[PENDING]`/`[URGENT]`/`[DEADLOCK]` markers in chat.md continue to work for one release cycle (grep fallback). New control signals must use signals.jsonl — see `references/coordinator-pattern.md` §Signal Protocol.
 
 ## Message Format
 
@@ -75,8 +75,8 @@ When sending a blocking signal, write it as a **standalone bracketed line** at t
 The implementation does not match the spec. The verify command fails with exit code 1.
 ```
 
-The coordinator runs: `grep -c '^\[HOLD\]$\|^\[PENDING\]$\|^\[URGENT\]$' "$SPEC_PATH/chat.md"`
-This only matches lines that are exactly `[HOLD]`, `[PENDING]`, or `[URGENT]` — not `**Signal**: HOLD`.
+The coordinator runs: `grep -c '^\[HOLD\]$\|^\[PENDING\]$\|^\[URGENT\]$\|^\[DEADLOCK\]$' "$SPEC_PATH/chat.md"`
+This only matches lines that are exactly `[HOLD]`, `[PENDING]`, `[URGENT]`, or `[DEADLOCK]` — not `**Signal**: HOLD`.
 
 <!-- Messages accumulate here. Append only. Do not edit or delete. -->
 ### Optional: Pair-Debug Mode Note

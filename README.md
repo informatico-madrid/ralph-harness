@@ -103,6 +103,35 @@ This will:
 /ralphharness:implement
 ```
 
+### Import from BMAD Planning Artifacts
+
+If you've already created planning documents in BMAD, skip the research phase and import directly into a ralphharness spec:
+
+```bash
+/ralph-bmad:import <bmad-project-path> <spec-name>
+```
+
+**Arguments:**
+- `bmad-project-path` (required): Path to BMAD project directory (must contain `_bmad-output/`)
+- `spec-name` (required): Kebab-case name for the new spec
+
+**What Gets Generated:**
+- `requirements.md` — User stories extracted from PRD functional requirements
+- `design.md` — Architecture decisions and technical decisions
+- `tasks.md` — Story breakdown as executable Phase 1 tasks (ready for `/ralphharness:implement`)
+
+**Example:**
+
+```bash
+# From project root with BMAD artifacts
+/ralph-bmad:import . rag-integration
+
+# From external BMAD project
+/ralph-bmad:import ../bmad-projects/my-feature feature-name
+```
+
+The import command converts BMAD's structured planning (PRD, epics, architecture) into RalphHarness's executable format. No manual reformatting needed — specs are ready to execute immediately.
+
 ---
 
 ## Commands
@@ -110,6 +139,7 @@ This will:
 | Command | Description |
 |---------|-------------|
 | `/ralphharness "goal" [options]` | Start the spec-driven loop |
+| `/ralphharness:start` | Smart entry point (auto-detects new or resume) |
 | `/ralphharness:approve` | Approve current phase (interactive mode) |
 | `/ralphharness:cancel` | Cancel active loop and cleanup |
 | `/ralphharness:feedback` | Collect and process user feedback |
@@ -118,6 +148,7 @@ This will:
 | `/ralphharness:refactor` | Refactor existing spec |
 | `/ralphharness:rollback` | Rollback to git checkpoint |
 | `/ralphharness:switch` | Switch to another spec |
+| `/ralph-bmad:import` | Import BMAD planning artifacts into a spec |
 
 ---
 
