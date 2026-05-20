@@ -146,7 +146,7 @@ except EmbedderError: print('PASS')" | grep -q PASS && echo PASS`
   - _Requirements: FR-2_
   - _Design: Component 4_
 
-- [ ] 1.12 Implement `FAISSProvider` (read-only fallback)
+- [x] 1.12 Implement `FAISSProvider` (read-only fallback)
   - **Do**:
     1. `rag/providers/faiss.py` — `FAISSProvider(index_dir, allow_write=False)`.
     2. `retrieve(query_vec, collection, top_k)` loads `index_dir/{project}/{collection}.index` + `.metadata.jsonl` if present; returns top-k by cosine; empty if missing.
