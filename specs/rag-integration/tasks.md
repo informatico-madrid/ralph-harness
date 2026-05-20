@@ -159,7 +159,7 @@ except EmbedderError: print('PASS')" | grep -q PASS && echo PASS`
   - _Requirements: FR-2, NFR-5_
   - _Design: Component 4, Decision #4_
 
-- [ ] 1.13 Implement `RAGService` facade with graceful retrieve
+- [x] 1.13 Implement `RAGService` facade with graceful retrieve
   - **Do**:
     1. `rag/service.py` — `RAGService(config)` builds provider (Qdrant primary; falls back to FAISS on Qdrant `health_check==False`) + embedder chain.
     2. `retrieve(query, collection, top_k)` — embed → `provider.retrieve` → return list. Catch ALL exceptions, log WARN, return `[]`.
@@ -171,7 +171,7 @@ except EmbedderError: print('PASS')" | grep -q PASS && echo PASS`
   - _Requirements: FR-2, NFR-5, NFR-6_
   - _Design: Component 3, Decision #4_
 
-- [ ] 1.14 Write per-call telemetry to `retrieval-metrics.log` (Python)
+- [x] 1.14 Write per-call telemetry to `retrieval-metrics.log` (Python)
   - **Do**:
     1. `rag/observability.py` — `record_metric(op, spec, query, collection, top_k, provider, embedder, latency_ms, result_count, outcome)`.
     2. Hashes `query` with sha256 (NEVER logs raw query); appends one JSONL line to `~/.cache/smart-ralph/rag/retrieval-metrics.log`.
@@ -183,7 +183,7 @@ except EmbedderError: print('PASS')" | grep -q PASS && echo PASS`
   - _Requirements: AC-1.4, FR-5_
   - _Design: Observability section_
 
-- [ ] 1.15 Wire `retrieve` subcommand end-to-end
+- [x] 1.15 Wire `retrieve` subcommand end-to-end
   - **Do**:
     1. In `__main__.py retrieve`: instantiate `RAGService.from_config()`; if None or `service.retrieve(...)` empty, print `[]` and exit 0.
     2. Otherwise print JSON envelope `{provider_used, embedder_used, latency_ms, results: [Chunk...]}`.

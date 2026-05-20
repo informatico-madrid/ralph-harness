@@ -18,8 +18,56 @@ def _print_stub(**kwargs):
 
 
 def cmd_retrieve(args):
-    """Stub retrieve command."""
-    _print_stub(command="retrieve")
+    """Retrieve subcommand — wire to RAGService."""
+    from time import time
+
+    from .service import RAGService
+
+    start = time()
+    service = RAGService.from_config()
+
+    if service is None:
+        print("[]")
+        sys.exit(0)
+
+    try:
+        results = service.retrieve(args.query, args.collection, args.top_k)
+    except Exception as e:
+        print(f"[]", file=sys.stderr)
+        import logging
+
+        logging.getLogger("rag").warning("Retrieve failed: %s", e)
+        print("[]")
+        sys.exit(0)
+
+    latency_ms = (time() - start) * 1000
+
+    if not results:
+        print("[]")
+        sys.exit(0)
+
+    # Build JSON response
+    provider_name = type(service._provider).__name__.lower()
+    embedder_name = type(service._embedder).__name__.lower()
+
+    chunks = []
+    for r in results:
+        chunks.append(
+            {
+                "content": r.content[:500],  # Truncate for CLI output
+                "source_path": r.source_path,
+                "score": r.score,
+            }
+        )
+
+    envelope = {
+        "provider_used": provider_name,
+        "embedder_used": embedder_name,
+        "latency_ms": round(latency_ms, 1),
+        "results": chunks,
+    }
+    print(json.dumps(envelope))
+    sys.exit(0)
 
 
 def cmd_index(args):
