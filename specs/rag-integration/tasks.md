@@ -86,7 +86,7 @@ with direct shell smoke tests against ad-hoc fixtures.
   - _Requirements: FR-3_
   - _Design: Component 5_
 
-- [ ] 1.7 Implement `OpenAIEmbedder`
+- [x] 1.7 Implement `OpenAIEmbedder`
   - **Do**:
     1. `rag/embedder/openai.py` — `OpenAIEmbedder(api_key, model)` with lazy import of `openai`.
     2. Default model `text-embedding-3-small` (1536-dim).
