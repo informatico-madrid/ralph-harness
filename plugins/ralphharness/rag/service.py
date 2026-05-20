@@ -6,8 +6,11 @@ graceful degradation — ALL exceptions caught, returns empty/default.
 
 from __future__ import annotations
 
+import json
 import logging
-from typing import Any, Optional
+import sys
+from pathlib import Path as _Path
+from typing import Any, Callable, Optional
 
 from .config import RAGConfig
 from .types import Chunk
@@ -185,3 +188,102 @@ class RAGService:
         except Exception as e:
             logger.warning("RAGService.index failed: %s", e)
             return 0
+
+    def index_all(
+        self,
+        specs_dir: str = "specs",
+        on_progress: Optional[Callable[[str, str, int], None]] = None,
+    ) -> dict[str, int]:
+        """Index all spec artifacts across all specs.
+
+        Walks ``<specs_dir>/*/`` directories, chunks each artifact via
+        ``Chunker``, and indexes by collection_id (design.md Component 7
+        table). Streams per-spec progress via ``on_progress`` callback.
+
+        Args:
+            specs_dir: Path to the specs root directory.
+            on_progress: Optional callback ``func(name: str, status: str, total: int)``.
+
+        Returns:
+            Dict mapping spec name to number of chunks indexed.
+        """
+        from .chunker import Chunker
+        from .security import SecurityLayer
+
+        specs_path = _Path(specs_dir)
+        results: dict[str, int] = {}
+
+        if not specs_path.is_dir():
+            logger.warning("Specs directory not found: %s", specs_dir)
+            return results
+
+        spec_dirs = sorted(
+            d for d in specs_path.iterdir()
+            if d.is_dir() and not d.name.startswith(".")
+        )
+
+        chunker = Chunker()
+        security = SecurityLayer()
+
+        for spec_dir in spec_dirs:
+            spec_name = spec_dir.name
+            total_indexed = 0
+
+            # Collect all indexable files in this spec
+            files: list[_Path] = []
+            for ext in (".md", ".jsonl", ".py"):
+                files.extend(sorted(spec_dir.glob(f"**/*{ext}")))
+
+            if on_progress:
+                on_progress(spec_name, "discovering", len(files))
+
+            for filepath in files:
+                try:
+                    content = filepath.read_text(encoding="utf-8")
+                except OSError as e:
+                    logger.warning("Cannot read %s: %s", filepath, e)
+                    if on_progress:
+                        on_progress(spec_name, "skipped", 0)
+                    continue
+
+                try:
+                    chunks = chunker.chunk(str(filepath), content)
+                except Exception as e:
+                    logger.warning("Chunking failed for %s: %s", filepath, e)
+                    if on_progress:
+                        on_progress(spec_name, "chunk_failed", 0)
+                    continue
+
+                # Security filter
+                accepted_chunks: list[Chunk] = []
+                for c in chunks:
+                    sr = security.sanitize(c)
+                    if sr.accepted:
+                        accepted_chunks.append(c)
+                    else:
+                        logger.info(
+                            "Chunk rejected by %s: %s",
+                            sr.rejected_by, c.source_path,
+                        )
+
+                if not accepted_chunks:
+                    if on_progress:
+                        on_progress(spec_name, "rejected", 0)
+                    continue
+
+                # Index by collection (use spec name as collection)
+                try:
+                    count = self.index(accepted_chunks, spec_name)
+                    total_indexed += count
+                    if on_progress:
+                        on_progress(spec_name, "indexed", count)
+                except Exception as e:
+                    logger.warning("Indexing failed for %s: %s", spec_name, e)
+                    if on_progress:
+                        on_progress(spec_name, "index_failed", 0)
+
+            results[spec_name] = total_indexed
+            if on_progress:
+                on_progress(spec_name, "complete", total_indexed)
+
+        return results

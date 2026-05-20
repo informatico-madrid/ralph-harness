@@ -437,7 +437,7 @@ stop-watcher hook, and a real Ralph Loop iteration with RAG enabled.
   - **Verify**: `cd /mnt/bunker_data/ai/smart-ralph && ruff check plugins/ralphharness/rag/ && mypy plugins/ralphharness/rag/ && echo PASS`
   - **Commit**: `chore(rag): ruff + mypy clean`
 
-- [ ] 4.3 Implement `/ralphharness:index-all` command + flock rate limit
+- [x] 4.3 Implement `/ralphharness:index-all` command + flock rate limit
   > **REOPEN — Audit fix #B4, #M5** (ver `/home/malka/.claude/plans/haz-un-plan-para-sorted-grove.md` sección 6.A puntos 4, 9)
   > Motivo: `cmd_index_all` tiene **dos bugs ejecutables**: (a) `time()` se llama como módulo (no como función → `TypeError: 'module' object is not callable` en línea ~101); (b) `service.index_all()` no existe (cubierto por reopen 1.13). Además, el lock-stealing por mtime permite a dos procesos pisarse si el segundo decide robar tras 60s sin validar PID. El [VERIFY] anterior solo testeó `--dry-run` que cortocircuita antes del bug.
   > Criterios añadidos:

@@ -8,8 +8,10 @@ Subcommands: retrieve, index, index-all, doctor, search, onboard
 import argparse
 import fcntl
 import json
+import os
 import sys
 import time
+from typing import Optional
 from pathlib import Path
 
 
@@ -79,39 +81,85 @@ def cmd_index(args):
 
 def cmd_index_all(args):
     """Index all spec artifacts with flock-based rate limiting."""
+    from time import time
+
     from .config import RAGConfig
     from .service import RAGService
 
     config = RAGConfig.load()
 
-    if not config.enabled:
-        _print_stub(command="index-all", status="disabled")
-
     lock_dir = Path.home() / ".cache" / "smart-ralph" / "rag"
     lock_dir.mkdir(parents=True, exist_ok=True)
     lock_path = lock_dir / "index-all.lock"
 
-    try:
-        lock_fd = open(lock_path, "w")
-        fcntl.flock(lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
-    except BlockingIOError:
-        # Check if lock is stale (> 60s)
+    lock_fd: Optional[int] = None
+
+    def _acquire_lock() -> Optional[int]:
+        """Acquire exclusive lock with PID-validated steal."""
+        fd = open(lock_path, "w")
         try:
-            mtime = lock_path.stat().st_mtime
+            fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            fd.write(str(os.getpid()))
+            fd.flush()
+            return fd  # Got it immediately
+        except BlockingIOError:
+            pass
+
+        # Lock held — check mtime for soft rate limit
+        try:
+            st = lock_path.stat()
+            mtime = st.st_mtime
             if (time() - mtime) < 60:
-                print(json.dumps({"error": "another index-all is in progress"}))
-                sys.exit(1)
-            # Stale lock — remove and retry
-            lock_path.unlink(missing_ok=True)
-            lock_fd = open(lock_path, "w")
-            fcntl.flock(lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
-        except Exception:
-            print(json.dumps({"error": "another index-all is in progress"}))
-            sys.exit(1)
+                fd.close()
+                return None  # Not stale, reject
+        except OSError:
+            fd.close()
+            return None
+
+        # Stale lock (> 60s) — try to steal
+        try:
+            pid = int(lock_path.read_text().strip())
+        except (ValueError, OSError):
+            pid = 0
+
+        # Only steal if PID is dead
+        if pid > 0:
+            try:
+                os.kill(pid, 0)
+                # PID alive — do not steal
+                fd.close()
+                return None
+            except OSError:
+                pass  # PID dead, safe to steal
+
+        lock_path.unlink(missing_ok=True)
+        fd = open(lock_path, "w")
+        fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        fd.write(str(os.getpid()))
+        fd.flush()
+        return fd
+
+    lock_fd = _acquire_lock()
+    if lock_fd is None:
+        print(json.dumps({"error": "another index-all is in progress"}))
+        sys.exit(1)
 
     try:
         if args.dry_run:
-            print(json.dumps({"phase": "dry-run", "status": "ok"}))
+            # Stream per-spec dry-run progress
+            specs = Path("specs")
+            if specs.is_dir():
+                for spec_dir in sorted(
+                    d for d in specs.iterdir()
+                    if d.is_dir() and not d.name.startswith(".")
+                ):
+                    print(json.dumps({
+                        "phase": "dry-run",
+                        "spec": spec_dir.name,
+                        "status": "ok",
+                    }))
+            else:
+                print(json.dumps({"phase": "dry-run", "status": "ok"}))
             sys.exit(0)
 
         service = RAGService.from_config()
@@ -119,11 +167,27 @@ def cmd_index_all(args):
             print(json.dumps({"error": "RAG service not available"}))
             sys.exit(1)
 
-        service.index_all()
+        def _on_progress(spec_name, status, total):
+            print(json.dumps({
+                "phase": "indexing",
+                "spec": spec_name,
+                "status": status,
+                "total": total,
+            }))
+            sys.stdout.flush()
+
+        service.index_all("specs", on_progress=_on_progress)
         print(json.dumps({"phase": "complete", "status": "ok"}))
     finally:
-        fcntl.flock(lock_fd, fcntl.LOCK_UN)
-        lock_fd.close()
+        if lock_fd is not None:
+            try:
+                fcntl.flock(lock_fd, fcntl.LOCK_UN)
+            except Exception:
+                pass
+            try:
+                lock_fd.close()
+            except Exception:
+                pass
 
 
 def cmd_doctor(args):
