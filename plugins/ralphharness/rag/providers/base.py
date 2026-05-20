@@ -13,8 +13,8 @@ from ..types import Chunk
 class VectorDBProvider(ABC):
     """Abstract base class for vector database providers.
 
-    health_check is synchronous (simple connectivity check).
-    retrieve and index are async (can involve network I/O).
+    All methods are synchronous — the service layer (RAGService)
+    orchestrates async embedding before calling provider methods.
     """
 
     @abstractmethod
@@ -26,11 +26,14 @@ class VectorDBProvider(ABC):
         """
 
     @abstractmethod
-    async def retrieve(self, query: str, collection: str, top_k: int = 3) -> list[Chunk]:
-        """Retrieve relevant chunks for a query.
+    def retrieve(self, query_vec: list[float], collection: str, top_k: int = 3) -> list[Chunk]:
+        """Retrieve relevant chunks for an embedding vector.
+
+        The caller (RAGService) is responsible for embedding the text
+        query before calling this method.
 
         Args:
-            query: Search query string.
+            query_vec: Pre-computed embedding vector.
             collection: Target collection name.
             top_k: Number of results to return.
 
@@ -39,11 +42,12 @@ class VectorDBProvider(ABC):
         """
 
     @abstractmethod
-    async def index(self, chunks: list[Chunk], collection: str) -> int:
+    def index(self, chunks: list[Chunk], collection: str) -> int:
         """Index a batch of chunks into a collection.
 
         Args:
-            chunks: Chunks to index.
+            chunks: Chunks to index (each must have a ``vector``
+                attribute set by the service layer).
             collection: Target collection name.
 
         Returns:

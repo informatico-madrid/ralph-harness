@@ -37,6 +37,9 @@ class Chunk:
     score: float = 0.0
     stale: bool = False
 
+    # Transient: set by RAGService.index() before delegating to provider
+    vector: list[float] | None = None
+
     # Indexing metadata
     source_line_start: int = 0
     source_line_end: int = 0

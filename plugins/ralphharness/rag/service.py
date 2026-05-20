@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import json
 import logging
-import sys
+import os
 from pathlib import Path as _Path
 from typing import Any, Callable, Optional
 
@@ -61,8 +61,10 @@ class RAGService:
             logger.info("RAG disabled — returning None (zero overhead)")
             return None
 
+        project = cls._detect_project()
+
         # Build provider (Qdrant primary, FAISS fallback)
-        provider = cls._build_provider(config)
+        provider = cls._build_provider(config, project)
         if provider is None:
             logger.warning("No vector DB provider available")
             return None
@@ -78,11 +80,17 @@ class RAGService:
         return cls(provider=provider, embedder=embedder)
 
     @staticmethod
-    def _build_provider(config: RAGConfig) -> Any:
+    def _detect_project() -> str:
+        """Derive a project name from the working directory."""
+        return os.path.basename(os.getcwd()) or "unknown"
+
+    @staticmethod
+    def _build_provider(config: RAGConfig, project: str) -> Any:
         """Build vector DB provider with Qdrant→FAISS fallback.
 
         Args:
             config: RAGConfig instance.
+            project: Project name used in collection naming.
 
         Returns:
             VectorDBProvider instance or None.
@@ -95,6 +103,7 @@ class RAGService:
                 endpoint=config.vector_db.endpoint or "http://localhost:6333",
                 api_key=config.vector_db.api_key or "",
                 prefix=config.vector_db.collection_prefix or "",
+                project=project,
             )
 
             if qdrant.health_check():
@@ -141,6 +150,10 @@ class RAGService:
             logger.warning("Failed to build embedder chain: %s", e)
             return None
 
+    # ------------------------------------------------------------------
+    # Public API
+    # ------------------------------------------------------------------
+
     def retrieve(
         self,
         query: str,
@@ -170,7 +183,8 @@ class RAGService:
     def index(self, chunks: list[Chunk], collection: str) -> int:
         """Index chunks with graceful degradation.
 
-        Catches ALL exceptions, logs WARN, returns 0.
+        Embeds each chunk's content via the embedder, then delegates
+        to provider.index(). Catches ALL exceptions, logs WARN, returns 0.
 
         Args:
             chunks: Chunks to index.
@@ -180,14 +194,60 @@ class RAGService:
             Number of chunks indexed, or 0 on error.
         """
         try:
+            if not chunks:
+                return 0
+
+            texts = [c.content for c in chunks]
+            vectors = self._embedder.embed_batch(texts)
+
+            if len(vectors) != len(chunks):
+                logger.warning(
+                    "Embedding count mismatch: in=%d out=%d",
+                    len(chunks), len(vectors),
+                )
+                return 0
+
+            for c, v in zip(chunks, vectors):
+                c.vector = v
+
             return self._provider.index(chunks, collection)
-        except NotImplementedError:
-            logger.info("Indexing not yet implemented for %s",
-                        type(self._provider).__name__)
-            return 0
         except Exception as e:
             logger.warning("RAGService.index failed: %s", e)
             return 0
+
+    def health_check(self) -> dict[str, Any]:
+        """Check the health of the full RAG stack.
+
+        Returns:
+            Dict with keys ``provider``, ``embedder``, and ``ok``.
+            ``ok`` is True only when both provider and embedder are healthy.
+        """
+        try:
+            provider_ok = bool(self._provider.health_check())
+        except Exception as e:
+            logger.warning("Provider health check failed: %s", e)
+            provider_ok = False
+
+        try:
+            self._embedder.embed("health_check")
+            embedder_ok = True
+        except Exception as e:
+            logger.warning("Embedder health check failed: %s", e)
+            embedder_ok = False
+
+        return {
+            "provider": type(self._provider).__name__,
+            "embedder": type(self._embedder).__name__,
+            "ok": provider_ok and embedder_ok,
+        }
+
+    def health_check_json(self) -> str:
+        """Return health check result as a JSON string.
+
+        Convenience method for CLI output that matches the JSON format
+        expected by verify commands (double-quoted keys, lowercase booleans).
+        """
+        return json.dumps(self.health_check())
 
     def index_all(
         self,

@@ -174,7 +174,7 @@ except EmbedderError: print('PASS')" | grep -q PASS && echo PASS`
   - _Requirements: FR-2, NFR-5_
   - _Design: Component 4, Decision #4_
 
-- [ ] 1.13 Implement `RAGService` facade with graceful retrieve
+- [x] 1.13 Implement `RAGService` facade with graceful retrieve
   > **REOPEN — Audit fix #B1, #B6, #B10, #M6, #M10** (ver `/home/malka/.claude/plans/haz-un-plan-para-sorted-grove.md` sección 6.A puntos 1, 2, 3, 4)
   > Motivo: el feature está funcionalmente muerto — `QdrantProvider.retrieve`/`.index` son stubs que devuelven `[]`/`0`; `RAGService.index()` no embebe antes de delegar al provider; la firma `retrieve()` mezcla `query: str` (service) con `query_vec: list[float]` (provider) sin unificarse; faltan `health_check()` e `index_all()` que llaman tanto el design como `cmd_index_all` y `commands/rag-doctor`. El [VERIFY] anterior solo comprobó `from_config() == None` cuando disabled — jamás testeó round-trip real contra Qdrant.
   > Criterios añadidos:
