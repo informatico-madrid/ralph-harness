@@ -36,7 +36,7 @@ with direct shell smoke tests against ad-hoc fixtures.
   - _Requirements: FR-1_
   - _Design: Component 2_
 
-- [ ] 1.2 Implement `rag/config.py` with `RAGConfig.load()`
+- [x] 1.2 Implement `rag/config.py` with `RAGConfig.load()`
   > **REOPEN — Audit fix #M1** (ver `/home/malka/.claude/plans/haz-un-plan-para-sorted-grove.md` sección 6.C punto 16)
   > Motivo: parser YAML casero aplasta config anidada; la sintaxis `rag:\n  vector_db:\n    endpoint: …` documentada en CLAUDE.md/README NO funciona porque el loader es plano y no consume `pyyaml`.
   > Criterios añadidos: cargar `pyyaml` lazy con fallback warning; soportar frontmatter `---…---` y bloque ```yaml; assert `cfg.vector_db.endpoint == "x"` cuando YAML anidado; deduplicar lectura `RALPH_RAG_OPENAI_API_KEY` (M2). El [VERIFY] anterior solo comprobó `enabled == False` por defecto — no testeó la anidación real.
@@ -92,7 +92,7 @@ with direct shell smoke tests against ad-hoc fixtures.
   - _Requirements: FR-3_
   - _Design: Component 5_
 
-- [ ] 1.7 Implement `OpenAIEmbedder`
+- [x] 1.7 Implement `OpenAIEmbedder`
   > **REOPEN — Audit fix #M9, #M14** (ver `/home/malka/.claude/plans/haz-un-plan-para-sorted-grove.md` sección 6.C puntos 18, 20)
   > Motivo: cliente `openai` se instancia en cada `embed()` (sin cache) y `embed_batch` descarta silentemente cuando `len(output) != len(input)` — degrada throughput y oculta corrupciones.
   > Criterios añadidos: `self._client` cacheado con lazy init; `embed_batch` debe `raise EmbedderError("len mismatch: in=N out=M")` si las longitudes no coinciden; verify mock-based que invoca `embed_batch(["a","b"])` con stub que devuelve `[v]` y asserta excepción.
@@ -109,7 +109,7 @@ except EmbedderError: print('PASS')" | grep -q PASS && echo PASS`
   - _Requirements: FR-3_
   - _Design: Component 5, Decision #5_
 
-- [ ] 1.8 Implement `AzureOpenAIEmbedder` (stub if endpoint unset)
+- [x] 1.8 Implement `AzureOpenAIEmbedder` (stub if endpoint unset)
   > **REOPEN — Audit fix #M9, #M14** (ver `/home/malka/.claude/plans/haz-un-plan-para-sorted-grove.md` sección 6.C puntos 18, 20)
   > Motivo: cliente `openai.AzureOpenAI` se instancia en cada `embed()`; `embed_batch` también descarta silentemente en len mismatch.
   > Criterios añadidos: `self._client` cacheado lazy; `embed_batch` raise `EmbedderError` en mismatch (mismo contrato que 1.7).

@@ -27,6 +27,9 @@ class EmbedderConfig:
     model: str = "BAAI/bge-small-en-v1.5"
     api_key: Optional[str] = None
     api_base: Optional[str] = None
+    fallback_order: list[str] = field(
+        default_factory=lambda: ["local", "openai", "azure"]
+    )
     # OpenAI specific
     openai_model: str = "text-embedding-3-small"
     # Azure specific
@@ -121,11 +124,15 @@ class RAGConfig:
         embedder_raw = d.get("embedding", d.get("embedder", {}))
         if not isinstance(embedder_raw, dict):
             embedder_raw = {}
+        fb_order = embedder_raw.get("fallback_order", ["local", "openai", "azure"])
+        if not isinstance(fb_order, list):
+            fb_order = ["local", "openai", "azure"]
         embedder = EmbedderConfig(
             provider=embedder_raw.get("provider", "local"),
             model=embedder_raw.get("model", "BAAI/bge-small-en-v1.5"),
             api_key=embedder_raw.get("api_key"),
             api_base=embedder_raw.get("api_base"),
+            fallback_order=fb_order,
             openai_model=embedder_raw.get("openai_model", "text-embedding-3-small"),
             azure_endpoint=embedder_raw.get("azure_endpoint"),
             azure_deployment=embedder_raw.get("azure_deployment"),

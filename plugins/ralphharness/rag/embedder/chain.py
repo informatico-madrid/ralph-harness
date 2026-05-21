@@ -117,8 +117,9 @@ class EmbedderChain(Embedder):
 def from_config(config: Any) -> EmbedderChain:
     """Build an EmbedderChain from RAGConfig.
 
-    Builds embedders based on the config's embedder settings, in the
-    configured fallback order: [local, openai, azure].
+    Builds embedders based on the configured fallback order.
+    Only the embedders listed in config.embedder.fallback_order
+    are included, in the exact order specified.
 
     Args:
         config: RAGConfig instance.
@@ -126,42 +127,44 @@ def from_config(config: Any) -> EmbedderChain:
     Returns:
         EmbedderChain with configured embedders.
     """
+    fallback_order = getattr(
+        config.embedder, "fallback_order", ["local", "openai", "azure"]
+    )
+    api_key = getattr(config.embedder, "api_key", None)
+
     embedders: list[Embedder] = []
 
-    # Local embedder (always included if available)
-    try:
-        from .local import LocalEmbedder
-
-        model = getattr(config.embedder, "model", "BAAI/bge-small-en-v1.5")
-        embedders.append(LocalEmbedder(model=model))
-    except Exception:
-        pass
-
-    # OpenAI embedder (if configured with API key)
-    api_key = getattr(config.embedder, "api_key", None)
-    if api_key:
+    for step in fallback_order:
         try:
-            from .openai import OpenAIEmbedder
+            if step == "local":
+                from .local import LocalEmbedder
 
-            openai_model = getattr(config.embedder, "openai_model", "text-embedding-3-small")
-            embedders.append(OpenAIEmbedder(api_key=api_key, model=openai_model))
-        except Exception:
-            pass
+                model = getattr(config.embedder, "model", "BAAI/bge-small-en-v1.5")
+                embedders.append(LocalEmbedder(model=model))
+            elif step == "openai" and api_key:
+                from .openai import OpenAIEmbedder
 
-    # Azure OpenAI embedder (if configured with endpoint)
-    azure_endpoint = getattr(config.embedder, "azure_endpoint", None)
-    if azure_endpoint:
-        try:
-            from .azure import AzureOpenAIEmbedder
-
-            azure_deployment = getattr(config.embedder, "azure_deployment", "")
-            embedders.append(
-                AzureOpenAIEmbedder(
-                    endpoint=azure_endpoint,
-                    deployment_name=azure_deployment,
-                    api_key=api_key or "",
+                openai_model = getattr(
+                    config.embedder, "openai_model", "text-embedding-3-small"
                 )
-            )
+                embedders.append(
+                    OpenAIEmbedder(api_key=api_key, model=openai_model)
+                )
+            elif step == "azure":
+                from .azure import AzureOpenAIEmbedder
+
+                azure_endpoint = getattr(config.embedder, "azure_endpoint", None)
+                azure_deployment = getattr(
+                    config.embedder, "azure_deployment", ""
+                )
+                if azure_endpoint:
+                    embedders.append(
+                        AzureOpenAIEmbedder(
+                            endpoint=azure_endpoint,
+                            deployment_name=azure_deployment,
+                            api_key=api_key or "",
+                        )
+                    )
         except Exception:
             pass
 
