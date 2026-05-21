@@ -42,6 +42,7 @@ class AzureOpenAIEmbedder(Embedder):
         self._endpoint = endpoint
         self._api_key = api_key
         self._deployment_name = deployment_name
+        self._client: Any = None
 
     @property
     def dimensions(self) -> int:
@@ -49,27 +50,28 @@ class AzureOpenAIEmbedder(Embedder):
         return self._dimensions_map.get(self._deployment_name, 1536)
 
     def _get_client(self) -> Any:
-        """Get the Azure OpenAI client (lazy import).
+        """Get the Azure OpenAI client (lazy import + cache).
 
         Raises EmbedderError if endpoint is not configured.
         """
         if not self._endpoint:
             raise EmbedderError("azure not configured")
 
-        try:
-            from openai import AzureOpenAI
-        except ImportError as e:
-            raise EmbedderError(
-                "openai package is not installed. "
-                "Install with: pip install openai"
-            ) from e
-
-        return AzureOpenAI(
-            api_key=self._api_key,
-            api_version="2023-05-15",
-            azure_endpoint=self._endpoint,
-            timeout=30.0,
-        )
+        if self._client is None:
+            try:
+                from openai import AzureOpenAI
+            except ImportError as e:
+                raise EmbedderError(
+                    "openai package is not installed. "
+                    "Install with: pip install openai"
+                ) from e
+            self._client = AzureOpenAI(
+                api_key=self._api_key,
+                api_version="2023-05-15",
+                azure_endpoint=self._endpoint,
+                timeout=30.0,
+            )
+        return self._client
 
     def embed(self, text: str) -> list[float]:
         """Embed a single text string.
@@ -120,6 +122,11 @@ class AzureOpenAIEmbedder(Embedder):
                 input=texts,
             )
             results = [d.embedding for d in response.data if d.embedding is not None]
+            if len(results) != len(texts):
+                raise EmbedderError(
+                    f"Batch embedding returned {len(results)} vectors for "
+                    f"{len(texts)} inputs"
+                )
             return results
         except Exception as e:
             raise EmbedderError(

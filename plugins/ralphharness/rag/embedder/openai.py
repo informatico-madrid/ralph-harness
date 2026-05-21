@@ -33,6 +33,7 @@ class OpenAIEmbedder(Embedder):
         """
         self._api_key = api_key
         self._model = model
+        self._client: Any = None
 
     @property
     def dimensions(self) -> int:
@@ -40,16 +41,17 @@ class OpenAIEmbedder(Embedder):
         return self._dimensions_map.get(self._model, 1536)
 
     def _get_client(self) -> Any:
-        """Get the OpenAI client (lazy import)."""
-        try:
-            from openai import OpenAI
-        except ImportError as e:
-            raise EmbedderError(
-                "openai package is not installed. "
-                "Install with: pip install openai"
-            ) from e
-
-        return OpenAI(api_key=self._api_key, timeout=30.0)
+        """Get the OpenAI client (lazy import + cache)."""
+        if self._client is None:
+            try:
+                from openai import OpenAI
+            except ImportError as e:
+                raise EmbedderError(
+                    "openai package is not installed. "
+                    "Install with: pip install openai"
+                ) from e
+            self._client = OpenAI(api_key=self._api_key, timeout=30.0)
+        return self._client
 
     def embed(self, text: str) -> list[float]:
         """Embed a single text string.
@@ -103,6 +105,11 @@ class OpenAIEmbedder(Embedder):
                 input=texts,
             )
             results = [d.embedding for d in response.data if d.embedding is not None]
+            if len(results) != len(texts):
+                raise EmbedderError(
+                    f"Batch embedding returned {len(results)} vectors for "
+                    f"{len(texts)} inputs"
+                )
             return results
         except Exception as e:
             raise EmbedderError(
