@@ -656,7 +656,7 @@ NUNCA mocks. Las verify-tasks que dependen de Qdrant llevan en cabecera:
   - _Requirements: FR-2, FR-4_
   - _Design: Flow 4_
 
-- [ ] 6.B.3 commands/research.md pre-phase retrieval
+- [x] 6.B.3 commands/research.md pre-phase retrieval
   > **NEW — Audit FR-2 wiring gap** (ver `/home/malka/.claude/plans/haz-un-plan-para-sorted-grove.md` sección 6.B punto 13)
   > Motivo: `commands/research.md` jamás invoca retrieval antes de delegar al `research-analyst`. Design FR-2 lista pre-research como trigger point obligatorio.
   - **Do**:
@@ -670,7 +670,7 @@ NUNCA mocks. Las verify-tasks que dependen de Qdrant llevan en cabecera:
   - _Requirements: FR-2_
   - _Design: Flows 1-2_
 
-- [ ] 6.B.4 commands/requirements.md pre-phase retrieval
+- [x] 6.B.4 commands/requirements.md pre-phase retrieval
   > **NEW — Audit FR-2 wiring gap** (ver `/home/malka/.claude/plans/haz-un-plan-para-sorted-grove.md` sección 6.B punto 13)
   > Motivo: ídem 6.B.3 para pre-requirements (mapeo: collection `requirements_patterns`).
   - **Do**:
@@ -683,7 +683,7 @@ NUNCA mocks. Las verify-tasks que dependen de Qdrant llevan en cabecera:
   - **Commit**: `feat(rag): pre-requirements retrieval in requirements command`
   - _Requirements: FR-2_
 
-- [ ] 6.B.5 commands/design.md pre-phase retrieval
+- [x] 6.B.5 commands/design.md pre-phase retrieval
   > **NEW — Audit FR-2 wiring gap** (ver `/home/malka/.claude/plans/haz-un-plan-para-sorted-grove.md` sección 6.B punto 13)
   > Motivo: ídem 6.B.3 para pre-design (collection `architecture_decisions`).
   - **Do**:
@@ -696,7 +696,7 @@ NUNCA mocks. Las verify-tasks que dependen de Qdrant llevan en cabecera:
   - **Commit**: `feat(rag): pre-design retrieval in design command`
   - _Requirements: FR-2_
 
-- [ ] 6.B.6 commands/tasks.md pre-phase retrieval
+- [x] 6.B.6 commands/tasks.md pre-phase retrieval
   > **NEW — Audit FR-2 wiring gap** (ver `/home/malka/.claude/plans/haz-un-plan-para-sorted-grove.md` sección 6.B punto 13)
   > Motivo: ídem 6.B.3 para pre-tasks (collection `specs_tasks`).
   - **Do**:
