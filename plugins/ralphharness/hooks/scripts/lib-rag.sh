@@ -21,9 +21,11 @@ _RAG_LOADED=1
 # When disabled, no subprocess is spawned.
 
 rag_enabled() {
-    # Fast path: check RAG_ENABLED env var (bypasses file I/O)
-    if [ -n "$RAG_ENABLED" ]; then
-        case "$RAG_ENABLED" in
+    # Fast path: check RALPH_RAG_ENABLED env var (bypasses file I/O)
+    # RAG_ENABLED is kept as a legacy alias
+    local _val="${RALPH_RAG_ENABLED:-$RAG_ENABLED}"
+    if [ -n "$_val" ]; then
+        case "$_val" in
             true|yes|1) return 0 ;;
             *) return 1 ;;
         esac
@@ -68,9 +70,16 @@ rag_retrieve() {
         return 0
     fi
 
-    # Enabled path: call Python module with timeout
+    # Enabled path: call Python module with adaptive timeout
+    # 15s cold start (model download/loading); 5s warm if cache exists
+    local _timeout=15
+    if [ -d "${HOME:-/tmp}/.cache/smart-ralph/rag" ]; then
+        _timeout=5
+    fi
     local result
-    result=$(timeout 2s PYTHONPATH=. python -m plugins.ralphharness.rag retrieve \
+    # Note: env var must precede timeout invocation (GNU timeout treats
+    # "cmd arg" as the command, not "ENV=val cmd arg")
+    result=$(PYTHONPATH=. timeout "${_timeout}s" python -m plugins.ralphharness.rag retrieve \
         --query "$query" \
         --collection "$collection" \
         --top-k "$top_k" 2>/dev/null) || result=""
