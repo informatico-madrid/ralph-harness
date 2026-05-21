@@ -174,19 +174,15 @@ def provider(fake_qdrant_client: FakeQdrantClient) -> Any:
         mock_class.return_value = fake_qdrant_client
         p = QdrantProvider(endpoint="http://localhost:6333", prefix="integ_")
         # Force-delete any stale collection
-        try:
-            client = p._get_client()
-            client.delete_collection(p._collection_name(p._project, TEST_COLLECTION))
-        except Exception:
-            pass
+        client = p._get_client()
+        client.delete_collection(p._collection_name(p._project, TEST_COLLECTION))
         p._ensure_collection(TEST_COLLECTION, dimensions=VECTOR_DIM)
         yield p
-        # Cleanup
+        # Cleanup — don't suppress failures; fake client shouldn't fail
         try:
-            client = p._get_client()
             client.delete_collection(p._collection_name(p._project, TEST_COLLECTION))
         except Exception:
-            pass
+            pass  # teardown: collection may already be gone
 
 
 @pytest.fixture(scope="module")
