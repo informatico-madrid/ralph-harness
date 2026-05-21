@@ -150,6 +150,91 @@ class EmbedderStep(OnboardingStep):
         return ["pip", "install", "sentence-transformers"]
 
 
+class ProjectNameStep(OnboardingStep):
+    """Ask for the project name used in Qdrant collection naming."""
+
+    _CONFIG_PATH = Path.home() / ".config" / "smart-ralph" / ".ralphharness.local.md"
+
+    @property
+    def name(self) -> str:
+        return "Project name"
+
+    def detect(self) -> DetectionResult:
+        """Check if project name is configured or if cwd will be used."""
+        from .config import RAGConfig
+
+        config = RAGConfig.load()
+        if config.project:
+            return DetectionResult(DetectionState.OK, detail=config.project)
+        # Check if config file exists with rag: block but no project
+        try:
+            content = self._CONFIG_PATH.read_text(encoding="utf-8")
+            if "rag:" in content:
+                return DetectionResult(
+                    DetectionState.MISSING,
+                    detail="RAG configured but no project name set (will use cwd)",
+                )
+        except OSError:
+            pass
+        return DetectionResult(
+            DetectionState.MISSING,
+            detail="Project name not configured (will derive from cwd)",
+        )
+
+    def explain(self) -> str:
+        return (
+            "Set a project name for Qdrant collection naming. "
+            "Collections will be named <project>-research, <project>-design, etc. "
+            "If empty, the current directory name will be used."
+        )
+
+    def install_command(self) -> Optional[list[str]]:
+        return None  # Handled via prompt_interactive
+
+    def prompt_interactive(self, answer: str) -> DetectionResult:
+        """Handle interactive prompt: write project name to config."""
+        project = answer.strip() if answer else ""
+        if not project:
+            return DetectionResult(DetectionState.OK, detail="Using cwd fallback")
+        try:
+            import yaml as _yaml
+        except ImportError:
+            return DetectionResult(
+                DetectionState.MISSING,
+                detail="pyyaml not installed — cannot update config",
+            )
+        try:
+            content = self._CONFIG_PATH.read_text(encoding="utf-8")
+        except OSError:
+            content = ""
+        data: dict[str, Any] = {}
+        if content:
+            yaml_content: str | None = None
+            if "```yaml" in content:
+                start = content.find("```yaml") + 7
+                while start < len(content) and content[start] in (" ", "\t"):
+                    start += 1
+                end = content.find("```", start)
+                if end != -1:
+                    yaml_content = content[start:end].strip()
+            if yaml_content is None and content.lstrip().startswith("---"):
+                rest = content.lstrip()[3:]
+                end_idx = rest.find("---")
+                if end_idx > 0:
+                    yaml_content = rest[:end_idx].strip()
+            if yaml_content:
+                try:
+                    data = _yaml.safe_load(yaml_content) or {}
+                except _yaml.YAMLError:
+                    pass
+        if "rag" not in data or not isinstance(data["rag"], dict):
+            data["rag"] = {}
+        data["rag"]["project"] = project
+        new_content = f"---\n{_yaml.dump(data, default_flow_style=False, sort_keys=False)}\n---\n"
+        self._CONFIG_PATH.write_text(new_content, encoding="utf-8")
+        return DetectionResult(DetectionState.OK, detail=project)
+
+
 class ConfigStep(OnboardingStep):
     """Check RAG configuration in .ralphharness.local.md."""
 
@@ -280,6 +365,17 @@ def run(steps: list[OnboardingStep], interactive: bool = True) -> dict:
                 else:
                     print(f"Retry detect still {detect_result.state.value}. Proceeding with install.")
             # y or a or default -> proceed with install
+            # Special handling for steps with prompt_interactive (e.g. ProjectNameStep)
+            if hasattr(step, "prompt_interactive"):
+                prompt_result = step.prompt_interactive(answer)
+                if prompt_result.state == DetectionState.OK:
+                    summary["installed"] += 1
+                    print(f"OK – {prompt_result.detail}")
+                    continue
+                else:
+                    print(f"FAIL – {prompt_result.detail}")
+                    summary["failed"] += 1
+                    continue
         else:
             # Non-interactive: record MISSING steps as skipped
             summary["skipped"] += 1

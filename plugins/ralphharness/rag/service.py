@@ -86,7 +86,8 @@ class RAGService:
             logger.info("RAG disabled — returning None (zero overhead)")
             return None
 
-        project = cls._detect_project()
+        # Use config.project if set, otherwise derive from cwd
+        project = config.project or cls._detect_project()
 
         # Build provider (Qdrant primary, FAISS fallback)
         provider = cls._build_provider(config, project)

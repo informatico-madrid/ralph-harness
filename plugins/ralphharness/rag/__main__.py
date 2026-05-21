@@ -326,12 +326,13 @@ def cmd_search(args):
 
 
 def cmd_onboard(args):
-    """Onboard subcommand: run the 7-step installer."""
+    """Onboard subcommand: run the 8-step installer."""
     from .onboarding import (
         ConfigStep,
         DoctorStep,
         EmbedderStep,
         IndexBootstrapStep,
+        ProjectNameStep,
         PythonDepsStep,
         PythonStep,
         VectorDBStep,
@@ -342,6 +343,7 @@ def cmd_onboard(args):
         PythonStep(),
         PythonDepsStep(),
         VectorDBStep(),
+        ProjectNameStep(),
         EmbedderStep(),
         ConfigStep(),
         IndexBootstrapStep(),
