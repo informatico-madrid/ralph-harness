@@ -138,11 +138,12 @@ class OpenAIEmbedder(Embedder):
                 "latency_ms": round(latency_ms, 1),
             }
         except Exception as e:
+            latency_ms = (time.monotonic() - start) * 1000
             return {
                 "status": "unhealthy",
                 "dimensions": self.dimensions,
                 "model": self._model,
                 "provider": "openai",
-                "latency_ms": 0,
+                "latency_ms": round(latency_ms, 1),
                 "error": str(e),
             }

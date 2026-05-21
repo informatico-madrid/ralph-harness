@@ -157,7 +157,7 @@ class QdrantProvider(VectorDBProvider):
         except Exception:
             return []
 
-    def _retrieve_raw(
+    def retrieve_raw(
         self, query_vec: list[float], collection_name: str, top_k: int = 3
     ) -> list:
         """Retrieve from a fully-qualified collection name (no prefix applied)."""
@@ -217,7 +217,7 @@ class QdrantProvider(VectorDBProvider):
             return []
 
         full_name = self._collection_name(self._project, collection)
-        return self._retrieve_raw(query_vec, full_name, top_k)
+        return self.retrieve_raw(query_vec, full_name, top_k)
 
     def index(
         self, chunks: list, collection: str, dimensions: int | None = None

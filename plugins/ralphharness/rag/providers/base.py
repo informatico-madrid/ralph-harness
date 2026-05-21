@@ -62,7 +62,7 @@ class VectorDBProvider(ABC):
             List of collection names.
         """
 
-    def _retrieve_raw(
+    def retrieve_raw(
         self, query_vec: list[float], collection_name: str, top_k: int = 3
     ) -> list[Chunk]:
         """Retrieve from a fully-qualified collection name (no prefix transformation).

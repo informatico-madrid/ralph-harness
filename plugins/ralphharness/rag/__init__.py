@@ -17,4 +17,4 @@ import os
 
 # Suppress huggingface_hub deprecation warning at module load time.
 # Set default only if user hasn't already configured it.
-os.environ.setdefault("HF_HUB_ENABLE_HF_TRANSFER", "false")
+os.environ.setdefault("HF_HUB_ENABLE_HF_TRANSFER", "0")

@@ -83,7 +83,7 @@ class TestRetrieveAll:
             source_line_start=1, source_line_end=10
         )
         mock_provider.retrieve.side_effect = [[chunk1], [chunk2]]
-        mock_provider._retrieve_raw.side_effect = [[chunk1], [chunk2]]
+        mock_provider.retrieve_raw.side_effect = [[chunk1], [chunk2]]
 
         mock_embedder = mock.MagicMock()
         mock_embedder.embed.return_value = [0.1] * 384
@@ -120,7 +120,7 @@ class TestRetrieveAll:
             source_line_start=10, source_line_end=20, score=0.85
         )
         mock_provider.retrieve.side_effect = [[chunk1, chunk2]]
-        mock_provider._retrieve_raw.side_effect = [[chunk1, chunk2]]
+        mock_provider.retrieve_raw.side_effect = [[chunk1, chunk2]]
 
         mock_embedder = mock.MagicMock()
         mock_embedder.embed.return_value = [0.1] * 384
@@ -133,6 +133,7 @@ class TestRetrieveAll:
     def test_embed_failure_returns_empty(self, tmp_path: Path) -> None:
         """_retrieve_all returns [] when embedder fails."""
         mock_provider = mock.MagicMock()
+        mock_provider.list_collections.return_value = ["smart-ralph-spec-research"]
         mock_embedder = mock.MagicMock()
         mock_embedder.embed.side_effect = Exception("model not loaded")
 

@@ -11,7 +11,7 @@ import json
 import os
 import sys
 import time
-from typing import Optional
+from typing import Any, Optional
 from pathlib import Path
 
 
@@ -208,6 +208,7 @@ def cmd_doctor(args):
     config = RAGConfig.load()
 
     checks = []
+    embedder_health: dict[str, Any] = {}
 
     # Phase 1: Config validation
     if not config.enabled:

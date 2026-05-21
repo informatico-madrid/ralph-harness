@@ -268,11 +268,25 @@ class RAGService:
         reranks by score, deduplicates by (source_path, line_start, line_end),
         and returns top_k total.
         """
+        import time
+
         try:
             query_vec = self._embedder.embed(query)
         except Exception as e:
             logger.warning("RAGService._retrieve_all embed failed: %s", e)
-            self._emit_retrieval_complete("all", 0, start)
+            latency_ms = (time.monotonic() - start) * 1000
+            record_metric(
+                op="retrieve",
+                spec=self._spec_path.name if self._spec_path else "unknown",
+                query=query,
+                collection="all",
+                top_k=top_k,
+                provider_used=type(self._provider).__name__,
+                embedder_used=type(self._embedder).__name__,
+                latency_ms=latency_ms,
+                result_count=0,
+                outcome="error",
+            )
             self._emit_retrieval_failed("all", str(e), "retrieval")
             return []
 
@@ -280,7 +294,19 @@ class RAGService:
             all_collections = self._provider.list_collections()
         except Exception as e:
             logger.warning("RAGService._retrieve_all list_collections failed: %s", e)
-            self._emit_retrieval_complete("all", 0, start)
+            latency_ms = (time.monotonic() - start) * 1000
+            record_metric(
+                op="retrieve",
+                spec=self._spec_path.name if self._spec_path else "unknown",
+                query=query,
+                collection="all",
+                top_k=top_k,
+                provider_used=type(self._provider).__name__,
+                embedder_used=type(self._embedder).__name__,
+                latency_ms=latency_ms,
+                result_count=0,
+                outcome="error",
+            )
             self._emit_retrieval_failed("all", str(e), "retrieval")
             return []
 
@@ -290,10 +316,23 @@ class RAGService:
         all_results: list[Chunk] = []
         for coll in all_collections:
             try:
-                results = self._provider._retrieve_raw(query_vec, coll, top_k)
+                results = self._provider.retrieve_raw(query_vec, coll, top_k)
                 all_results.extend(results)
             except Exception as e:
                 logger.warning("_retrieve_all failed for %s: %s", coll, e)
+                coll_latency_ms = (time.monotonic() - start) * 1000
+                record_metric(
+                    op="retrieve",
+                    spec=self._spec_path.name if self._spec_path else "unknown",
+                    query=query,
+                    collection="all",
+                    top_k=top_k,
+                    provider_used=type(self._provider).__name__,
+                    embedder_used=type(self._embedder).__name__,
+                    latency_ms=coll_latency_ms,
+                    result_count=0,
+                    outcome="error",
+                )
 
         # Deduplicate by (source_path, line_start, line_end)
         seen: set[tuple[str, int, int]] = set()
@@ -308,6 +347,19 @@ class RAGService:
         deduped.sort(key=lambda r: r.score if r.score else 0.0, reverse=True)
         result = deduped[:top_k]
 
+        latency_ms = (time.monotonic() - start) * 1000
+        record_metric(
+            op="retrieve",
+            spec=self._spec_path.name if self._spec_path else "unknown",
+            query=query,
+            collection="all",
+            top_k=top_k,
+            provider_used=type(self._provider).__name__,
+            embedder_used=type(self._embedder).__name__,
+            latency_ms=latency_ms,
+            result_count=len(result),
+            outcome="ok",
+        )
         self._emit_retrieval_complete("all", len(result), start)
         return result
 

@@ -1,10 +1,26 @@
 """Tests for OpenAI embedder api_base support."""
 
+import sys
+import types
 from unittest import mock
 
 import pytest
 
 from plugins.ralphharness.rag.embedder.openai import OpenAIEmbedder
+
+
+_OPENAI_STUB: types.ModuleType | None = None
+
+
+@pytest.fixture(autouse=True)
+def _openai_stub() -> None:
+    """Ensure openai module exists in sys.modules for mock.patch to work."""
+    global _OPENAI_STUB
+    _OPENAI_STUB = types.ModuleType("openai")
+    _OPENAI_STUB.OpenAI = mock.MagicMock
+    sys.modules["openai"] = _OPENAI_STUB
+    yield
+    sys.modules.pop("openai", None)
 
 
 class TestOpenAIBaseUrl:
