@@ -709,7 +709,7 @@ NUNCA mocks. Las verify-tasks que dependen de Qdrant llevan en cabecera:
   - **Commit**: `feat(rag): pre-tasks retrieval in tasks command`
   - _Requirements: FR-2_
 
-- [ ] 6.B.7 [VERIFY] Phase 6.B partial checkpoint: command wiring lint clean
+- [x] 6.B.7 [VERIFY] Phase 6.B partial checkpoint: command wiring lint clean
   - **Do**: Validar que todos los markdown editados parsean y los bash blocks son sintácticamente válidos.
   - **Verify**: `cd /mnt/bunker_data/ai/smart-ralph && for f in research requirements design tasks; do grep -A20 '^```bash' plugins/ralphharness/commands/$f.md | bash -n 2>&1 | grep -vqE 'syntax error' || { echo "FAIL $f"; exit 1; }; done && echo PASS`
   - **Done when**: 4 markdowns con bash blocks válidos.
