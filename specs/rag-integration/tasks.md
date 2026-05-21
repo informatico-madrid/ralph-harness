@@ -284,7 +284,7 @@ signal emission with the `phase` field. No new functionality.
   - _Requirements: FR-8, NFR-7_
   - _Design: Component 6_
 
-- [ ] 2.3 Centralise signal emission in `rag/signals.py` (with `phase` field)
+- [x] 2.3 Centralise signal emission in `rag/signals.py` (with `phase` field)
   > **REOPEN — Audit fix #B7, #B8** (ver `/home/malka/.claude/plans/haz-un-plan-para-sorted-grove.md` sección 6.A puntos 5, 6 — además cierra FAIL en `task_review.md:39`)
   > Motivo: (B7) `signals.emit` y `observability.record_metric` JAMÁS se ejecutan en producción — `service.retrieve`/`service.index` no los llaman; solo los tests los invocan. (B8) `signals.emit` escribe a `~/.cache/smart-ralph/signals.jsonl` en vez de `./specs/<spec>/signals.jsonl` (que es lo que el HOLD-gate del coordinator lee con `jq`). El review marcó FAIL crítico (`task_review.md:39`) porque `emit_retrieval_failed` ni siquiera está exportado.
   > Criterios añadidos:

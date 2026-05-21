@@ -13,6 +13,8 @@ from pathlib import Path as _Path
 from typing import Any, Callable, Optional
 
 from .config import RAGConfig
+from .observability import record_metric
+from .signals import emit_indexing_queued, emit_retrieval_complete, emit_retrieval_failed
 from .types import Chunk
 
 logger = logging.getLogger(__name__)
@@ -31,15 +33,38 @@ class RAGService:
         self,
         provider: Any,
         embedder: Any,
+        spec_path: Optional[_Path] = None,
     ):
         """Initialize RAGService.
 
         Args:
             provider: VectorDBProvider instance.
             embedder: Embedder instance.
+            spec_path: Optional path to the active spec directory for signal emission.
         """
         self._provider = provider
         self._embedder = embedder
+        self._spec_path = self._resolve_spec_path(spec_path)
+
+    def _resolve_spec_path(self, spec_path: Optional[_Path]) -> Optional[_Path]:
+        """Resolve the spec directory path for signal emission.
+
+        Returns None if no spec context is available.
+        """
+        if spec_path is not None:
+            if (spec_path / "signals.jsonl").exists() or (
+                spec_path / ".ralph-state.json"
+            ).exists():
+                return spec_path
+            # Accept the path anyway — may be created later
+            return spec_path
+
+        # Auto-detect: walk up from CWD looking for .ralph-state.json
+        cwd = _Path.cwd()
+        for parent in [cwd] + list(cwd.parents):
+            if (parent / ".ralph-state.json").exists():
+                return parent
+        return None
 
     @classmethod
     def from_config(cls, config: Optional[RAGConfig] = None) -> Optional["RAGService"]:
@@ -165,6 +190,9 @@ class RAGService:
         Embeds the query, calls provider.retrieve(), returns list of chunks.
         Catches ALL exceptions, logs WARN, returns [].
 
+        Emits RETRIEVAL_REQUEST at start, RETRIEVAL_COMPLETE on success,
+        RETRIEVAL_FAILED on error. Records observability metrics.
+
         Args:
             query: Search query.
             collection: Collection name.
@@ -173,11 +201,50 @@ class RAGService:
         Returns:
             List of chunks ranked by relevance. Empty list on any error.
         """
+        import time
+
+        start = time.monotonic()
+
         try:
             query_vec = self._embedder.embed(query)
-            return self._provider.retrieve(query_vec, collection, top_k)
+            results = self._provider.retrieve(query_vec, collection, top_k)
+            latency_ms = (time.monotonic() - start) * 1000
+            if self._spec_path is not None:
+                emit_retrieval_complete(
+                    self._spec_path, collection, len(results)
+                )
+            record_metric(
+                op="retrieve",
+                spec=self._spec_path.name if self._spec_path else "unknown",
+                query=query,
+                collection=collection,
+                top_k=top_k,
+                provider_used=type(self._provider).__name__,
+                embedder_used=type(self._embedder).__name__,
+                latency_ms=latency_ms,
+                result_count=len(results),
+                outcome="ok",
+            )
+            return results
         except Exception as e:
+            latency_ms = (time.monotonic() - start) * 1000
             logger.warning("RAGService.retrieve failed: %s", e)
+            if self._spec_path is not None:
+                emit_retrieval_failed(
+                    self._spec_path, reason=str(e), phase="retrieval"
+                )
+            record_metric(
+                op="retrieve",
+                spec=self._spec_path.name if self._spec_path else "unknown",
+                query=query,
+                collection=collection,
+                top_k=top_k,
+                provider_used=type(self._provider).__name__,
+                embedder_used=type(self._embedder).__name__,
+                latency_ms=latency_ms,
+                result_count=0,
+                outcome="error",
+            )
             return []
 
     def index(self, chunks: list[Chunk], collection: str) -> int:
@@ -186,6 +253,9 @@ class RAGService:
         Embeds each chunk's content via the embedder, then delegates
         to provider.index(). Catches ALL exceptions, logs WARN, returns 0.
 
+        Emits INDEXING_QUEUED on success, RETRIEVAL_FAILED on error.
+        Records observability metrics.
+
         Args:
             chunks: Chunks to index.
             collection: Collection name.
@@ -193,6 +263,11 @@ class RAGService:
         Returns:
             Number of chunks indexed, or 0 on error.
         """
+        import time
+
+        start = time.monotonic()
+        chunk_count = len(chunks)
+
         try:
             if not chunks:
                 return 0
@@ -210,9 +285,42 @@ class RAGService:
             for c, v in zip(chunks, vectors):
                 c.vector = v
 
-            return self._provider.index(chunks, collection)
+            count = self._provider.index(chunks, collection)
+            latency_ms = (time.monotonic() - start) * 1000
+            if self._spec_path is not None:
+                emit_indexing_queued(self._spec_path, chunk_count=count)
+            record_metric(
+                op="index",
+                spec=self._spec_path.name if self._spec_path else "unknown",
+                query=f"index-{collection}",
+                collection=collection,
+                top_k=chunk_count,
+                provider_used=type(self._provider).__name__,
+                embedder_used=type(self._embedder).__name__,
+                latency_ms=latency_ms,
+                result_count=count,
+                outcome="ok",
+            )
+            return count
         except Exception as e:
+            latency_ms = (time.monotonic() - start) * 1000
             logger.warning("RAGService.index failed: %s", e)
+            if self._spec_path is not None:
+                emit_retrieval_failed(
+                    self._spec_path, reason=str(e), phase="indexing"
+                )
+            record_metric(
+                op="index",
+                spec=self._spec_path.name if self._spec_path else "unknown",
+                query=f"index-{collection}",
+                collection=collection,
+                top_k=chunk_count,
+                provider_used=type(self._provider).__name__,
+                embedder_used=type(self._embedder).__name__,
+                latency_ms=latency_ms,
+                result_count=0,
+                outcome="error",
+            )
             return 0
 
     def health_check(self) -> dict[str, Any]:
