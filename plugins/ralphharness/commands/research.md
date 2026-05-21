@@ -78,7 +78,7 @@ from the vector DB to avoid redundant work.
 ```bash
 RAG_RESEARCH=$(timeout 5s PYTHONPATH=. python -m plugins.ralphharness.rag retrieve \
   --query "$(cat .progress.md | head -20)" \
-  --collection past_research \
+  --collection specs_research \
   --top-k 5 2>/dev/null) || RAG_RESEARCH=""
 if [ -n "$RAG_RESEARCH" ] && [ "$RAG_RESEARCH" != "[]" ]; then
   echo "$RAG_RESEARCH" | jq -r '.results[] | "## Prior research (RAG)\nPath: \(.source_path)\nScore: \(.score)\n\(.content)"' 2>/dev/null

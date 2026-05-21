@@ -3,7 +3,7 @@
 Auto-generated summary of all specs across configured directories.
 See [index-state.json](./index-state.json) for machine-readable data.
 
-**Last updated:** 2026-05-20T17:33:16Z
+**Last updated:** 2026-05-21T06:17:05Z
 
 ## Directories (1)
 
@@ -70,7 +70,7 @@ See [index-state.json](./index-state.json) for machine-readable data.
 | context-middleware | ./specs | complete |  |
 | reviewer-warmup | ./specs | execution | 1/19 tasks |
 | harness-enforcement-gates | ./specs | complete |  |
-| rag-integration | ./specs | execution | 54/54 tasks |
+| rag-integration | ./specs | execution | 65/74 tasks |
 
 ---
 

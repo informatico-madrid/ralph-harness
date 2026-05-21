@@ -660,39 +660,39 @@ NUNCA mocks. Las verify-tasks que dependen de Qdrant llevan en cabecera:
   > **NEW — Audit FR-2 wiring gap** (ver `/home/malka/.claude/plans/haz-un-plan-para-sorted-grove.md` sección 6.B punto 13)
   > Motivo: `commands/research.md` jamás invoca retrieval antes de delegar al `research-analyst`. Design FR-2 lista pre-research como trigger point obligatorio.
   - **Do**:
-    1. Antes del `Task` delegation block en `commands/research.md`, añadir un bloque `bash` que ejecute `python -m plugins.ralphharness.rag retrieve --query "<phase context>" --collection past_research --top-k 5`.
+    1. Antes del `Task` delegation block en `commands/research.md`, añadir un bloque `bash` que ejecute `python -m plugins.ralphharness.rag retrieve --query "<phase context>" --collection specs_research --top-k 5`.
     2. Inyectar output en el `progressMessage` del prompt como `## Prior research (RAG)`.
     3. Mapeo collection según design.md tabla L204-211.
   - **Files**: `plugins/ralphharness/commands/research.md`
-  - **Done when**: El markdown contiene literal `python -m plugins.ralphharness.rag retrieve` y collection `past_research`.
-  - **Verify**: `cd /mnt/bunker_data/ai/smart-ralph && grep -q 'python -m plugins.ralphharness.rag retrieve' plugins/ralphharness/commands/research.md && grep -q 'past_research' plugins/ralphharness/commands/research.md && echo PASS`
+  - **Done when**: El markdown contiene literal `python -m plugins.ralphharness.rag retrieve` y collection `specs_research`.
+  - **Verify**: `cd /mnt/bunker_data/ai/smart-ralph && grep -q 'python -m plugins.ralphharness.rag retrieve' plugins/ralphharness/commands/research.md && grep -q 'specs_research' plugins/ralphharness/commands/research.md && echo PASS`
   - **Commit**: `feat(rag): pre-research retrieval in research command (FR-2)`
   - _Requirements: FR-2_
   - _Design: Flows 1-2_
 
 - [x] 6.B.4 commands/requirements.md pre-phase retrieval
   > **NEW — Audit FR-2 wiring gap** (ver `/home/malka/.claude/plans/haz-un-plan-para-sorted-grove.md` sección 6.B punto 13)
-  > Motivo: ídem 6.B.3 para pre-requirements (mapeo: collection `requirements_patterns`).
+  > Motivo: ídem 6.B.3 para pre-requirements (mapeo: collection `specs_requirements`).
   - **Do**:
     1. Añadir bloque retrieval previo al `Task` block en `commands/requirements.md`.
-    2. Query: el goal del spec; collection: `requirements_patterns`; top_k=5.
+    2. Query: el goal del spec; collection: `specs_requirements`; top_k=5.
     3. Inyectar bajo `## Similar requirements (RAG)`.
   - **Files**: `plugins/ralphharness/commands/requirements.md`
-  - **Done when**: Markdown invoca `retrieve --collection requirements_patterns`.
-  - **Verify**: `cd /mnt/bunker_data/ai/smart-ralph && grep -q 'requirements_patterns' plugins/ralphharness/commands/requirements.md && echo PASS`
+  - **Done when**: Markdown invoca `retrieve --collection specs_requirements`.
+  - **Verify**: `cd /mnt/bunker_data/ai/smart-ralph && grep -q 'specs_requirements' plugins/ralphharness/commands/requirements.md && echo PASS`
   - **Commit**: `feat(rag): pre-requirements retrieval in requirements command`
   - _Requirements: FR-2_
 
 - [x] 6.B.5 commands/design.md pre-phase retrieval
   > **NEW — Audit FR-2 wiring gap** (ver `/home/malka/.claude/plans/haz-un-plan-para-sorted-grove.md` sección 6.B punto 13)
-  > Motivo: ídem 6.B.3 para pre-design (collection `architecture_decisions`).
+  > Motivo: ídem 6.B.3 para pre-design (collection `specs_design`).
   - **Do**:
     1. Añadir bloque retrieval previo en `commands/design.md`.
-    2. Query: requirements summary; collection: `architecture_decisions`; top_k=5.
+    2. Query: requirements summary; collection: `specs_design`; top_k=5.
     3. Inyectar bajo `## Past architecture decisions (RAG)`.
   - **Files**: `plugins/ralphharness/commands/design.md`
-  - **Done when**: Markdown invoca `retrieve --collection architecture_decisions`.
-  - **Verify**: `cd /mnt/bunker_data/ai/smart-ralph && grep -q 'architecture_decisions' plugins/ralphharness/commands/design.md && echo PASS`
+  - **Done when**: Markdown invoca `retrieve --collection specs_design`.
+  - **Verify**: `cd /mnt/bunker_data/ai/smart-ralph && grep -q 'specs_design' plugins/ralphharness/commands/design.md && echo PASS`
   - **Commit**: `feat(rag): pre-design retrieval in design command`
   - _Requirements: FR-2_
 

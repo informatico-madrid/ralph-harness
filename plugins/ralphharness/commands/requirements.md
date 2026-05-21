@@ -27,7 +27,7 @@ from the vector DB to avoid duplicating work.
 ```bash
 RAG_REQS=$(timeout 5s PYTHONPATH=. python -m plugins.ralphharness.rag retrieve \
   --query "$(cat .progress.md | head -20)" \
-  --collection past_requirements \
+  --collection specs_requirements \
   --top-k 5 2>/dev/null) || RAG_REQS=""
 if [ -n "$RAG_REQS" ] && [ "$RAG_REQS" != "[]" ]; then
   echo "$RAG_REQS" | jq -r '.results[] | "## Prior requirements (RAG)\nPath: \(.source_path)\nScore: \(.score)\n\(.content)"' 2>/dev/null

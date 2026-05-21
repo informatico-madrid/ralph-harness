@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "updated": "2026-05-20T17:33:16Z",
+  "updated": "2026-05-21T06:17:05Z",
   "directories": [
     {
       "path": "./specs",
@@ -390,8 +390,8 @@
       "name": "rag-integration",
       "path": "./specs/rag-integration",
       "phase": "execution",
-      "taskIndex": 54,
-      "totalTasks": 54
+      "taskIndex": 65,
+      "totalTasks": 74
     }
   ]
 }

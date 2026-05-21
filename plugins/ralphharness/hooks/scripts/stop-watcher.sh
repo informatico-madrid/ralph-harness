@@ -273,17 +273,22 @@ SWEEP_EOF
     # DEGRADED: MCP Playwright not available — block and escalate to human for install.
     # FAIL: implementation bug — activate repair loop (max 2 iterations).
     # Max 2 repair iterations per story before escalating to human.
+    #
+    # Why anchored ^VERIFICATION_X$: qa-engineer emits these tokens as a line of their
+    # own (protocol output). Matching the token embedded in prose (prior hook reasons,
+    # user/assistant messages discussing the issue, error logs) caused the hook to
+    # re-fire on every Stop, trapping the session. The anchored form only matches the
+    # agent's actual emission, not transcript chatter.
     TRANSCRIPT_TAIL=$(tail -500 "$TRANSCRIPT_PATH" 2>/dev/null || true)
-    # Only activate if the most recent verification signal is FAIL, PASS, or DEGRADED.
-    if echo "$TRANSCRIPT_TAIL" | grep -qE '(^|\W)VERIFICATION_(FAIL|PASS|DEGRADED)(\W|$)'; then
-        LAST_SIGNAL_LINE=$(echo "$TRANSCRIPT_TAIL" | grep -E '(^|\W)VERIFICATION_(FAIL|PASS|DEGRADED)(\W|$)' | tail -1)
-        if echo "$LAST_SIGNAL_LINE" | grep -qE '(^|\W)VERIFICATION_DEGRADED(\W|$)'; then
+    if echo "$TRANSCRIPT_TAIL" | grep -qE '^VERIFICATION_(FAIL|PASS|DEGRADED)[[:space:]]*$'; then
+        LAST_SIGNAL_LINE=$(echo "$TRANSCRIPT_TAIL" | grep -E '^VERIFICATION_(FAIL|PASS|DEGRADED)[[:space:]]*$' | tail -1)
+        if echo "$LAST_SIGNAL_LINE" | grep -qE '^VERIFICATION_DEGRADED[[:space:]]*$'; then
             # DEGRADED is not a code bug — MCP Playwright is simply not installed.
             # spec-executor already emitted ESCALATE (reason: verification-degraded) for this.
             # If that ESCALATE is in the transcript, do NOT emit another escalation block —
             # that would cause double-escalation (both spec-executor and stop-watcher blocking).
             # Instead, allow the stop so the human sees only the single spec-executor escalation.
-            if echo "$TRANSCRIPT_TAIL" | grep -qE '(^|\W)ESCALATE(\W|$)' && echo "$TRANSCRIPT_TAIL" | grep -qE 'verification-degraded'; then
+            if echo "$TRANSCRIPT_TAIL" | grep -qE '^ESCALATE[[:space:]]*$' && echo "$TRANSCRIPT_TAIL" | grep -qE 'verification-degraded'; then
                 echo "[ralphharness] DEGRADED + ESCALATE (verification-degraded) already in transcript — allowing stop (spec-executor handled)" >&2
                 exit 0
             fi
@@ -325,7 +330,7 @@ DEGRADED_EOF
                 "systemMessage": $msg
               }'
             exit 0
-        elif echo "$LAST_SIGNAL_LINE" | grep -qE '(^|\W)VERIFICATION_FAIL(\W|$)'; then
+        elif echo "$LAST_SIGNAL_LINE" | grep -qE '^VERIFICATION_FAIL[[:space:]]*$'; then
             REPAIR_ITER=$(jq -r '.repairIteration // 0' "$STATE_FILE" 2>/dev/null || echo "0")
             FAILED_STORY=$(jq -r '.failedStory // "unknown"' "$STATE_FILE" 2>/dev/null || echo "unknown")
             ORIGIN_TASK=$(jq -r '.originTaskIndex // "unknown"' "$STATE_FILE" 2>/dev/null || echo "unknown")
