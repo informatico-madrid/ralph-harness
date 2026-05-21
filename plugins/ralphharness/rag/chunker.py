@@ -101,6 +101,7 @@ class Chunker:
             return [text]
 
         tokenizer = self._tokenizer
+        tokens: list = []
         if tokenizer is not None:
             try:
                 tokens = tokenizer.encode(text)

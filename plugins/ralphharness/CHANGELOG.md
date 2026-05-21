@@ -2,6 +2,29 @@
 
 All notable changes to this project are documented here.
 
+## [5.9.2] - 2026-05-21
+
+### Fixed (rabbit PR review)
+- **PYTHONPATH placement (critical)**: In all 4 RAG-enabled phase commands (`research.md`, `requirements.md`, `design.md`, `tasks.md`), `timeout 5s PYTHONPATH=. python ...` failed silently because `timeout` interpreted `PYTHONPATH=.` as a literal command. Moved env assignment before `timeout` (`PYTHONPATH=. timeout 5s python ...`) so pre-phase retrieval actually runs.
+- **stop-watcher.sh hardening**:
+  - Removed shell-injection risk: `LAST_ERROR` (untrusted transcript content) is now passed as positional `$2` to the inner `bash -c` instead of being interpolated into the command string.
+  - Fixed jq filter: `rag retrieve` returns either `[]` or an envelope `{results:[...]}`; previous filter checked `type == "array"` then accessed `.results[]` (dead branch). Now accepts both shapes.
+  - Replaced `local` at top-level scope (script error: "local: can only be used in a function") with plain variables.
+- **`rag index-all` flock**: Open lock file with `"a+"` instead of `"w"` so the existing PID is not truncated before `fcntl.flock` succeeds. Truncate-and-write PID only after the lock is acquired. Close leaked fd before the stale-steal reopen.
+- **Chunker `_split_by_tokens`**: Initialize `tokens = []` before the `tokenizer is not None` branch to prevent `UnboundLocalError` when no tokenizer is configured.
+- **`service.index_all` read**: Catch `UnicodeDecodeError` alongside `OSError` so non-UTF8 files (binary artifacts, mixed encodings) are skipped with a warning instead of crashing the index.
+- **`signals.emit` typing**: Changed `**extra: str` → `**extra: Any` to match real callers (`result_count: int`, `chunk_count: int`).
+- **Test placeholders converted to real tests**:
+  - `test_onboarding.py` no longer swallows `ImportError`; asserts `OnboardingStep` imports cleanly (Phase 4 complete).
+  - `test_post_task_rag.bats` no longer skips when file is missing; asserts the file exists.
+
+### Skipped (with reason)
+- Broad `except Exception` in `test_integration_qdrant.py` setup/teardown — test-cleanup convention, fails visibly on real connection errors at first op.
+- Markdown lint nits on `specs/rag-integration/chat.md` (MD040, MD058, missing STUCK in legend) — chat.md is append-only history; modifying past entries violates protocol.
+- Two `test-spec` `INDEXING_QUEUED` entries in `signals.jsonl` — append-only protocol; entries are clearly tagged as test leakage and don't reference rag-integration.
+
+---
+
 ## [5.9.1] - 2026-05-21
 
 ### Fixed

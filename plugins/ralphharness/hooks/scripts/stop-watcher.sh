@@ -342,17 +342,23 @@ DEGRADED_EOF
             LAST_ERROR=$(echo "$TRANSCRIPT_TAIL" | grep -A5 'VERIFICATION_FAIL' | grep -v 'VERIFICATION_FAIL' | grep -v '^\-\-$' | grep -v '^\s*$' | head -3 | tr '\n' ' ' | sed 's/  */ /g')
             RAG_RECOVERY=""
             if [ -n "$LAST_ERROR" ]; then
-                RAG_RECOVERY=$(timeout 5s bash -c "source '$CLAUDE_PLUGIN_ROOT'/hooks/scripts/lib-rag.sh; rag_retrieve '$LAST_ERROR' 'execution_memory' 3" 2>/dev/null) || RAG_RECOVERY=""
+                # Pass LAST_ERROR as positional $1 to avoid shell-injection via transcript content.
+                RAG_RECOVERY=$(timeout 5s bash -c 'source "$1"/hooks/scripts/lib-rag.sh; rag_retrieve "$2" "execution_memory" 3' _ "$CLAUDE_PLUGIN_ROOT" "$LAST_ERROR" 2>/dev/null) || RAG_RECOVERY=""
             fi
             RECOVERY_SECTION=""
             if [ -n "$RAG_RECOVERY" ] && [ "$RAG_RECOVERY" != "[]" ]; then
+                # rag retrieve returns either [] (no results) or an envelope object {results:[...]};
+                # accept both shapes (top-level array of chunks OR object with .results array).
                 RECOVERY_SECTION=$(echo "$RAG_RECOVERY" | jq -r '
-                    if type == "array" and length > 0 then
+                    def chunks:
+                      if type == "array" then .
+                      elif type == "object" and (.results | type == "array") then .results
+                      else [] end;
+                    chunks as $c
+                    | if ($c | length) > 0 then
                         "## Similar past failures (RAG)\n" +
-                        ([.results[] | "### Source: \(.source_path) (score: \(.score))\n\(.content)"] | join("\n"))
-                    else
-                        ""
-                    end
+                        ([$c[] | "### Source: \(.source_path) (score: \(.score))\n\(.content)"] | join("\n"))
+                      else "" end
                 ' 2>/dev/null) || RECOVERY_SECTION=""
             fi
 
@@ -441,7 +447,8 @@ REPAIR_EOF
 
         # Inject RAG recovery context above ## Critical if available
         if [ -n "$RECOVERY_SECTION" ]; then
-            local _rag_before _rag_after
+            # NOTE: 'local' would fail here — this block is at script top level, not inside
+            # a function. Using plain variables avoids 'local: can only be used in a function'.
             _rag_before=$(echo "$REPAIR_REASON" | sed '/^## Critical$/q')
             _rag_after=$(echo "$REPAIR_REASON" | sed -n '/^## Critical$/,$ p')
             REPAIR_REASON="${_rag_before}

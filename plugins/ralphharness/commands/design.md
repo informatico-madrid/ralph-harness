@@ -25,7 +25,7 @@ Before gathering context, retrieve relevant prior designs
 from the vector DB to avoid duplicating architectural decisions.
 
 ```bash
-RAG_DESIGN=$(timeout 5s PYTHONPATH=. python -m plugins.ralphharness.rag retrieve \
+RAG_DESIGN=$(PYTHONPATH=. timeout 5s python -m plugins.ralphharness.rag retrieve \
   --query "$(cat .progress.md | head -20)" \
   --collection specs_design \
   --top-k 5 2>/dev/null) || RAG_DESIGN=""

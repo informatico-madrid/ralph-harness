@@ -408,7 +408,7 @@ class RAGService:
             for filepath in files:
                 try:
                     content = filepath.read_text(encoding="utf-8")
-                except OSError as e:
+                except (OSError, UnicodeDecodeError) as e:
                     logger.warning("Cannot read %s: %s", filepath, e)
                     if on_progress:
                         on_progress(spec_name, "skipped", 0)

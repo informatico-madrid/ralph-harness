@@ -95,17 +95,26 @@ def cmd_index_all(args):
     lock_fd: Optional[int] = None
 
     def _acquire_lock() -> Optional[int]:
-        """Acquire exclusive lock with PID-validated steal."""
-        fd = open(lock_path, "w")
+        """Acquire exclusive lock with PID-validated steal.
+
+        Uses "a+" (append) mode so the existing PID file is NOT truncated before
+        flock succeeds — truncating the holder's PID would break the stale-mtime /
+        PID-validation steal logic below. Only after the lock is held do we
+        truncate and write our own PID.
+        """
+        fd = open(lock_path, "a+")
         try:
             fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            # We now own the lock — safe to overwrite PID
+            fd.seek(0)
+            fd.truncate()
             fd.write(str(os.getpid()))
             fd.flush()
             return fd  # Got it immediately
         except BlockingIOError:
             pass
 
-        # Lock held — check mtime for soft rate limit
+        # Lock held by another process — check mtime for soft rate limit
         try:
             st = lock_path.stat()
             mtime = st.st_mtime
@@ -132,6 +141,8 @@ def cmd_index_all(args):
             except OSError:
                 pass  # PID dead, safe to steal
 
+        # Close the leaked fd from the failed flock attempt before reopening for steal.
+        fd.close()
         lock_path.unlink(missing_ok=True)
         fd = open(lock_path, "w")
         fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)

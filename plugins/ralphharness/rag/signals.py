@@ -13,7 +13,7 @@ from __future__ import annotations
 import json
 import logging
 from pathlib import Path
-from typing import Literal, Union
+from typing import Any, Literal, Union
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +26,7 @@ def _norm(p: _SpecPath) -> Path:
     return Path(p) if isinstance(p, str) else p
 
 
-def emit(spec_path: _SpecPath, signal_type: str, spec_name: str, **extra: str) -> None:
+def emit(spec_path: _SpecPath, signal_type: str, spec_name: str, **extra: Any) -> None:
     """Append a signal event to spec-specific signals.jsonl.
 
     Args:
