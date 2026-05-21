@@ -346,7 +346,7 @@ the post-task helper.
   - **Verify**: `cd /mnt/bunker_data/ai/smart-ralph && PYTHONPATH=. python -m pytest plugins/ralphharness/rag/tests/test_security.py -q && echo PASS`
   - **Commit**: `test(rag): SecurityLayer rejection coverage + log path assertion`
 
-- [ ] 3.5 Unit tests for `RAGService` (graceful + telemetry + signal phase)
+- [x] 3.5 Unit tests for `RAGService` (graceful + telemetry + signal phase)
   > **REOPEN — Audit: tests cosméticos** (ver `/home/malka/.claude/plans/haz-un-plan-para-sorted-grove.md` sección 6.D punto 32)
   > Motivo: el test pasó en verde pero el audit confirmó que `service.retrieve` jamás llama `record_metric` ni `signals.emit` en código de producción — los tests stub-only enmascaran el bug (B7). El test no patcheaba `record_metric` para asserta que se invocó; solo testeaba `retrieve() -> []`.
   > Criterios añadidos: añadir test que `patch('plugins.ralphharness.rag.observability.record_metric')` antes de `service.retrieve("hello", "execution_memory", 3)` y asserta que `mock.assert_called_once()` con `outcome="ok"` y `query_sha256=hashlib.sha256(b"hello").hexdigest()` (NO raw `"hello"`). Análogo para `signals.emit_retrieval_*`.
