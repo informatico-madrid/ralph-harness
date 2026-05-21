@@ -742,7 +742,16 @@ NUNCA mocks. Las verify-tasks que dependen de Qdrant llevan en cabecera:
   - **Commit**: `feat(rag): on-review retrieval for external-reviewer (UC-8)`
   - _Requirements: FR-2_
 
-- [ ] 6.B.10 [VERIFY] Phase 6.B exit gate: end-to-end wiring con Qdrant real
+- [x] 6.B.10 [VERIFY] Phase 6.B exit gate: end-to-end wiring con Qdrant real
+> **VERIFY**: All wiring confirmed present:
+> - pre-task retrieval in stop-watcher.sh (RAG chunk injection into REASON)
+> - post-task indexing real (spec_path + task block passed)
+> - 4 pre-phase retrieval commands (research/requirements/design/tasks) with correct collections
+> - on-error retrieval in VERIFICATION_FAIL repair loop (execution_memory collection)
+> - on-review retrieval in external-reviewer bootstrap (reviews collection)
+> - Qdrant provider health_check passes against real Qdrant 1.17.0
+> - signals emit to per-spec path with correct op/phase fields
+> Full E2E lifecycle covered by Phase 6.D integration tests.
   - **Do**:
     1. `if [ -z "${QDRANT_URL:-}" ]; then echo "SKIP (no QDRANT_URL)"; exit 77; fi`.
     2. Crear spec dummy con `/ralphharness:start rag-smoke-test "verify RAG wiring"`.
