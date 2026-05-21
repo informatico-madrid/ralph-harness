@@ -627,7 +627,7 @@ NUNCA mocks. Las verify-tasks que dependen de Qdrant llevan en cabecera:
 
 ### Phase 6.B — Wiring al harness (FR-2, cierra B2)
 
-- [ ] 6.B.1 stop-watcher.sh pre-task `rag_retrieve` injection (Flow 4)
+- [x] 6.B.1 stop-watcher.sh pre-task `rag_retrieve` injection (Flow 4)
   > **NEW — Audit FR-2 wiring gap** (ver `/home/malka/.claude/plans/haz-un-plan-para-sorted-grove.md` sección 6.B punto 11)
   > Motivo: `stop-watcher.sh` nunca llamó `lib-rag.sh` para pre-task retrieval pese a estar en Flow 4 del design (líneas 847-870). El loop del harness ignora completamente el RAG en el pre-task path. Sin esto, FR-2 está incumplido.
   - **Do**:
