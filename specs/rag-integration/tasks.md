@@ -778,7 +778,7 @@ NUNCA mocks. Las verify-tasks que dependen de Qdrant llevan en cabecera:
   - **Commit**: `test(rag): integration test against real Qdrant`
   - _Requirements: FR-2, NFR-5_
 
-- [ ] 6.D.2 bats e2e test del wiring del harness
+- [x] 6.D.2 bats e2e test del wiring del harness
   > **NEW — Audit gap** (ver `/home/malka/.claude/plans/haz-un-plan-para-sorted-grove.md` sección 6.D punto 30)
   > Motivo: el bats actual sólo testea `rag_retrieve` aislado — no testea el path `RALPH_RAG_ENABLED=true` end-to-end con Qdrant.
   - **Do**:
@@ -789,7 +789,7 @@ NUNCA mocks. Las verify-tasks que dependen de Qdrant llevan en cabecera:
   - **Verify**: `cd /mnt/bunker_data/ai/smart-ralph && bats plugins/ralphharness/tests/test_lib_rag.bats && echo PASS`
   - **Commit**: `test(rag): bats e2e enabled path with real Qdrant`
 
-- [ ] 6.D.3 Test per-spec signal emission
+- [x] 6.D.3 Test per-spec signal emission
   > **NEW — Audit gap** (ver `/home/malka/.claude/plans/haz-un-plan-para-sorted-grove.md` sección 6.D punto 31)
   > Motivo: `signals.emit` escribía al sitio incorrecto (`~/.cache/...`) y los tests no detectaron porque no aserción la ruta exacta.
   - **Do**:
@@ -802,7 +802,7 @@ NUNCA mocks. Las verify-tasks que dependen de Qdrant llevan en cabecera:
   - **Verify**: `cd /mnt/bunker_data/ai/smart-ralph && PYTHONPATH=. python -m pytest plugins/ralphharness/rag/tests/test_signals_per_spec.py -q && echo PASS`
   - **Commit**: `test(rag): per-spec signal emission with negative assertion`
 
-- [ ] 6.D.4 Test métrica registrada en service.retrieve
+- [x] 6.D.4 Test métrica registrada en service.retrieve
   > **NEW — Audit gap** (ver `/home/malka/.claude/plans/haz-un-plan-para-sorted-grove.md` sección 6.D punto 32)
   > Motivo: `record_metric` jamás fue llamado en producción; los tests existentes no aserción la invocación.
   - **Do**:
@@ -815,7 +815,7 @@ NUNCA mocks. Las verify-tasks que dependen de Qdrant llevan en cabecera:
   - **Verify**: `cd /mnt/bunker_data/ai/smart-ralph && PYTHONPATH=. python -m pytest plugins/ralphharness/rag/tests/test_observability_wiring.py -q && echo PASS`
   - **Commit**: `test(rag): assert record_metric is wired into service.retrieve`
 
-- [ ] 6.D.5 Test YAML loader anidado
+- [x] 6.D.5 Test YAML loader anidado
   > **NEW — Audit gap** (ver `/home/malka/.claude/plans/haz-un-plan-para-sorted-grove.md` sección 6.D punto 33)
   > Motivo: el parser plano se "comió" la anidación sin que el test lo notara.
   - **Do**:
@@ -828,7 +828,7 @@ NUNCA mocks. Las verify-tasks que dependen de Qdrant llevan en cabecera:
   - **Verify**: `cd /mnt/bunker_data/ai/smart-ralph && PYTHONPATH=. python -m pytest plugins/ralphharness/rag/tests/test_config.py::test_yaml_nested -q && echo PASS`
   - **Commit**: `test(rag): YAML loader handles nested rag.* keys`
 
-- [ ] 6.D.6 [VERIFY] Phase 6.D exit gate: suite completa con runtime real
+- [x] 6.D.6 [VERIFY] Phase 6.D exit gate: suite completa con runtime real
   - **Do**:
     1. `if [ -z "${QDRANT_URL:-}" ]; then echo "SKIP (no QDRANT_URL)"; exit 77; fi`.
     2. Correr `pytest` completo + `bats` completo.
@@ -839,7 +839,7 @@ NUNCA mocks. Las verify-tasks que dependen de Qdrant llevan en cabecera:
 
 ### Phase 6.E — Ship
 
-- [ ] 6.E.1 Cerrar entrada FAIL en task_review.md
+- [x] 6.E.1 Cerrar entrada FAIL en task_review.md
   > **NEW — Audit cierre** (ver `/home/malka/.claude/plans/haz-un-plan-para-sorted-grove.md` sección 6.E punto 34)
   - **Do**:
     1. Editar `specs/rag-integration/task_review.md` línea 39 (entry `2.3 FAIL critical`).
@@ -850,7 +850,7 @@ NUNCA mocks. Las verify-tasks que dependen de Qdrant llevan en cabecera:
   - **Verify**: `cd /mnt/bunker_data/ai/smart-ralph && test "$(grep -c '| FAIL ' specs/rag-integration/task_review.md)" = "0" && echo PASS`
   - **Commit**: `docs(rag): close FAIL entries 2.3 and 4.8 in task_review`
 
-- [ ] 6.E.2 Bump plugin version 5.8.0 → 5.9.0
+- [x] 6.E.2 Bump plugin version 5.8.0 → 5.9.0
   > **NEW — Audit cierre** (ver `/home/malka/.claude/plans/haz-un-plan-para-sorted-grove.md` sección 6.E punto 36)
   > Motivo: la feature ahora es funcional (no estaba); minor bump correcto.
   - **Do**:
@@ -861,7 +861,7 @@ NUNCA mocks. Las verify-tasks que dependen de Qdrant llevan en cabecera:
   - **Verify**: `cd /mnt/bunker_data/ai/smart-ralph && grep -q '"version": "5.9.0"' plugins/ralphharness/.claude-plugin/plugin.json && grep -q '"version": "5.9.0"' .claude-plugin/marketplace.json && echo PASS`
   - **Commit**: `chore: bump plugin to 5.9.0 (RAG audit fixes)`
 
-- [ ] 6.E.3 PR único con cuerpo tabulado bug→commit
+- [x] 6.E.3 PR único con cuerpo tabulado bug→commit
   > **NEW — Audit cierre** (ver `/home/malka/.claude/plans/haz-un-plan-para-sorted-grove.md` sección 6.E punto 37)
   - **Do**:
     1. `gh pr create --title "fix(rag): wire feature end-to-end + close audit findings"`.
@@ -871,7 +871,7 @@ NUNCA mocks. Las verify-tasks que dependen de Qdrant llevan en cabecera:
   - **Done when**: PR creado, body contiene tabla bug→commit.
   - **Commit**: (no commit — gh action)
 
-- [ ] 6.E.4 [VERIFY] Phase 6 exit gate: CI verde + audit findings cerrados
+- [x] 6.E.4 [VERIFY] Phase 6 exit gate: CI verde + audit findings cerrados
   - **Do**:
     1. `gh pr checks --watch` esperar CI.
     2. Assert que `task_review.md` no tiene `FAIL`.
