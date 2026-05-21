@@ -17,6 +17,306 @@ fi
 # Source path resolver for spec directory resolution
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CLAUDE_PLUGIN_ROOT="${CLAUDE_PLUGIN_ROOT:-$(cd "$SCRIPT_DIR/../../" && pwd)}"
+# Note: .progress.md and .ralph-state.json are preserved for loop continuation
+# Use /ralphharness:cancel to explicitly stop execution and cleanup state
+
+# Sequential [VERIFY] gate — blocks advancement when preceding [VERIFY] tasks
+# at lower indices remain unsatisfied.  Scans tasks.md for lines matching
+# "^- \\[[ x]\\]" and collects any [VERIFY] lines whose 0-based index is
+# strictly less than task_index and whose mark is " " (unchecked).
+gate_verify_sequential() {
+    local spec_path="$1"
+    local tasks_file="$2"
+    local task_index="$3"
+
+    # If tasks file does not exist there is nothing to check
+    if [ ! -f "$tasks_file" ]; then
+        return 0
+    fi
+
+    # Scan for unchecked [VERIFY] tasks below task_index
+    local blocked
+    blocked=$(awk -v target="$task_index" '
+        /^- \[[ x]\]/ {
+            if (/^- \[[ x\]].*\[VERIFY\]/ && /\[ \]/) {
+                print idx
+                exit 1
+            }
+            if (idx >= target) exit
+            idx++
+        }
+    ' "$tasks_file")
+
+    if [ -z "$blocked" ]; then
+        return 0
+    fi
+
+    echo "BLOCKED: preceding VERIFY task ${blocked} unsatisfied" >&2
+
+    # Emit DEADLOCK control signal to signals.jsonl (FR-2, AC-1.2, AC-1.7)
+    if [ ! -f "$spec_path/signals.jsonl" ]; then
+      cp "$CLAUDE_PLUGIN_ROOT/templates/signals.jsonl" "$spec_path/signals.jsonl" 2>/dev/null || true
+    fi
+    source "$CLAUDE_PLUGIN_ROOT/hooks/scripts/lib-signals.sh" 2>/dev/null || true
+
+    deadlock_payload=$(jq -n \
+      --arg source "gate_verify_sequential" \
+      --arg reason "preceding VERIFY task ${blocked} unsatisfied" \
+      --argjson taskIndex "$blocked" \
+      --arg status "active" \
+      --arg timestamp "$(date -u +%FT%TZ)" \
+      '{type:"control",signal:"DEADLOCK",from:"gate_verify_sequential",to:"coordinator",taskIndex:$taskIndex,status:$status,timestamp:$timestamp,reason:$reason}')
+
+    if ! append_signal "$spec_path" "$deadlock_payload"; then
+      echo "[harness][gate] WARN: signals.jsonl write failed (read-only fs), skipping DEADLOCK" >> "$spec_path/.progress.md" 2>/dev/null
+      return 0
+    fi
+    return 1
+}
+
+# Capture a snapshot of checked task IDs from tasks.md for task-mark integrity
+# guard.  Builds {"checkedTaskIds":[...],"capturedAt":"<ISO>"} and merges it
+# into .ralph-state.json.taskMarkSnapshot atomically.
+capture_task_marks() {
+    local spec_path="$1"
+    local tasks_file="$2"
+    local state_file="$3"
+
+    if [ ! -f "$tasks_file" ]; then
+        return 0
+    fi
+
+    local captured_at
+    captured_at=$(date -u +%FT%TZ)
+
+    # Build JSON array of checked task IDs (0-based index)
+    local checked_ids
+    checked_ids=$(awk '
+        /^- \[x\]/ { printf "%d\n", idx; idx++ ; next }
+        /^- \[[ x]\]/ { idx++; next }
+        { next }
+    ' "$tasks_file")
+
+    # Build JSON array string
+    local ids_json
+    ids_json=$(printf '%s\n' "$checked_ids" | jq -R 'tonumber' | jq -s '.')
+
+    local payload
+    payload=$(jq -n \
+      --argjson ids "$ids_json" \
+      --arg ts "$captured_at" \
+      '{checkedTaskIds: $ids, capturedAt: $ts}')
+
+    # Atomically update state file — merge into taskMarkSnapshot
+    if [ -f "$state_file" ]; then
+        local tmp="${state_file}.tmp"
+        if jq --argjson snap "$payload" '.taskMarkSnapshot = $snap' "$state_file" > "$tmp" 2>/dev/null; then
+            mv "$tmp" "$state_file"
+        else
+            rm -f "$tmp"
+        fi
+    fi
+}
+
+# Emit a per-task metric line to .metrics.jsonl.
+# Calls write_metric exactly once per advancement (new task or retry),
+# detected via lastMetricTaskIndex / lastMetricIteration idempotency guard.
+# Best-effort: always returns 0 (write_metric failure -> WARN).
+emit_task_metric() {
+    local spec_path="$1"
+    local state_file="$2"
+
+    if [ ! -f "$state_file" ]; then
+        return 0
+    fi
+
+    # Read current advancement state from state file
+    local task_index task_iteration last_metric_task_index last_metric_iteration
+    task_index=$(jq -r '.taskIndex // 0' "$state_file" 2>/dev/null || echo "0")
+    task_iteration=$(jq -r '.taskIteration // 0' "$state_file" 2>/dev/null || echo "0")
+    last_metric_task_index=$(jq -r '.lastMetricTaskIndex // -1' "$state_file" 2>/dev/null || echo "-1")
+    last_metric_iteration=$(jq -r '.lastMetricIteration // -1' "$state_file" 2>/dev/null || echo "-1")
+
+    # Advancement detection -- determine pass/fail for this step
+    local status="pass"
+    if [ "$task_index" -gt "$last_metric_task_index" ] 2>/dev/null; then
+        status="pass"
+    elif [ "$task_index" -eq "$last_metric_task_index" ] && [ "$task_iteration" -gt "$last_metric_iteration" ] 2>/dev/null; then
+        status="fail"
+    else
+        return 0
+    fi
+
+    # Resolve commit SHA from spec repo
+    local commit_sha
+    commit_sha=$(git -C "$spec_path" log -1 --format=%H 2>/dev/null || echo "unknown")
+
+    # Derive task name from tasks.md (first line of current task block)
+    local task_name="unknown"
+    local tasks_file="$CWD/$spec_path/tasks.md"
+    if [ -f "$tasks_file" ]; then
+        task_name=$(awk -v idx="$task_index" '
+            /^- \[[ x]\]/ && c == idx {
+                sub(/^[- ]* \[[ x]\] /, "")
+                print
+                exit
+            }
+            /^- \[[ x]\]/ { c++ }
+        ' "$tasks_file")
+    fi
+
+    # Source write-metric helper
+    source "$CLAUDE_PLUGIN_ROOT/hooks/scripts/write-metric.sh" 2>/dev/null || true
+
+    # Build task_id from index (e.g. "1.12")
+    local task_id="${task_index}.${task_iteration}"
+
+    # Call write_metric (best-effort: failure -> WARN, continue)
+    local write_exit=0
+    write_metric "$spec_path" "$status" "$task_index" "$task_iteration" "0" "$task_name" "implementation" "$task_id" "$commit_sha" || write_exit=$?
+    if [ "$write_exit" -ne 0 ]; then
+        echo "[harness][metric] WARN: write_metric failed (exit $write_exit)" >> "$spec_path/.progress.md" 2>/dev/null
+    fi
+
+    # Update lastMetricTaskIndex / lastMetricIteration in state (atomic)
+    local tmp="${state_file}.tmp"
+    if jq --argjson ti "$task_index" --argjson ti2 "$task_iteration" \
+        '.lastMetricTaskIndex = $ti | .lastMetricIteration = $ti2' \
+        "$state_file" > "$tmp" 2>/dev/null; then
+        mv "$tmp" "$state_file"
+    else
+        rm -f "$tmp"
+    fi
+
+    return 0
+}
+
+# Task-mark integrity guard — detects illegitimate [x]->[ ] un-marks.
+# Reads taskMarkSnapshot from state, compares against current tasks.md,
+# classifies unmarked tasks using task_review.md PASS entries and
+# external_unmarks delta. Never writes external_unmarks; never re-marks.
+gate_task_mark_integrity() {
+    local spec_path="$1"
+    local state_file="$2"
+
+    # Resolve paths
+    local tasks_file="$CWD/$spec_path/tasks.md"
+    local review_file="$CWD/$spec_path/task_review.md"
+
+    # If task_review.md absent — skip guard (no review to check)
+    if [ ! -f "$review_file" ]; then
+        echo "[harness][gate] WARN: task_review.md absent from $spec_path; skipping integrity guard" >> "$CWD/$spec_path/.progress.md" 2>/dev/null
+        return 0
+    fi
+
+    # Read taskMarkSnapshot from state file
+    local snapshot
+    snapshot=$(jq -r '.taskMarkSnapshot // null' "$state_file" 2>/dev/null || echo "null")
+    if [ "$snapshot" = "null" ]; then
+        capture_task_marks "$spec_path" "$tasks_file" "$state_file" 2>/dev/null || true
+        return 0
+    fi
+
+    # Under flock on tasks.md.lock: read current checked IDs, detect un-marks, classify
+    (
+        exec 201>"${tasks_file}.lock"
+        flock -e 201 || exit 0
+
+        # Read current [x] task IDs from tasks.md (0-based indices)
+        local current_ids
+        current_ids=$(awk '
+            /^- \[x\]/ { printf "%d\n", idx; idx++; next }
+            /^- \[[ x]\]/ { idx++; next }
+            { next }
+        ' "$tasks_file" 2>/dev/null)
+
+        # Parse prior and current checked task IDs into arrays
+        local -a prior_ids=() current_ids_arr=()
+        while IFS= read -r id; do
+            [ -n "$id" ] && prior_ids+=("$id")
+        done <<< "$(echo "$snapshot" | jq -r '.checkedTaskIds // [] | .[]')"
+        while IFS= read -r id; do
+            [ -n "$id" ] && current_ids_arr+=("$id")
+        done <<< "$current_ids"
+
+        # Compute unmarked = prior - current
+        local -a unmarked=()
+        for pid in "${prior_ids[@]}"; do
+            local found=0
+            for cid in "${current_ids_arr[@]}"; do
+                if [ "$pid" = "$cid" ]; then found=1; break; fi
+            done
+            [ "$found" -eq 0 ] && unmarked+=("$pid")
+        done
+
+        # Classify each unmarked task: LEGITIMATE vs ILLEGITIMATE
+        local -a legitimate=() illegitimate=()
+        for tid in "${unmarked[@]}"; do
+            # hasPass = task_review.md has a PASS entry for this task
+            local grep_pattern="### \[task-${tid}\]"
+            local hasPass=0
+            if grep -q "$grep_pattern" "$review_file" 2>/dev/null; then
+                if awk -v pattern="$grep_pattern" '
+                    $0 ~ pattern { in_task=1; next }
+                    in_task && /^- status:/ { gsub(/^[[:space:]]*- status: */, ""); if (tolower($0) == "pass") print "1"; in_task=0 }
+                    in_task && /^### / { in_task=0 }
+                ' "$review_file" 2>/dev/null | grep -q .; then
+                    hasPass=1
+                fi
+            fi
+
+            # extInc = external_un_marks[tid] (current) > externalUnmarks[tid] (snapshot)
+            local extInc=0
+            local ext_current
+            ext_current=$(jq -r ".external_un_marks[\"$tid\"] // 0" "$state_file" 2>/dev/null || echo 0)
+            extInc=$(echo "$snapshot" | jq --arg tid "$tid" --argjson cur "$ext_current" '
+                ($cur > (if .externalUnmarks[$tid] then .externalUnmarks[$tid] else 0 end)) | if . then 1 else 0 end
+            ' 2>/dev/null || echo 0)
+
+            if [ "$hasPass" -eq 1 ] && [ "$extInc" -eq 0 ]; then
+                illegitimate+=("$tid")
+            else
+                legitimate+=("$tid")
+            fi
+        done
+
+        # Emit DEADLOCK for each illegitimate un-mark
+        for tid in "${illegitimate[@]}"; do
+            local payload
+            payload=$(jq -n \
+              --arg source "gate_task_mark_integrity" \
+              --arg reason "illegitimate un-mark of task ${tid}" \
+              --argjson taskId "$tid" \
+              --arg status "active" \
+              --arg timestamp "$(date -u +%FT%TZ)" \
+              '{type:"control",signal:"DEADLOCK",from:"gate_task_mark_integrity",to:"coordinator",taskId:$taskId,status:$status,timestamp:$timestamp,reason:$reason}')
+
+            if ! append_signal "$spec_path" "$payload"; then
+                echo "[harness][gate] WARN: signals.jsonl write failed, skipping DEADLOCK for task $tid" >> "$CWD/$spec_path/.progress.md" 2>/dev/null
+            fi
+        done
+
+        # Refresh taskMarkSnapshot under same lock
+        local captured_at
+        captured_at=$(date -u +%FT%TZ)
+        local ids_json
+        ids_json=$(printf '%s\n' "$current_ids" | jq -R 'tonumber' | jq -s '.')
+        local snap_payload
+        snap_payload=$(jq -n \
+          --argjson ids "$ids_json" \
+          --arg ts "$captured_at" \
+          '{checkedTaskIds: $ids, capturedAt: $ts}')
+
+        if [ -f "$state_file" ]; then
+            local tmp="${state_file}.tmp"
+            if jq --argjson snap "$snap_payload" '.taskMarkSnapshot = $snap' "$state_file" > "$tmp" 2>/dev/null; then
+                mv "$tmp" "$state_file"
+            else
+                rm -f "$tmp"
+            fi
+        fi
+    ) 201>"${tasks_file}.lock"
+}
 RALPH_CWD="$CWD"
 export RALPH_CWD
 source "$SCRIPT_DIR/path-resolver.sh"
@@ -727,12 +1027,12 @@ if [ "$PHASE" = "execution" ] && [ "$TASK_INDEX" -lt "$TOTAL_TASKS" ]; then
     MAX_TASK_ITER=$(jq -r '.maxTaskIterations // 5' "$STATE_FILE" 2>/dev/null || echo "5")
 
     # Append-only invariant: check that no existing lines were modified
-    local _prev_hash=$(git hash HEAD -- plugins/ralphharness/hooks/scripts/stop-watcher.sh 2>/dev/null || true)
+    _prev_hash=$(git hash HEAD -- plugins/ralphharness/hooks/scripts/stop-watcher.sh 2>/dev/null || true)
     if [ -n "$_prev_hash" ]; then
-        local _curr_hash=$(git hash -- plugins/ralphharness/hooks/scripts/stop-watcher.sh 2>/dev/null || true)
+        _curr_hash=$(git hash -- plugins/ralphharness/hooks/scripts/stop-watcher.sh 2>/dev/null || true)
         if [ "$_prev_hash" != "$_curr_hash" ]; then
             # Count deletions — any deletion = policy violation
-            local _deletion_count=$(git diff HEAD -- plugins/ralphharness/hooks/scripts/stop-watcher.sh | grep -c '^-' || true)
+            _deletion_count=$(git diff HEAD -- plugins/ralphharness/hooks/scripts/stop-watcher.sh | grep -c '^-' || true)
             if [ "$_deletion_count" -gt 0 ]; then
                 echo "APPEND-ONLY VIOLATION: $_deletion_count line(s) deleted" >&2
                 exit 1
@@ -741,11 +1041,11 @@ if [ "$PHASE" = "execution" ] && [ "$TASK_INDEX" -lt "$TOTAL_TASKS" ]; then
     fi
 
     # Also check spec-executor.md wasn't modified (only appended to)
-    local _executor_prev=$(git hash HEAD -- plugins/ralphharness/agents/spec-executor.md 2>/dev/null || true)
+    _executor_prev=$(git hash HEAD -- plugins/ralphharness/agents/spec-executor.md 2>/dev/null || true)
     if [ -n "$_executor_prev" ]; then
-        local _executor_curr=$(git hash -- plugins/ralphharness/agents/spec-executor.md 2>/dev/null || true)
+        _executor_curr=$(git hash -- plugins/ralphharness/agents/spec-executor.md 2>/dev/null || true)
         if [ "$_executor_prev" != "$_executor_curr" ]; then
-            local _executor_del=$(git diff HEAD -- plugins/ralphharness/agents/spec-executor.md | grep -c '^-' || true)
+            _executor_del=$(git diff HEAD -- plugins/ralphharness/agents/spec-executor.md | grep -c '^-' || true)
             if [ "$_executor_del" -gt 0 ]; then
                 echo "APPEND-ONLY VIOLATION in spec-executor.md: $_executor_del deletions" >&2
                 exit 1
@@ -953,303 +1253,3 @@ fi
 # Only remove files older than 60 minutes to avoid race conditions with active executors
 find "$CWD/$SPEC_PATH" -name ".progress-task-*.md" -mmin +60 -delete 2>/dev/null || true
 
-# Note: .progress.md and .ralph-state.json are preserved for loop continuation
-# Use /ralphharness:cancel to explicitly stop execution and cleanup state
-
-# Sequential [VERIFY] gate — blocks advancement when preceding [VERIFY] tasks
-# at lower indices remain unsatisfied.  Scans tasks.md for lines matching
-# "^- \\[[ x]\\]" and collects any [VERIFY] lines whose 0-based index is
-# strictly less than task_index and whose mark is " " (unchecked).
-gate_verify_sequential() {
-    local spec_path="$1"
-    local tasks_file="$2"
-    local task_index="$3"
-
-    # If tasks file does not exist there is nothing to check
-    if [ ! -f "$tasks_file" ]; then
-        return 0
-    fi
-
-    # Scan for unchecked [VERIFY] tasks below task_index
-    local blocked
-    blocked=$(awk -v target="$task_index" '
-        /^- \[[ x]\]/ {
-            if (/^- \[[ x\]].*\[VERIFY\]/ && /\[ \]/) {
-                print idx
-                exit 1
-            }
-            if (idx >= target) exit
-            idx++
-        }
-    ' "$tasks_file")
-
-    if [ -z "$blocked" ]; then
-        return 0
-    fi
-
-    echo "BLOCKED: preceding VERIFY task ${blocked} unsatisfied" >&2
-
-    # Emit DEADLOCK control signal to signals.jsonl (FR-2, AC-1.2, AC-1.7)
-    if [ ! -f "$spec_path/signals.jsonl" ]; then
-      cp "$CLAUDE_PLUGIN_ROOT/templates/signals.jsonl" "$spec_path/signals.jsonl" 2>/dev/null || true
-    fi
-    source "$CLAUDE_PLUGIN_ROOT/hooks/scripts/lib-signals.sh" 2>/dev/null || true
-
-    deadlock_payload=$(jq -n \
-      --arg source "gate_verify_sequential" \
-      --arg reason "preceding VERIFY task ${blocked} unsatisfied" \
-      --argjson taskIndex "$blocked" \
-      --arg status "active" \
-      --arg timestamp "$(date -u +%FT%TZ)" \
-      '{type:"control",signal:"DEADLOCK",from:"gate_verify_sequential",to:"coordinator",taskIndex:$taskIndex,status:$status,timestamp:$timestamp,reason:$reason}')
-
-    if ! append_signal "$spec_path" "$deadlock_payload"; then
-      echo "[harness][gate] WARN: signals.jsonl write failed (read-only fs), skipping DEADLOCK" >> "$spec_path/.progress.md" 2>/dev/null
-      return 0
-    fi
-    return 1
-}
-
-# Capture a snapshot of checked task IDs from tasks.md for task-mark integrity
-# guard.  Builds {"checkedTaskIds":[...],"capturedAt":"<ISO>"} and merges it
-# into .ralph-state.json.taskMarkSnapshot atomically.
-capture_task_marks() {
-    local spec_path="$1"
-    local tasks_file="$2"
-    local state_file="$3"
-
-    if [ ! -f "$tasks_file" ]; then
-        return 0
-    fi
-
-    local captured_at
-    captured_at=$(date -u +%FT%TZ)
-
-    # Build JSON array of checked task IDs (0-based index)
-    local checked_ids
-    checked_ids=$(awk '
-        /^- \[x\]/ { printf "%d\n", idx; idx++ ; next }
-        /^- \[[ x]\]/ { idx++; next }
-        { next }
-    ' "$tasks_file")
-
-    # Build JSON array string
-    local ids_json
-    ids_json=$(printf '%s\n' "$checked_ids" | jq -R 'tonumber' | jq -s '.')
-
-    local payload
-    payload=$(jq -n \
-      --argjson ids "$ids_json" \
-      --arg ts "$captured_at" \
-      '{checkedTaskIds: $ids, capturedAt: $ts}')
-
-    # Atomically update state file — merge into taskMarkSnapshot
-    if [ -f "$state_file" ]; then
-        local tmp="${state_file}.tmp"
-        if jq --argjson snap "$payload" '.taskMarkSnapshot = $snap' "$state_file" > "$tmp" 2>/dev/null; then
-            mv "$tmp" "$state_file"
-        else
-            rm -f "$tmp"
-        fi
-    fi
-}
-
-# Emit a per-task metric line to .metrics.jsonl.
-# Calls write_metric exactly once per advancement (new task or retry),
-# detected via lastMetricTaskIndex / lastMetricIteration idempotency guard.
-# Best-effort: always returns 0 (write_metric failure -> WARN).
-emit_task_metric() {
-    local spec_path="$1"
-    local state_file="$2"
-
-    if [ ! -f "$state_file" ]; then
-        return 0
-    fi
-
-    # Read current advancement state from state file
-    local task_index task_iteration last_metric_task_index last_metric_iteration
-    task_index=$(jq -r '.taskIndex // 0' "$state_file" 2>/dev/null || echo "0")
-    task_iteration=$(jq -r '.taskIteration // 0' "$state_file" 2>/dev/null || echo "0")
-    last_metric_task_index=$(jq -r '.lastMetricTaskIndex // -1' "$state_file" 2>/dev/null || echo "-1")
-    last_metric_iteration=$(jq -r '.lastMetricIteration // -1' "$state_file" 2>/dev/null || echo "-1")
-
-    # Advancement detection -- determine pass/fail for this step
-    local status="pass"
-    if [ "$task_index" -gt "$last_metric_task_index" ] 2>/dev/null; then
-        status="pass"
-    elif [ "$task_index" -eq "$last_metric_task_index" ] && [ "$task_iteration" -gt "$last_metric_iteration" ] 2>/dev/null; then
-        status="fail"
-    else
-        return 0
-    fi
-
-    # Resolve commit SHA from spec repo
-    local commit_sha
-    commit_sha=$(git -C "$spec_path" log -1 --format=%H 2>/dev/null || echo "unknown")
-
-    # Derive task name from tasks.md (first line of current task block)
-    local task_name="unknown"
-    local tasks_file="$CWD/$spec_path/tasks.md"
-    if [ -f "$tasks_file" ]; then
-        task_name=$(awk -v idx="$task_index" '
-            /^- \[[ x]\]/ && c == idx {
-                sub(/^[- ]* \[[ x]\] /, "")
-                print
-                exit
-            }
-            /^- \[[ x]\]/ { c++ }
-        ' "$tasks_file")
-    fi
-
-    # Source write-metric helper
-    source "$CLAUDE_PLUGIN_ROOT/hooks/scripts/write-metric.sh" 2>/dev/null || true
-
-    # Build task_id from index (e.g. "1.12")
-    local task_id="${task_index}.${task_iteration}"
-
-    # Call write_metric (best-effort: failure -> WARN, continue)
-    local write_exit=0
-    write_metric "$spec_path" "$status" "$task_index" "$task_iteration" "0" "$task_name" "implementation" "$task_id" "$commit_sha" || write_exit=$?
-    if [ "$write_exit" -ne 0 ]; then
-        echo "[harness][metric] WARN: write_metric failed (exit $write_exit)" >> "$spec_path/.progress.md" 2>/dev/null
-    fi
-
-    # Update lastMetricTaskIndex / lastMetricIteration in state (atomic)
-    local tmp="${state_file}.tmp"
-    if jq --argjson ti "$task_index" --argjson ti2 "$task_iteration" \
-        '.lastMetricTaskIndex = $ti | .lastMetricIteration = $ti2' \
-        "$state_file" > "$tmp" 2>/dev/null; then
-        mv "$tmp" "$state_file"
-    else
-        rm -f "$tmp"
-    fi
-
-    return 0
-}
-
-# Task-mark integrity guard — detects illegitimate [x]->[ ] un-marks.
-# Reads taskMarkSnapshot from state, compares against current tasks.md,
-# classifies unmarked tasks using task_review.md PASS entries and
-# external_unmarks delta. Never writes external_unmarks; never re-marks.
-gate_task_mark_integrity() {
-    local spec_path="$1"
-    local state_file="$2"
-
-    # Resolve paths
-    local tasks_file="$CWD/$spec_path/tasks.md"
-    local review_file="$CWD/$spec_path/task_review.md"
-
-    # If task_review.md absent — skip guard (no review to check)
-    if [ ! -f "$review_file" ]; then
-        echo "[harness][gate] WARN: task_review.md absent from $spec_path; skipping integrity guard" >> "$CWD/$spec_path/.progress.md" 2>/dev/null
-        return 0
-    fi
-
-    # Read taskMarkSnapshot from state file
-    local snapshot
-    snapshot=$(jq -r '.taskMarkSnapshot // null' "$state_file" 2>/dev/null || echo "null")
-    if [ "$snapshot" = "null" ]; then
-        capture_task_marks "$spec_path" "$tasks_file" "$state_file" 2>/dev/null || true
-        return 0
-    fi
-
-    # Under flock on tasks.md.lock: read current checked IDs, detect un-marks, classify
-    (
-        exec 201>"${tasks_file}.lock"
-        flock -e 201 || exit 0
-
-        # Read current [x] task IDs from tasks.md (0-based indices)
-        local current_ids
-        current_ids=$(awk '
-            /^- \[x\]/ { printf "%d\n", idx; idx++; next }
-            /^- \[[ x]\]/ { idx++; next }
-            { next }
-        ' "$tasks_file" 2>/dev/null)
-
-        # Parse prior and current checked task IDs into arrays
-        local -a prior_ids=() current_ids_arr=()
-        while IFS= read -r id; do
-            [ -n "$id" ] && prior_ids+=("$id")
-        done <<< "$(echo "$snapshot" | jq -r '.checkedTaskIds // [] | .[]')"
-        while IFS= read -r id; do
-            [ -n "$id" ] && current_ids_arr+=("$id")
-        done <<< "$current_ids"
-
-        # Compute unmarked = prior - current
-        local -a unmarked=()
-        for pid in "${prior_ids[@]}"; do
-            local found=0
-            for cid in "${current_ids_arr[@]}"; do
-                if [ "$pid" = "$cid" ]; then found=1; break; fi
-            done
-            [ "$found" -eq 0 ] && unmarked+=("$pid")
-        done
-
-        # Classify each unmarked task: LEGITIMATE vs ILLEGITIMATE
-        local -a legitimate=() illegitimate=()
-        for tid in "${unmarked[@]}"; do
-            # hasPass = task_review.md has a PASS entry for this task
-            local grep_pattern="### \[task-${tid}\]"
-            local hasPass=0
-            if grep -q "$grep_pattern" "$review_file" 2>/dev/null; then
-                if awk -v pattern="$grep_pattern" '
-                    $0 ~ pattern { in_task=1; next }
-                    in_task && /^- status:/ { gsub(/^[[:space:]]*- status: */, ""); if (tolower($0) == "pass") print "1"; in_task=0 }
-                    in_task && /^### / { in_task=0 }
-                ' "$review_file" 2>/dev/null | grep -q .; then
-                    hasPass=1
-                fi
-            fi
-
-            # extInc = external_un_marks[tid] (current) > externalUnmarks[tid] (snapshot)
-            local extInc=0
-            local ext_current
-            ext_current=$(jq -r ".external_un_marks[\"$tid\"] // 0" "$state_file" 2>/dev/null || echo 0)
-            extInc=$(echo "$snapshot" | jq --arg tid "$tid" --argjson cur "$ext_current" '
-                ($cur > (if .externalUnmarks[$tid] then .externalUnmarks[$tid] else 0 end)) | if . then 1 else 0 end
-            ' 2>/dev/null || echo 0)
-
-            if [ "$hasPass" -eq 1 ] && [ "$extInc" -eq 0 ]; then
-                illegitimate+=("$tid")
-            else
-                legitimate+=("$tid")
-            fi
-        done
-
-        # Emit DEADLOCK for each illegitimate un-mark
-        for tid in "${illegitimate[@]}"; do
-            local payload
-            payload=$(jq -n \
-              --arg source "gate_task_mark_integrity" \
-              --arg reason "illegitimate un-mark of task ${tid}" \
-              --argjson taskId "$tid" \
-              --arg status "active" \
-              --arg timestamp "$(date -u +%FT%TZ)" \
-              '{type:"control",signal:"DEADLOCK",from:"gate_task_mark_integrity",to:"coordinator",taskId:$taskId,status:$status,timestamp:$timestamp,reason:$reason}')
-
-            if ! append_signal "$spec_path" "$payload"; then
-                echo "[harness][gate] WARN: signals.jsonl write failed, skipping DEADLOCK for task $tid" >> "$CWD/$spec_path/.progress.md" 2>/dev/null
-            fi
-        done
-
-        # Refresh taskMarkSnapshot under same lock
-        local captured_at
-        captured_at=$(date -u +%FT%TZ)
-        local ids_json
-        ids_json=$(printf '%s\n' "$current_ids" | jq -R 'tonumber' | jq -s '.')
-        local snap_payload
-        snap_payload=$(jq -n \
-          --argjson ids "$ids_json" \
-          --arg ts "$captured_at" \
-          '{checkedTaskIds: $ids, capturedAt: $ts}')
-
-        if [ -f "$state_file" ]; then
-            local tmp="${state_file}.tmp"
-            if jq --argjson snap "$snap_payload" '.taskMarkSnapshot = $snap' "$state_file" > "$tmp" 2>/dev/null; then
-                mv "$tmp" "$state_file"
-            else
-                rm -f "$tmp"
-            fi
-        fi
-    ) 201>"${tasks_file}.lock"
-}
