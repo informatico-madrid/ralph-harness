@@ -196,7 +196,12 @@ codex_helpers = sorted(
     if p.is_dir()
 )
 
-expected = sorted(cmd for cmd in plugin_commands if cmd != "new")
+# RAG operational commands (rag-doctor, index-all, rag-search, rag-onboard) are
+# not included in Codex skills because they are human-operator tools for
+# diagnosis/setup/indexing, not part of the autonomous Ralph workflow.
+# Autonomous RAG retrievals go through lib-rag.sh, not slash commands.
+excluded_commands = {"new", "rag-doctor", "rag-onboard", "rag-search", "index-all"}
+expected = sorted(cmd for cmd in plugin_commands if cmd not in excluded_commands)
 assert codex_helpers == expected, {
     "expected": expected,
     "actual": codex_helpers,

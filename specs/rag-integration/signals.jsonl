@@ -1,0 +1,4 @@
+{"ts":"2026-05-21T04:50:44Z","op":"INDEXING_QUEUED","spec":"test-spec","phase":"indexing","chunk_count":5}
+{"ts":"2026-05-21T04:50:50Z","op":"INDEXING_QUEUED","spec":"test-spec","phase":"indexing","chunk_count":5}
+{"ts":"2026-05-21T05:36:00Z","type":"DEADLOCK","reason":"coordinator stalled at taskIndex=64, SPEC-ADJUSTMENT unprocessed for 8+ cycles","reviewer":"external-reviewer"}
+{"ts":"2026-05-21T08:56:45Z","type":"DEADLOCK_RESOLVED","spec":"rag-integration","resolved_by":"manual-sync","detail":"tasks.md=74/74 [x], state.taskIndex=65 was stale; collections renamed past_*→specs_* (design.md alignment), .ralph-state.json removed per completion protocol","prior_signal_ts":"2026-05-21T05:36:00Z"}

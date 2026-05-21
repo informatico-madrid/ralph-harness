@@ -27,6 +27,12 @@ Thumbs.db
 *.swp
 *.swo
 
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+
 # Logs
 *.log
 .playwright-mcp

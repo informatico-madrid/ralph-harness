@@ -1,0 +1,50 @@
+# security_allowlist.yaml — Patterns that trigger chunk rejection.
+#
+# If any chunk content matches these patterns, the chunk is rejected
+# and logged to sanitization-rejections.log (NEVER written to stdout
+# or signals.jsonl).
+#
+# Format: rich list [{id, regex, severity}, …]
+#   - id:      stable identifier for this rule
+#   - regex:   Python regex to match in chunk content
+#   - severity: "block" → reject; "warn" → accept with warning
+
+- id: aws_access_key
+  regex: "AKIA[0-9A-Z]{16}"
+  severity: block
+
+- id: aws_key_id_assignment
+  regex: "AWS_ACCESS_KEY_ID\\s*="
+  severity: block
+
+- id: aws_secret_assignment
+  regex: "aws_secret_access_key\\s*="
+  severity: block
+
+- id: ssh_key
+  regex: "ssh-(rsa|dsa|ed25519)\\s+"
+  severity: block
+
+- id: private_key
+  regex: "BEGIN.*PRIVATE KEY"
+  severity: block
+
+- id: bearer_token
+  regex: "Bearer\\s+[A-Za-z0-9\\-_\\.]+"
+  severity: block
+
+- id: github_pat
+  regex: "ghp_[A-Za-z0-9]{36}"
+  severity: block
+
+- id: slack_token
+  regex: "slack-[A-Za-z0-9\\-]+"
+  severity: block
+
+- id: password_leak
+  regex: "password\\s*[:=]\\s*['\\\"]?[A-Za-z0-9!@#$%^&*]{8,}"
+  severity: block
+
+- id: api_key_leak
+  regex: "api_key\\s*[:=]\\s*['\\\"]?[A-Za-z0-9]{16,}"
+  severity: block

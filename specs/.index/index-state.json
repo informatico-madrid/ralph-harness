@@ -1,10 +1,10 @@
 {
   "version": "1.0",
-  "updated": "2026-05-19T10:52:52Z",
+  "updated": "2026-05-21T06:17:05Z",
   "directories": [
     {
       "path": "./specs",
-      "specsCount": 55,
+      "specsCount": 56,
       "isDefault": true
     }
   ],
@@ -382,10 +382,16 @@
     {
       "name": "harness-enforcement-gates",
       "path": "./specs/harness-enforcement-gates",
-      "phase": "tasks",
+      "phase": "complete",
       "taskIndex": 0,
-      "totalTasks": 52,
-      "awaitingApproval": true
+      "totalTasks": 52
+    },
+    {
+      "name": "rag-integration",
+      "path": "./specs/rag-integration",
+      "phase": "execution",
+      "taskIndex": 65,
+      "totalTasks": 74
     }
   ]
 }

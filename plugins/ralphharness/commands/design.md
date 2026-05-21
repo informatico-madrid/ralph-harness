@@ -19,6 +19,24 @@ Create a task for each item and complete in order:
 5. **Walkthrough & approval** -- display summary, get user approval
 6. **Finalize** -- update state, commit, stop
 
+## Pre-design RAG Retrieval (FR-2 — Flow 2)
+
+Before gathering context, retrieve relevant prior designs
+from the vector DB to avoid duplicating architectural decisions.
+
+```bash
+RAG_DESIGN=$(PYTHONPATH=. timeout 5s python -m plugins.ralphharness.rag retrieve \
+  --query "$(cat .progress.md | head -20)" \
+  --collection specs_design \
+  --top-k 5 2>/dev/null) || RAG_DESIGN=""
+if [ -n "$RAG_DESIGN" ] && [ "$RAG_DESIGN" != "[]" ]; then
+  echo "$RAG_DESIGN" | jq -r '.results[] | "## Prior design (RAG)\nPath: \(.source_path)\nScore: \(.score)\n\(.content)"' 2>/dev/null
+fi
+```
+
+Include any results under `## Prior design (RAG)` in your analysis.
+If no results, proceed without them (zero overhead).
+
 ## Step 1: Gather Context
 
 1. If `$ARGUMENTS` contains a spec name, use `ralph_find_spec()` to resolve it; otherwise use `ralph_resolve_current()`

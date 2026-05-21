@@ -1,0 +1,37 @@
+name: Python Tests
+
+on:
+  push:
+    paths:
+      - 'plugins/ralphharness/rag/**/*.py'
+      - 'plugins/ralphharness/rag/**/*.yaml'
+      - 'plugins/ralphharness/rag/**/*.jsonl'
+      - '.github/workflows/python-tests.yml'
+  pull_request:
+    paths:
+      - 'plugins/ralphharness/rag/**/*.py'
+      - 'plugins/ralphharness/rag/**/*.yaml'
+      - 'plugins/ralphharness/rag/**/*.jsonl'
+      - '.github/workflows/python-tests.yml'
+
+jobs:
+  test:
+    name: Run pytest
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest qdrant-client pyyaml pyyaml
+
+      - name: Run tests
+        working-directory: plugins/ralphharness
+        run: PYTHONPATH=../.. python -m pytest rag/tests/ -v

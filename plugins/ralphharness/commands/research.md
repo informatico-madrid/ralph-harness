@@ -70,6 +70,24 @@ Append to `.progress.md` under "Interview Responses":
 
 Pass combined context to subagent delegation as "Interview Context".
 
+## Pre-research RAG Retrieval (FR-2 — Flow 2)
+
+Before delegating to research-analyst agents, retrieve relevant prior research
+from the vector DB to avoid redundant work.
+
+```bash
+RAG_RESEARCH=$(PYTHONPATH=. timeout 5s python -m plugins.ralphharness.rag retrieve \
+  --query "$(cat .progress.md | head -20)" \
+  --collection specs_research \
+  --top-k 5 2>/dev/null) || RAG_RESEARCH=""
+if [ -n "$RAG_RESEARCH" ] && [ "$RAG_RESEARCH" != "[]" ]; then
+  echo "$RAG_RESEARCH" | jq -r '.results[] | "## Prior research (RAG)\nPath: \(.source_path)\nScore: \(.score)\n\(.content)"' 2>/dev/null
+fi
+```
+
+Include any results under `## Prior research (RAG)` in your analysis.
+If no results, proceed without them (zero overhead).
+
 ## Step 3: Execute Parallel Research (Team-Based)
 
 <mandatory>

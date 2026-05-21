@@ -71,7 +71,7 @@ Fine is the default. Coarse reduces token consumption ~3-5x for sequential execu
 > 1. **ALWAYS bump the version** in BOTH files for the modified plugin:
 >    - `plugins/<plugin-name>/.claude-plugin/plugin.json` (the plugin you're modifying)
 >    - `.claude-plugin/marketplace.json` (update the corresponding plugin entry)
-    - Current version: 5.7.0 (all specs complete — 42 specs with artifacts, 10 in engine roadmap epic)
+    - Current version: 5.9.0 (RAG integration functional, 45 specs with artifacts)
 > 2. Use semantic versioning: patch (fixes), minor (features), major (breaking)
 > 3. Bump once per set of related changes (not per commit)
 > 4. Only update the version for plugins you actually modified
@@ -174,6 +174,44 @@ Spec-executor must output `TASK_COMPLETE` for coordinator to advance. Coordinato
 ### Dependencies
 
 RalphHarness v3.0.0+ is self-contained with no external plugin dependencies. The execution loop is handled by the stop-hook.
+
+### RAG (optional)
+
+An opt-in Python RAG layer (`plugins/ralphharness/rag/`) provides retrieval-augmented
+context from past spec data during execution. It is disabled by default — the plugin
+functions identically when RAG is off.
+
+**Enable via**: `/ralphharness:rag-onboard` (recommended interactive installer) or
+manually by adding a `rag:` block to `.ralphharness.local.md`:
+
+```yaml
+---
+rag:
+  enabled: true
+  provider: qdrant       # or faiss
+  embeddings:
+    provider: local      # or openai, azure
+  vector_db:
+    endpoint: http://localhost:6333
+  faiss:
+    index_dir: ~/.cache/smart-ralph/rag/faiss
+    allow_write: false
+---
+```
+
+**New commands**:
+- `/ralphharness:rag-doctor` — tiered health report (OK/WARN/FAIL per check)
+- `/ralphharness:index-all` — index all spec artifacts (flock rate-limited, 1/min)
+- `/ralphharness:rag-search` — human-operator triage tool, reads across all collections
+- `/ralphharness:rag-onboard` — interactive onboarding wizard (7-step detection + install)
+
+**Providers**: Qdrant (primary) → FAISS fallback. Embedder chain: local (sentence-transformers) → OpenAI → Azure. Any failure returns empty, never blocks the loop.
+
+**Signals**: `RETRIEVAL_FAILED` (with `phase: retrieval|indexing`) and `INDEXING_QUEUED` are
+written to spec `signals.jsonl`. See design.md for full detail.
+
+**Telemetry**: `retrieval-metrics.log` records per-call metrics with SHA-256-hashed queries
+(never raw queries). Rejection log at `sanitization-rejections.log`.
 
 ## Key Files
 
