@@ -86,7 +86,8 @@ class RAGService:
             logger.info("RAG disabled — returning None (zero overhead)")
             return None
 
-        project = cls._detect_project()
+        # Use config.project if set, otherwise derive from cwd
+        project = config.project or cls._detect_project()
 
         # Build provider (Qdrant primary, FAISS fallback)
         provider = cls._build_provider(config, project)
@@ -190,12 +191,16 @@ class RAGService:
         Embeds the query, calls provider.retrieve(), returns list of chunks.
         Catches ALL exceptions, logs WARN, returns [].
 
+        Special case: ``collection="all"`` searches across all project-scoped
+        collections managed by the provider, merges results, deduplicates,
+        and returns top_k sorted by score.
+
         Emits RETRIEVAL_REQUEST at start, RETRIEVAL_COMPLETE on success,
         RETRIEVAL_FAILED on error. Records observability metrics.
 
         Args:
             query: Search query.
-            collection: Collection name.
+            collection: Collection name (use ``"all"`` to search all).
             top_k: Number of results.
 
         Returns:
@@ -204,6 +209,10 @@ class RAGService:
         import time
 
         start = time.monotonic()
+
+        # Special case: "all" searches across all indexed collections
+        if collection == "all":
+            return self._retrieve_all(query, top_k, start)
 
         try:
             query_vec = self._embedder.embed(query)
@@ -246,6 +255,125 @@ class RAGService:
                 outcome="error",
             )
             return []
+
+    def _retrieve_all(
+        self,
+        query: str,
+        top_k: int,
+        start: float,
+    ) -> list[Chunk]:
+        """Search across all indexed collections and merge results.
+
+        Embeds the query once, searches each collection, merges and
+        reranks by score, deduplicates by (source_path, line_start, line_end),
+        and returns top_k total.
+        """
+        import time
+
+        try:
+            query_vec = self._embedder.embed(query)
+        except Exception as e:
+            logger.warning("RAGService._retrieve_all embed failed: %s", e)
+            latency_ms = (time.monotonic() - start) * 1000
+            record_metric(
+                op="retrieve",
+                spec=self._spec_path.name if self._spec_path else "unknown",
+                query=query,
+                collection="all",
+                top_k=top_k,
+                provider_used=type(self._provider).__name__,
+                embedder_used=type(self._embedder).__name__,
+                latency_ms=latency_ms,
+                result_count=0,
+                outcome="error",
+            )
+            self._emit_retrieval_failed("all", str(e), "retrieval")
+            return []
+
+        try:
+            all_collections = self._provider.list_collections()
+        except Exception as e:
+            logger.warning("RAGService._retrieve_all list_collections failed: %s", e)
+            latency_ms = (time.monotonic() - start) * 1000
+            record_metric(
+                op="retrieve",
+                spec=self._spec_path.name if self._spec_path else "unknown",
+                query=query,
+                collection="all",
+                top_k=top_k,
+                provider_used=type(self._provider).__name__,
+                embedder_used=type(self._embedder).__name__,
+                latency_ms=latency_ms,
+                result_count=0,
+                outcome="error",
+            )
+            self._emit_retrieval_failed("all", str(e), "retrieval")
+            return []
+
+        if not all_collections:
+            return []
+
+        all_results: list[Chunk] = []
+        for coll in all_collections:
+            try:
+                results = self._provider.retrieve_raw(query_vec, coll, top_k)
+                all_results.extend(results)
+            except Exception as e:
+                logger.warning("_retrieve_all failed for %s: %s", coll, e)
+                coll_latency_ms = (time.monotonic() - start) * 1000
+                record_metric(
+                    op="retrieve",
+                    spec=self._spec_path.name if self._spec_path else "unknown",
+                    query=query,
+                    collection="all",
+                    top_k=top_k,
+                    provider_used=type(self._provider).__name__,
+                    embedder_used=type(self._embedder).__name__,
+                    latency_ms=coll_latency_ms,
+                    result_count=0,
+                    outcome="error",
+                )
+
+        # Deduplicate by (source_path, line_start, line_end)
+        seen: set[tuple[str, int, int]] = set()
+        deduped: list[Chunk] = []
+        for r in all_results:
+            key = (r.source_path, r.source_line_start, r.source_line_end)
+            if key not in seen:
+                seen.add(key)
+                deduped.append(r)
+
+        # Sort by score and take top_k
+        deduped.sort(key=lambda r: r.score if r.score else 0.0, reverse=True)
+        result = deduped[:top_k]
+
+        latency_ms = (time.monotonic() - start) * 1000
+        record_metric(
+            op="retrieve",
+            spec=self._spec_path.name if self._spec_path else "unknown",
+            query=query,
+            collection="all",
+            top_k=top_k,
+            provider_used=type(self._provider).__name__,
+            embedder_used=type(self._embedder).__name__,
+            latency_ms=latency_ms,
+            result_count=len(result),
+            outcome="ok",
+        )
+        self._emit_retrieval_complete("all", len(result), start)
+        return result
+
+    def _emit_retrieval_complete(
+        self, collection: str, count: int, start: float
+    ) -> None:
+        """Emit RETRIEVAL_COMPLETE signal with latency tracking."""
+        if self._spec_path is not None:
+            emit_retrieval_complete(self._spec_path, collection, count)
+
+    def _emit_retrieval_failed(self, collection: str, reason: str, phase: str) -> None:
+        """Emit RETRIEVAL_FAILED signal."""
+        if self._spec_path is not None:
+            emit_retrieval_failed(self._spec_path, reason=reason, phase=phase)
 
     def index(self, chunks: list[Chunk], collection: str) -> int:
         """Index chunks with graceful degradation.

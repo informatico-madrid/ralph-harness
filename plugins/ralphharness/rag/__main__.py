@@ -11,7 +11,7 @@ import json
 import os
 import sys
 import time
-from typing import Optional
+from typing import Any, Optional
 from pathlib import Path
 
 
@@ -202,48 +202,101 @@ def cmd_index_all(args):
 
 
 def cmd_doctor(args):
-    """Doctor command: print tiered health report."""
+    """Doctor command: tiered health report with actual connectivity tests."""
     from .config import RAGConfig
 
     config = RAGConfig.load()
 
     checks = []
+    embedder_health: dict[str, Any] = {}
 
-    if config.enabled:
-        checks.append("OK     enabled: true")
-    else:
+    # Phase 1: Config validation
+    if not config.enabled:
         checks.append("WARN   enabled: false (RAG is disabled)")
+        print("\n".join(checks))
+        sys.exit(0)
 
+    checks.append("OK     enabled: true")
     checks.append(f"OK     provider: {config.provider}")
 
-    if config.embedder.provider == "local":
-        checks.append("OK     embeddings.provider: local (sentence-transformers)")
-    elif config.embedder.provider == "openai":
-        if config.embedder.api_key:
-            checks.append("OK     embeddings.provider: openai (key configured)")
-        else:
-            checks.append("WARN   embeddings.provider: openai (no API key configured)")
-    elif config.embedder.provider == "azure":
-        if config.embedder.azure_endpoint:
-            checks.append("OK     embeddings.provider: azure (endpoint configured)")
-        else:
-            checks.append("WARN   embeddings.provider: azure (no endpoint configured)")
+    # Embedder config check
+    ep = config.embedder.provider
+    if ep == "local":
+        checks.append("OK     embedder.provider: local (sentence-transformers)")
+    elif ep == "openai":
+        has_key = bool(config.embedder.api_key)
+        checks.append(f"OK     embedder.provider: openai {'(key configured)' if has_key else '(no API key)'}")
+    elif ep == "azure":
+        has_ep = bool(config.embedder.azure_endpoint)
+        checks.append(f"OK     embedder.provider: azure {'(endpoint configured)' if has_ep else '(no endpoint)'}")
     else:
-        checks.append(f"WARN   embeddings.provider: unknown ({config.embedder.provider})")
+        checks.append(f"WARN   embedder.provider: unknown ({ep})")
 
+    # Vector DB endpoint check
     if config.provider == "qdrant":
-        if config.vector_db.endpoint:
-            checks.append(f"OK     vector_db.endpoint: {config.vector_db.endpoint}")
-        else:
-            checks.append("WARN   vector_db.endpoint: not configured (will use default)")
+        checks.append(f"OK     vector_db.endpoint: {config.vector_db.endpoint}")
     elif config.provider == "faiss":
-        if config.vector_db.faiss_index_path:
-            checks.append(f"OK     faiss.index_path: {config.vector_db.faiss_index_path}")
-        else:
-            checks.append("WARN   faiss.index_path: not configured")
+        path = config.vector_db.faiss_index_path
+        checks.append(f"OK     faiss.index_path: {path}" if path else "WARN   faiss.index_path: not configured")
 
-    report = "\n".join(checks)
-    print(report)
+    # Phase 2: Build RAGService for real connectivity tests
+    from .service import RAGService
+
+    service = RAGService.from_config()
+    if service is None:
+        checks.append("FAIL   service: unable to build RAGService (provider/embedder unavailable)")
+        print("\n".join(checks))
+        sys.exit(0)
+
+    # Phase 3: Provider health check (actual connectivity)
+    try:
+        if service._provider.health_check():
+            checks.append("OK     provider.connectivity: reachable")
+        else:
+            checks.append("FAIL   provider.connectivity: unreachable")
+    except Exception as e:
+        checks.append(f"FAIL   provider.connectivity: {e}")
+
+    # Phase 4: Embedder health check (actual call)
+    try:
+        embedder_health = service._embedder.health_check()
+        status = embedder_health.get("status", "unknown")
+        dim = embedder_health.get("dimensions", 0)
+        if status in ("ok", "ready"):
+            checks.append(f"OK     embedder.connectivity: ready (dimensions: {dim})")
+        elif status == "unhealthy":
+            checks.append(f"FAIL   embedder.connectivity: {embedder_health.get('error', 'unknown')}")
+        else:
+            checks.append(f"WARN   embedder.connectivity: {status}")
+    except Exception as e:
+        checks.append(f"FAIL   embedder.connectivity: {e}")
+
+    # Phase 5: Per-collection info
+    try:
+        all_collections = service._provider.list_collections()
+        if not all_collections:
+            checks.append("INFO   collections: none indexed (run index-all first)")
+        else:
+            checks.append(f"OK     collections: {len(all_collections)} indexed")
+            embedder_dim = embedder_health.get("dimensions", 0)
+            for coll in sorted(all_collections):
+                try:
+                    if hasattr(service._provider, "_get_client"):
+                        client = service._provider._get_client()
+                        if client:
+                            info = client.get_collection(coll)
+                            points = info.points_count or 0
+                            vc = info.config.params.vectors if hasattr(info.config.params, "vectors") else None
+                            vec_size = vc.size if vc and hasattr(vc, "size") else 0
+                            checks.append(f"OK     collection.{coll}: {points} points, {vec_size} dims")
+                            if vec_size and embedder_dim and vec_size != embedder_dim:
+                                checks.append(f"WARN   collection.{coll}: vector dims ({vec_size}) != embedder dims ({embedder_dim})")
+                except Exception as e:
+                    checks.append(f"WARN   collection.{coll}: could not get info ({e})")
+    except Exception as e:
+        checks.append(f"WARN   collections: could not list ({e})")
+
+    print("\n".join(checks))
     sys.exit(0)
 
 
@@ -274,12 +327,13 @@ def cmd_search(args):
 
 
 def cmd_onboard(args):
-    """Onboard subcommand: run the 7-step installer."""
+    """Onboard subcommand: run the 8-step installer."""
     from .onboarding import (
         ConfigStep,
         DoctorStep,
         EmbedderStep,
         IndexBootstrapStep,
+        ProjectNameStep,
         PythonDepsStep,
         PythonStep,
         VectorDBStep,
@@ -290,6 +344,7 @@ def cmd_onboard(args):
         PythonStep(),
         PythonDepsStep(),
         VectorDBStep(),
+        ProjectNameStep(),
         EmbedderStep(),
         ConfigStep(),
         IndexBootstrapStep(),

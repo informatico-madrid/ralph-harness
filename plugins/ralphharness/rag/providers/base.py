@@ -53,3 +53,21 @@ class VectorDBProvider(ABC):
         Returns:
             Number of chunks successfully indexed.
         """
+
+    @abstractmethod
+    def list_collections(self) -> list[str]:
+        """List all collection names available in this provider.
+
+        Returns:
+            List of collection names.
+        """
+
+    def retrieve_raw(
+        self, query_vec: list[float], collection_name: str, top_k: int = 3
+    ) -> list[Chunk]:
+        """Retrieve from a fully-qualified collection name (no prefix transformation).
+
+        Override this in providers that apply name transformations (e.g. Qdrant).
+        The default implementation calls ``retrieve()`` for compatibility.
+        """
+        return self.retrieve(query_vec, collection_name, top_k)

@@ -147,8 +147,9 @@ def from_config(config: Any) -> EmbedderChain:
                 openai_model = getattr(
                     config.embedder, "openai_model", "text-embedding-3-small"
                 )
+                openai_api_base = getattr(config.embedder, "api_base", None)
                 embedders.append(
-                    OpenAIEmbedder(api_key=api_key, model=openai_model)
+                    OpenAIEmbedder(api_key=api_key, model=openai_model, api_base=openai_api_base)
                 )
             elif step == "azure":
                 from .azure import AzureOpenAIEmbedder

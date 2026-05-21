@@ -71,6 +71,7 @@ class RAGConfig:
 
     enabled: bool = False
     provider: str = "qdrant"  # VectorDB default
+    project: str = ""  # Override default project name (folder-based detection)
     embedder: EmbedderConfig = field(default_factory=EmbedderConfig)
     vector_db: VectorDBConfig = field(default_factory=VectorDBConfig)
     retrieval: RetrievalConfig = field(default_factory=RetrievalConfig)
@@ -193,6 +194,9 @@ class RAGConfig:
             except (ValueError, TypeError):
                 min_score = 0.7
 
+        # Project name for collection naming (env > yaml > cwd default)
+        project = d.get("project")
+
         return cls(
             enabled=enabled,
             provider=provider,
@@ -202,6 +206,7 @@ class RAGConfig:
             allow_cross_project=allow_cross_project,
             staleness_threshold_days=int(staleness),
             min_relevance_score=float(min_score),
+            project=project or "",
         )
 
 
@@ -310,6 +315,11 @@ def _load_config_from_env() -> dict[str, Any]:
     azure_endpoint = os.environ.get("RALPH_RAG_AZURE_ENDPOINT")
     if azure_endpoint:
         result.setdefault("embedder", {})["azure_endpoint"] = azure_endpoint
+
+    # RALPH_RAG_PROJECT (collection naming)
+    project = os.environ.get("RALPH_RAG_PROJECT")
+    if project:
+        result["project"] = project
 
     return result
 
