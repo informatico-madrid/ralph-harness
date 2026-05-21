@@ -715,7 +715,8 @@ NUNCA mocks. Las verify-tasks que dependen de Qdrant llevan en cabecera:
   - **Done when**: 4 markdowns con bash blocks válidos.
   - **Commit**: `chore(rag): pass phase 6.B partial checkpoint`
 
-- [ ] 6.B.8 on-error retrieval en retry path
+- [x] 6.B.8 on-error retrieval en retry path
+> **NEW — Audit FR-2 wiring gap** (ver `/home/malka/.claude/plans/haz-un-plan-para-sorted-grove.md` sección 6.B punto 14)
   > **NEW — Audit FR-2 wiring gap** (ver `/home/malka/.claude/plans/haz-un-plan-para-sorted-grove.md` sección 6.B punto 14)
   > Motivo: cuando spec-executor reporta failure, el retry path en `stop-watcher.sh` no consulta `execution_memory` con el `last_error`. PRD UC-7 lo requiere.
   - **Do**:

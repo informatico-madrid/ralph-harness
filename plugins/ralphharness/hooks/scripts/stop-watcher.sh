@@ -333,6 +333,24 @@ DEGRADED_EOF
 
             echo "[ralphharness] VERIFICATION_FAIL detected | story: $FAILED_STORY | repair iter: $REPAIR_ITER/$MAX_REPAIR" >&2
 
+            # On-error RAG retrieval: find similar past failures in execution_memory
+            LAST_ERROR=$(echo "$TRANSCRIPT_TAIL" | grep -A5 'VERIFICATION_FAIL' | grep -v 'VERIFICATION_FAIL' | grep -v '^\-\-$' | grep -v '^\s*$' | head -3 | tr '\n' ' ' | sed 's/  */ /g')
+            RAG_RECOVERY=""
+            if [ -n "$LAST_ERROR" ]; then
+                RAG_RECOVERY=$(timeout 5s bash -c "source '$CLAUDE_PLUGIN_ROOT'/hooks/scripts/lib-rag.sh; rag_retrieve '$LAST_ERROR' 'execution_memory' 3" 2>/dev/null) || RAG_RECOVERY=""
+            fi
+            RECOVERY_SECTION=""
+            if [ -n "$RAG_RECOVERY" ] && [ "$RAG_RECOVERY" != "[]" ]; then
+                RECOVERY_SECTION=$(echo "$RAG_RECOVERY" | jq -r '
+                    if type == "array" and length > 0 then
+                        "## Similar past failures (RAG)\n" +
+                        ([.results[] | "### Source: \(.source_path) (score: \(.score))\n\(.content)"] | join("\n"))
+                    else
+                        ""
+                    end
+                ' 2>/dev/null) || RECOVERY_SECTION=""
+            fi
+
             STOP_HOOK_ACTIVE=$(echo "$INPUT" | jq -r '.stop_hook_active // false' 2>/dev/null || echo "false")
             if [ "$STOP_HOOK_ACTIVE" = "true" ]; then
                 echo "[ralphharness] stop_hook_active=true in repair loop, allowing stop" >&2
@@ -415,6 +433,17 @@ Spec: $SPEC_PATH | Failed story: $FAILED_STORY | Origin task index: $ORIGIN_TASK
 - Do NOT output ALL_TASKS_COMPLETE until repair resolves and normal flow resumes
 REPAIR_EOF
 )
+
+        # Inject RAG recovery context above ## Critical if available
+        if [ -n "$RECOVERY_SECTION" ]; then
+            local _rag_before _rag_after
+            _rag_before=$(echo "$REPAIR_REASON" | sed '/^## Critical$/q')
+            _rag_after=$(echo "$REPAIR_REASON" | sed -n '/^## Critical$/,$ p')
+            REPAIR_REASON="${_rag_before}
+
+${RECOVERY_SECTION}
+${_rag_after}"
+        fi
         jq -n \
           --arg reason "$REPAIR_REASON" \
           --arg msg "RalphHarness Phase 3: repair $NEXT_REPAIR/$MAX_REPAIR — $FAILED_STORY" \
