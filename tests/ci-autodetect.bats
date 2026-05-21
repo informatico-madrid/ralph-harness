@@ -7,16 +7,23 @@ SPECIAL_DIR=""
 DETECT_SCRIPT=""
 TEST_ROOT=""
 REPO_ROOT="$(dirname "$BATS_TEST_DIRNAME")"
+STUBBIN=""
 
 setup() {
     SPECIAL_DIR=$(mktemp -d)
     FIXTURE_DIR="$REPO_ROOT/tests/fixtures/phase6"
     DETECT_SCRIPT="$REPO_ROOT/plugins/ralphharness/hooks/scripts/detect-ci-commands.sh"
     TEST_ROOT="$REPO_ROOT"
+    # Create stub binaries so write-time command -v filter doesn't drop entries
+    STUBBIN=$(mktemp -d)
+    for bin in ruff mypy pytest pnpm npm yarn; do
+        printf '#!/bin/sh\nexec "$@"\n' > "$STUBBIN/$bin"
+        chmod +x "$STUBBIN/$bin"
+    done
 }
 
 teardown() {
-    rm -rf "$SPECIAL_DIR"
+    rm -rf "$SPECIAL_DIR" "$STUBBIN"
 }
 
 # =============================================================================
@@ -43,7 +50,7 @@ testpaths = ["tests"]
 TOML
 
     local output
-    output=$(bash "$DETECT_SCRIPT" "$spec_dir" 2>/dev/null)
+    output=$(PATH="$STUBBIN:$PATH" bash "$DETECT_SCRIPT" "$spec_dir" 2>/dev/null)
     [ -n "$output" ]
 
     # Verify valid JSON
@@ -85,7 +92,7 @@ JSON
 
     # Use stub PATH with pnpm available (simulating pnpm installed)
     local output
-    output=$(PATH="/tmp/stubbin:$PATH" bash "$DETECT_SCRIPT" "$spec_dir" 2>/dev/null)
+    output=$(PATH="$STUBBIN:$PATH" bash "$DETECT_SCRIPT" "$spec_dir" 2>/dev/null)
     [ -n "$output" ]
 
     # Should use pnpm, not npm
@@ -108,7 +115,7 @@ JSON
 
     # Use stub PATH with yarn available
     local output
-    output=$(PATH="/tmp/stubbin:$PATH" bash "$DETECT_SCRIPT" "$spec_dir" 2>/dev/null)
+    output=$(PATH="$STUBBIN:$PATH" bash "$DETECT_SCRIPT" "$spec_dir" 2>/dev/null)
     [ -n "$output" ]
 
     echo "$output" | jq -e '.[].command | contains("yarn")' | grep -q true
@@ -128,7 +135,7 @@ JSON
 JSON
 
     local output
-    output=$(bash "$DETECT_SCRIPT" "$spec_dir" 2>/dev/null)
+    output=$(PATH="$STUBBIN:$PATH" bash "$DETECT_SCRIPT" "$spec_dir" 2>/dev/null)
     [ -n "$output" ]
 
     echo "$output" | jq -e '.[].command | contains("npm")' | grep -q true
@@ -157,7 +164,7 @@ build:
 MAKE
 
     local output
-    output=$(bash "$DETECT_SCRIPT" "$spec_dir" 2>/dev/null)
+    output=$(PATH="$STUBBIN:$PATH" bash "$DETECT_SCRIPT" "$spec_dir" 2>/dev/null)
     [ -n "$output" ]
     echo "$output" | jq -e . >/dev/null
 
@@ -182,7 +189,7 @@ version = "0.1.0"
 TOML
 
     local output
-    output=$(bash "$DETECT_SCRIPT" "$spec_dir" 2>/dev/null)
+    output=$(PATH="$STUBBIN:$PATH" bash "$DETECT_SCRIPT" "$spec_dir" 2>/dev/null)
     [ -n "$output" ]
     echo "$output" | jq -e . >/dev/null
 
@@ -202,7 +209,7 @@ go 1.21
 GOMOD
 
     local output
-    output=$(bash "$DETECT_SCRIPT" "$spec_dir" 2>/dev/null)
+    output=$(PATH="$STUBBIN:$PATH" bash "$DETECT_SCRIPT" "$spec_dir" 2>/dev/null)
     [ -n "$output" ]
     echo "$output" | jq -e . >/dev/null
 
@@ -441,7 +448,7 @@ WRAPPER
     mkdir -p "$spec_dir"
 
     local output
-    output=$(bash "$DETECT_SCRIPT" "$spec_dir" 2>/dev/null)
+    output=$(PATH="$STUBBIN:$PATH" bash "$DETECT_SCRIPT" "$spec_dir" 2>/dev/null)
     [ "$output" = "[]" ] || echo "$output" | jq -e '. == []' >/dev/null
 }
 
