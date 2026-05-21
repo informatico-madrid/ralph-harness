@@ -158,3 +158,12 @@ class FAISSProvider(VectorDBProvider):
             True if index_dir exists and is readable.
         """
         return self._index_dir.exists() and os.access(str(self._index_dir), os.R_OK)
+
+    def list_collections(self) -> list[str]:
+        """List all collection names available in the FAISS index directory.
+
+        Returns list of collection names (without .index suffix).
+        """
+        if not self._index_dir.exists():
+            return []
+        return sorted(p.stem for p in self._index_dir.glob("*.index"))

@@ -27,7 +27,7 @@ context from the vector DB to avoid duplicating implementation decisions.
 ```bash
 RAG_TASKS=$(PYTHONPATH=. timeout 5s python -m plugins.ralphharness.rag retrieve \
   --query "$(cat .progress.md | head -20)" \
-  --collection specs_tasks \
+  --collection "$(basename \"$(pwd)\")-tasks" \
   --top-k 5 2>/dev/null) || RAG_TASKS=""
 if [ -n "$RAG_TASKS" ] && [ "$RAG_TASKS" != "[]" ]; then
   echo "$RAG_TASKS" | jq -r '.results[] | "## Prior tasks (RAG)\nPath: \(.source_path)\nScore: \(.score)\n\(.content)"' 2>/dev/null

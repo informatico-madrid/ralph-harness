@@ -24,15 +24,17 @@ class OpenAIEmbedder(Embedder):
         "text-embedding-ada-002": 1536,
     }
 
-    def __init__(self, api_key: str, model: str = DEFAULT_MODEL):
+    def __init__(self, api_key: str, model: str = DEFAULT_MODEL, api_base: str | None = None):
         """Initialize the OpenAI embedder.
 
         Args:
             api_key: OpenAI API key.
             model: Model name. Defaults to text-embedding-3-small.
+            api_base: Optional custom API base URL (for local OpenAI-compatible endpoints).
         """
         self._api_key = api_key
         self._model = model
+        self._api_base = api_base
         self._client: Any = None
 
     @property
@@ -50,7 +52,10 @@ class OpenAIEmbedder(Embedder):
                     "openai package is not installed. "
                     "Install with: pip install openai"
                 ) from e
-            self._client = OpenAI(api_key=self._api_key, timeout=30.0)
+            kwargs: dict[str, Any] = {"api_key": self._api_key, "timeout": 30.0}
+            if self._api_base:
+                kwargs["base_url"] = self._api_base
+            self._client = OpenAI(**kwargs)
         return self._client
 
     def embed(self, text: str) -> list[float]:
@@ -117,15 +122,27 @@ class OpenAIEmbedder(Embedder):
             ) from e
 
     def health_check(self) -> dict[str, Any]:
-        """Check the health of the OpenAI embedder.
+        """Check the health of the OpenAI embedder via a test API call."""
+        import time
 
-        Returns:
-            Dict with status, dimensions, and model info.
-        """
-        return {
-            "status": "ok",
-            "dimensions": self.dimensions,
-            "model": self._model,
-            "provider": "openai",
-            "latency_ms": 0,
-        }
+        start = time.monotonic()
+        try:
+            client = self._get_client()
+            client.embeddings.create(model=self._model, input="health_check")
+            latency_ms = (time.monotonic() - start) * 1000
+            return {
+                "status": "ok",
+                "dimensions": self.dimensions,
+                "model": self._model,
+                "provider": "openai",
+                "latency_ms": round(latency_ms, 1),
+            }
+        except Exception as e:
+            return {
+                "status": "unhealthy",
+                "dimensions": self.dimensions,
+                "model": self._model,
+                "provider": "openai",
+                "latency_ms": 0,
+                "error": str(e),
+            }

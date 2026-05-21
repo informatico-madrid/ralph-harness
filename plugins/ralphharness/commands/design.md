@@ -27,7 +27,7 @@ from the vector DB to avoid duplicating architectural decisions.
 ```bash
 RAG_DESIGN=$(PYTHONPATH=. timeout 5s python -m plugins.ralphharness.rag retrieve \
   --query "$(cat .progress.md | head -20)" \
-  --collection specs_design \
+  --collection "$(basename \"$(pwd)\")-design" \
   --top-k 5 2>/dev/null) || RAG_DESIGN=""
 if [ -n "$RAG_DESIGN" ] && [ "$RAG_DESIGN" != "[]" ]; then
   echo "$RAG_DESIGN" | jq -r '.results[] | "## Prior design (RAG)\nPath: \(.source_path)\nScore: \(.score)\n\(.content)"' 2>/dev/null

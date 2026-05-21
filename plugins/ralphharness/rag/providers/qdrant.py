@@ -141,39 +141,41 @@ class QdrantProvider(VectorDBProvider):
         except Exception:
             return False
 
-    def retrieve(
-        self, query_vec: list[float], collection: str, top_k: int = 3
-    ) -> list:
-        """Retrieve relevant chunks via Qdrant search.
+    def list_collections(self) -> list[str]:
+        """List all collection names managed by this provider instance.
 
-        Uses qdrant_client.QdrantClient.search with the provided
-        embedding vector.
-
-        Args:
-            query_vec: Pre-computed embedding vector.
-            collection: Target collection name.
-            top_k: Number of results to return.
-
-        Returns:
-            List of Chunk objects ranked by relevance score.
-            Empty list on any error.
+        Returns full collection names (with prefix and project).
+        Returns empty list on any error.
         """
+        client = self._get_client()
+        if client is None:
+            return []
+        try:
+            collections = client.get_collections()
+            prefix_pattern = f"{self._prefix}{self._project}-"
+            return [c.name for c in collections.collections if c.name.startswith(prefix_pattern)]
+        except Exception:
+            return []
+
+    def _retrieve_raw(
+        self, query_vec: list[float], collection_name: str, top_k: int = 3
+    ) -> list:
+        """Retrieve from a fully-qualified collection name (no prefix applied)."""
         from ..types import Chunk
 
         client = self._get_client()
         if client is None:
             return []
 
-        full_name = self._collection_name(self._project, collection)
         try:
             response = client.query_points(
-                collection_name=full_name,
+                collection_name=collection_name,
                 query=query_vec,
                 limit=top_k,
             )
             points = response.points if hasattr(response, "points") else response
         except Exception as e:
-            logger.warning("Qdrant search failed for %s: %s", full_name, e)
+            logger.warning("Qdrant search failed for %s: %s", collection_name, e)
             return []
 
         results: list[Chunk] = []
@@ -192,6 +194,30 @@ class QdrantProvider(VectorDBProvider):
                 )
             )
         return results
+
+    def retrieve(
+        self, query_vec: list[float], collection: str, top_k: int = 3
+    ) -> list:
+        """Retrieve relevant chunks via Qdrant search.
+
+        Uses qdrant_client.QdrantClient.search with the provided
+        embedding vector.
+
+        Args:
+            query_vec: Pre-computed embedding vector.
+            collection: Target collection name (will be prefixed).
+            top_k: Number of results to return.
+
+        Returns:
+            List of Chunk objects ranked by relevance score.
+            Empty list on any error.
+        """
+        client = self._get_client()
+        if client is None:
+            return []
+
+        full_name = self._collection_name(self._project, collection)
+        return self._retrieve_raw(query_vec, full_name, top_k)
 
     def index(
         self, chunks: list, collection: str, dimensions: int | None = None

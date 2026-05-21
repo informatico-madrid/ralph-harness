@@ -12,3 +12,9 @@ Implements Components 1-9 from specs/rag-integration/design.md:
   8. Bash hooks (lib-rag.sh) — rag_retrieve, rag_index_task, rag_health_check
   9. OnboardingStep ABC + 7 concrete steps for /rag-onboard
 """
+
+import os
+
+# Suppress huggingface_hub deprecation warning at module load time.
+# Set default only if user hasn't already configured it.
+os.environ.setdefault("HF_HUB_ENABLE_HF_TRANSFER", "false")
