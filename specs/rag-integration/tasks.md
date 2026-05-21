@@ -642,7 +642,7 @@ NUNCA mocks. Las verify-tasks que dependen de Qdrant llevan en cabecera:
   - _Requirements: FR-2_
   - _Design: Flow 4_
 
-- [ ] 6.B.2 stop-watcher.sh post-task indexing real (no stub)
+- [x] 6.B.2 stop-watcher.sh post-task indexing real (no stub)
   > **NEW — Audit FR-2 wiring gap** (ver `/home/malka/.claude/plans/haz-un-plan-para-sorted-grove.md` sección 6.B punto 12)
   > Motivo: en `stop-watcher.sh:889` se invoca `bash post-task-rag.sh "$SPEC_NAME" "$TASKS_FILE"` pero el helper interpreta los args como índice/path antiguos — el design pide pasar `$SPEC_PATH` y el bloque de la tarea recién completada.
   - **Do**:
