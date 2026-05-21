@@ -19,6 +19,24 @@ Create a task for each item and complete in order:
 5. **Walkthrough & approval** -- display summary, get user approval
 6. **Finalize** -- update state, commit, stop
 
+## Pre-tasks RAG Retrieval (FR-2 — Flow 2)
+
+Before gathering context, retrieve relevant prior tasks and execution
+context from the vector DB to avoid duplicating implementation decisions.
+
+```bash
+RAG_TASKS=$(timeout 5s PYTHONPATH=. python -m plugins.ralphharness.rag retrieve \
+  --query "$(cat .progress.md | head -20)" \
+  --collection specs_tasks \
+  --top-k 5 2>/dev/null) || RAG_TASKS=""
+if [ -n "$RAG_TASKS" ] && [ "$RAG_TASKS" != "[]" ]; then
+  echo "$RAG_TASKS" | jq -r '.results[] | "## Prior tasks (RAG)\nPath: \(.source_path)\nScore: \(.score)\n\(.content)"' 2>/dev/null
+fi
+```
+
+Include any results under `## Prior tasks (RAG)` in your analysis.
+If no results, proceed without them (zero overhead).
+
 ## Step 1: Gather Context
 
 1. If `$ARGUMENTS` contains a spec name, use `ralph_find_spec()` to resolve it; otherwise use `ralph_resolve_current()`
