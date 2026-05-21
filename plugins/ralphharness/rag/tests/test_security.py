@@ -7,7 +7,7 @@ class TestSecurityLayerRejects:
     def test_aws_key(self, sample_secret_chunk) -> None:
         result = SecurityLayer().sanitize(sample_secret_chunk)
         assert result.accepted is False
-        assert result.re_id != ""
+        assert result.rejected_by != ""
 
     def test_ssh_key(self) -> None:
         from plugins.ralphharness.rag.types import Chunk

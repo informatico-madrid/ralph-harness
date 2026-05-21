@@ -48,8 +48,8 @@ class TestRAGConfigFromEnv:
             cfg = RAGConfig.load()
             assert cfg.provider == "faiss"
 
-    def test_env_embedding_provider(self) -> None:
-        with mock.patch.dict(os.environ, {"RALPH_RAG_EMBEDDING_PROVIDER": "openai"}):
+    def test_env_embedder_provider(self) -> None:
+        with mock.patch.dict(os.environ, {"RALPH_RAG_EMBEDDER_PROVIDER": "openai"}):
             cfg = RAGConfig.load()
             assert cfg.embedder.provider == "openai"
 

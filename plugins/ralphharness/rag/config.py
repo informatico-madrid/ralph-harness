@@ -6,10 +6,13 @@ Default state is disabled - projects without a `rag:` block run with zero RAG ca
 
 from __future__ import annotations
 
+import logging
 import os
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Optional
+
+logger = logging.getLogger(__name__)
 
 
 # Default project config location (same pattern as other .ralphharness.*.md files)
@@ -94,11 +97,11 @@ class RAGConfig:
         path = config_path or _DEFAULT_CONFIG_PATH
         file_cfg = _load_yaml_frontmatter(path)
         if file_cfg:
-            result = _merge_configs(result, file_cfg)
+            result = _deep_merge(result, file_cfg)
 
         # Load and merge environment variables (override file config)
         env_cfg = _load_config_from_env()
-        result = _merge_configs(result, env_cfg)
+        result = _deep_merge(result, env_cfg)
 
         return cls._from_dict(result)
 
@@ -201,114 +204,59 @@ def _load_yaml_frontmatter(path: Path) -> Optional[dict[str, Any]]:
     Looks for content between ```yaml ... ``` or --- delimiters
     and extracts a `rag:` block if present.
 
-    Returns None if the file doesn't exist or has no rag: block.
+    Uses pyyaml for proper nested YAML parsing. Falls back to None
+    (with warning) if pyyaml is not installed.
     """
+    try:
+        import yaml  # noqa: F811
+    except ImportError:
+        logger.warning(
+            "pyyaml not installed — using default RAG config "
+            "(install with: pip install pyyaml)"
+        )
+        return None
+
     try:
         content = path.read_text(encoding="utf-8")
     except (OSError, FileNotFoundError):
         return None
 
-    # Simple YAML frontmatter parser (no pyyaml dependency for config loading)
-    # Try --- delimited frontmatter
-    if content.startswith("---"):
-        end_idx = content.find("---", 3)
-        if end_idx > 0:
-            yaml_content = content[3:end_idx].strip()
-        else:
-            return None
-    else:
-        # Try ```yaml delimited
-        start = content.find("```yaml")
-        if start == -1:
-            return None
-        start += 9
+    yaml_content: str | None = None
+
+    # Try ```yaml fenced block first
+    start = content.find("```yaml")
+    if start != -1:
+        start += 7  # past "```yaml"
+        # Skip trailing whitespace/newline
+        while start < len(content) and content[start] in (" ", "\t"):
+            start += 1
         end = content.find("```", start)
-        if end == -1:
-            return None
-        yaml_content = content[start:end].strip()
+        if end != -1:
+            yaml_content = content[start:end].strip()
 
-    # Simple key: value parser
-    result: dict[str, Any] = {}
-    for line in yaml_content.split("\n"):
-        line = line.strip()
-        if not line or line.startswith("#"):
-            continue
-        if ":" in line:
-            key, _, value = line.partition(":")
-            key = key.strip()
-            value = value.strip()
-            if value:
-                result[key] = _parse_yaml_value(value)
+    # Try --- delimited frontmatter
+    if yaml_content is None and content.lstrip().startswith("---"):
+        rest = content.lstrip()[3:]
+        end_idx = rest.find("---")
+        if end_idx > 0:
+            yaml_content = rest[:end_idx].strip()
 
-    # Look for rag: nested block in the raw content
-    rag_block = _extract_rag_block(content, yaml_content)
-    if rag_block:
-        result = {**result, **rag_block}
-
-    return result if result else None
-
-
-def _extract_rag_block(content: str, frontmatter: str) -> Optional[dict[str, Any]]:
-    """Extract the rag: block from YAML content.
-
-    Handles both frontmatter and regular markdown YAML blocks.
-    """
-    lines = content.split("\n")
-    in_rag = False
-    rag_indent = 0
-    result: dict[str, Any] = {}
-
-    for line in lines:
-        stripped = line.lstrip()
-        indent = len(line) - len(stripped)
-
-        # Detect rag: top-level key
-        if stripped.startswith("rag:") and indent == 0:
-            in_rag = True
-            rag_indent = indent
-            rest = stripped[4:].strip()
-            if rest:
-                result["enabled"] = _parse_yaml_value(rest)
-            continue
-
-        if in_rag:
-            # End of rag block if we hit a non-empty line at same or lower indent
-            if stripped and indent <= rag_indent:
-                break
-            # Parse nested keys (rag.provider, rag.endpoint, etc.)
-            if stripped:
-                if ":" in stripped:
-                    key, _, value = stripped.partition(":")
-                    key = key.strip()
-                    value = value.strip()
-                    if value and not value.startswith("#"):
-                        result[key] = _parse_yaml_value(value)
-
-    return result if result else None
-
-
-def _parse_yaml_value(value: str) -> Any:
-    """Parse a simple YAML value string."""
-    if value.lower() in ("true", "yes"):
-        return True
-    if value.lower() in ("false", "no"):
-        return False
-    if value.lower() == "null" or value == "~":
+    if not yaml_content:
         return None
+
     try:
-        return int(value)
-    except ValueError:
-        pass
-    try:
-        return float(value)
-    except ValueError:
-        pass
-    # Strip quotes if present
-    if (value.startswith('"') and value.endswith('"')) or (
-        value.startswith("'") and value.endswith("'")
-    ):
-        return value[1:-1]
-    return value
+        data = yaml.safe_load(yaml_content)
+    except yaml.YAMLError as exc:
+        logger.warning("Failed to parse YAML frontmatter: %s", exc)
+        return None
+
+    if not isinstance(data, dict):
+        return None
+
+    # Extract rag: block if present
+    if "rag" in data and isinstance(data["rag"], dict):
+        return data["rag"]
+    return data if data else None
 
 
 def _load_config_from_env() -> dict[str, Any]:
@@ -318,8 +266,9 @@ def _load_config_from_env() -> dict[str, Any]:
     RALPH_RAG_ENABLED=true
     RALPH_RAG_PROVIDER=qdrant
     RALPH_RAG_ENDPOINT=http://localhost:6333
-    RALPH_RAG_EMBEDDING_PROVIDER=openai
+    RALPH_RAG_EMBEDDER_PROVIDER=openai
     RALPH_RAG_OPENAI_API_KEY=sk-...
+    RALPH_RAG_AZURE_ENDPOINT=https://...
     """
     result: dict[str, Any] = {}
 
@@ -339,32 +288,35 @@ def _load_config_from_env() -> dict[str, Any]:
     if api_key:
         result["api_key"] = api_key
 
-    embedder_provider = os.environ.get("RALPH_RAG_EMBEDDING_PROVIDER")
-    if embedder_provider is not None:
-        result.setdefault("embedding", {})["provider"] = embedder_provider
+    # RALPH_RAG_EMBEDDER_PROVIDER (new) + backward compat RALPH_RAG_EMBEDDING_PROVIDER
+    for env_var in ("RALPH_RAG_EMBEDDER_PROVIDER", "RALPH_RAG_EMBEDDING_PROVIDER"):
+        provider = os.environ.get(env_var)
+        if provider is not None:
+            result.setdefault("embedder", {})["provider"] = provider
+            break
 
+    # RALPH_RAG_OPENAI_API_KEY read once (M2 dedup fix)
     openai_key = os.environ.get("RALPH_RAG_OPENAI_API_KEY")
     if openai_key:
-        result.setdefault("embedding", {})["api_key"] = openai_key
+        result.setdefault("embedder", {})["api_key"] = openai_key
 
     azure_endpoint = os.environ.get("RALPH_RAG_AZURE_ENDPOINT")
     if azure_endpoint:
-        result.setdefault("embedding", {})["azure_endpoint"] = azure_endpoint
-
-    openai_key = os.environ.get("RALPH_RAG_OPENAI_API_KEY")
-    if openai_key:
-        result.setdefault("embedding", {})["api_key"] = openai_key
+        result.setdefault("embedder", {})["azure_endpoint"] = azure_endpoint
 
     return result
 
 
-def _merge_configs(file_cfg: dict[str, Any], env_cfg: dict[str, Any]) -> dict[str, Any]:
-    """Merge environment config over file config (env takes precedence)."""
-    merged = dict(file_cfg)
-    # Deep merge for nested dicts
-    for key, value in env_cfg.items():
-        if key in merged and isinstance(merged[key], dict) and isinstance(value, dict):
-            merged[key] = {**merged[key], **value}
+def _deep_merge(base: dict[str, Any], override: dict[str, Any]) -> dict[str, Any]:
+    """Recursively merge override into base (override wins)."""
+    result = dict(base)
+    for key, value in override.items():
+        if (
+            key in result
+            and isinstance(result[key], dict)
+            and isinstance(value, dict)
+        ):
+            result[key] = _deep_merge(result[key], value)
         else:
-            merged[key] = value
-    return merged
+            result[key] = value
+    return result
