@@ -11,6 +11,7 @@ Spec-driven development with smart compaction. A Claude Code plugin that combine
 - **BMAD Bridge**: Import BMAD planning artifacts (PRD, epics, architecture) into ralphharness specs via `/ralph-bmad:import`
 - **Loop Safety**: Pre-loop git checkpoint, circuit breaker, per-task metrics, and read-only detection
 - **Role Boundaries**: Mechanical enforcement of file access rules per agent role
+- **RAG Integration (opt-in)**: Retrieval-augmented generation layer enriches execution context with past spec data; optional install via `/ralphharness:rag-onboard`
 
 ## Installation
 
@@ -149,6 +150,10 @@ The import command converts BMAD's structured planning (PRD, epics, architecture
 | `/ralphharness:rollback` | Rollback to git checkpoint |
 | `/ralphharness:switch` | Switch to another spec |
 | `/ralph-bmad:import` | Import BMAD planning artifacts into a spec |
+| `/ralphharness:rag-onboard` | Interactive RAG setup wizard (7-step detection) |
+| `/ralphharness:rag-doctor` | Health check for RAG configuration |
+| `/ralphharness:rag-search` | Query past spec artifacts across all collections |
+| `/ralphharness:index-all` | Index all spec artifacts for RAG retrieval |
 
 ---
 
