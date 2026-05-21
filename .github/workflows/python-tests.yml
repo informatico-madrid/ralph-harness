@@ -34,4 +34,4 @@ jobs:
 
       - name: Run tests
         working-directory: plugins/ralphharness
-        run: python -m pytest rag/tests/ -v
+        run: PYTHONPATH=../.. python -m pytest rag/tests/ -v
