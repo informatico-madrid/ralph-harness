@@ -30,7 +30,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install pytest qdrant-client pyyaml pyyaml
+          pip install pytest qdrant-client pyyaml
 
       - name: Run tests
         working-directory: plugins/ralphharness
