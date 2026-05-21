@@ -764,7 +764,7 @@ NUNCA mocks. Las verify-tasks que dependen de Qdrant llevan en cabecera:
 
 ### Phase 6.D — Test reinforcement (cierra agujero de verificación)
 
-- [ ] 6.D.1 Integration test con Qdrant real en Docker
+- [x] 6.D.1 Integration test con Qdrant real en Docker
   > **NEW — Audit gap** (ver `/home/malka/.claude/plans/haz-un-plan-para-sorted-grove.md` sección 6.D punto 29)
   > Motivo: `test_qdrant_integration.py` actual stub-only — siempre skip o `if svc is not None`. No prueba el round-trip real index→retrieve.
   - **Do**:

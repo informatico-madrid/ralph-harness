@@ -5,7 +5,9 @@ Primary provider — uses qdrant_client QdrantClient for HTTP REST API.
 
 from __future__ import annotations
 
+import hashlib
 import logging
+import uuid
 from typing import Any
 
 from .base import VectorDBProvider
@@ -164,11 +166,12 @@ class QdrantProvider(VectorDBProvider):
 
         full_name = self._collection_name(self._project, collection)
         try:
-            points = client.search(
+            response = client.query_points(
                 collection_name=full_name,
-                query_vector=query_vec,
+                query=query_vec,
                 limit=top_k,
             )
+            points = response.points if hasattr(response, "points") else response
         except Exception as e:
             logger.warning("Qdrant search failed for %s: %s", full_name, e)
             return []
@@ -232,9 +235,22 @@ class QdrantProvider(VectorDBProvider):
                     )
                     continue
 
+                # Sanitize chunk.id to a valid Qdrant UUID
+                point_id = chunk.id
+                if ":" not in point_id:
+                    try:
+                        int(point_id)
+                    except ValueError:
+                        pass  # Valid as-is (UUID or short string)
+                else:
+                    # Replace colons with hyphens to form valid UUID-like ID
+                    point_id = hashlib.sha256(
+                        chunk.id.encode()
+                    ).hexdigest()[:32]
+
                 points.append(
                     qmodels.PointStruct(
-                        id=chunk.id,
+                        id=point_id,
                         vector=vec,
                         payload={
                             "content": chunk.content,
