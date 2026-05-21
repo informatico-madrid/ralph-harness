@@ -844,6 +844,24 @@ PARALLEL: These are [P] tasks -- dispatch ALL in ONE message via Task tool. Each
         PARALLEL_INSTRUCTIONS=""
     fi
 
+    # RAG pre-task retrieval injection (Flow 4 — FR-2)
+    # Source lib-rag.sh and retrieve relevant context for the current task.
+    NEXT_TASK_DESC=""
+    RAG_CHUNKS=""
+    if [ -n "$TASK_BLOCK" ]; then
+        NEXT_TASK_DESC=$(echo "$TASK_BLOCK" | head -1 | sed -E 's/^- \[[ xP]*\] *[0-9.]+ *//')
+    fi
+    if [ -n "$NEXT_TASK_DESC" ]; then
+        source "$SCRIPT_DIR/lib-rag.sh"
+        RAG_RAW=$(rag_retrieve "$NEXT_TASK_DESC" "specs_tasks" 5) || true
+        if [ -n "$RAG_RAW" ]; then
+            RAG_CHUNKS="
+## Relevant context (RAG)
+$RAG_RAW
+"
+        fi
+    fi
+
     REASON=$(cat <<STOP_WATCHER_REASON_EOF
 Continue spec: $SPEC_NAME (Task $((TASK_INDEX + 1))/$TOTAL_TASKS, Iter $GLOBAL_ITERATION)
 
@@ -853,6 +871,7 @@ Path: $SPEC_PATH | Index: $TASK_INDEX | Iteration: $TASK_ITERATION/$MAX_TASK_ITE
 $TASK_HEADER
 $TASK_BLOCK
 $PARALLEL_INSTRUCTIONS
+$RAG_CHUNKS
 
 ## Resume
 1. Read $SPEC_PATH/.ralph-state.json for current state

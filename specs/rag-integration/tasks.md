@@ -126,7 +126,7 @@ except EmbedderError: print('PASS')" | grep -q PASS && echo PASS`
   - _Requirements: FR-3_
   - _Design: Component 5, Decision #5_
 
-- [ ] 1.9 Implement `EmbedderChain` (fallback per `[local, openai, azure]`)
+- [x] 1.9 Implement `EmbedderChain` (fallback per `[local, openai, azure]`)
   > **REOPEN — Audit fix #M11** (ver `/home/malka/.claude/plans/haz-un-plan-para-sorted-grove.md` sección 6.C punto 19)
   > Motivo: `from_config` ignora `config.embedder.fallback_order` — siempre añade `[local, openai, azure]` en orden fijo. Si la config dice `fallback_order: [openai]` no se respeta.
   > Criterios añadidos: leer la lista exacta de `config.embedder.fallback_order`, construir solo los embedders listados, en el orden dado; nunca añadir uno no listado. Verify: config con `fallback_order: ["openai"]` produce chain con un único embedder OpenAI (assert `len(chain.embedders) == 1` e `isinstance(chain.embedders[0], OpenAIEmbedder)`).
