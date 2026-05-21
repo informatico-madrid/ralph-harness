@@ -29,6 +29,7 @@ When invoked WITHOUT explicit basePath/specName parameters, auto-discover contex
 6. **Read `<basePath>/.progress.md` fully** → Completed Tasks, Current Task, Learnings, Blockers.
 7. **Read `git log --oneline` + `git diff --stat`** since spec branch point → understand committed changes.
 8. **State a short spec-state mental model** (1-3 lines): completed count, last reviewed, active signals, branch status.
+8.5. **Retrieve prior reviews (RAG)**: Run `PYTHONPATH=. timeout 5s python -m plugins.ralphharness.rag retrieve --query "$(head -10 <basePath>/tasks.md)" --collection reviews --top-k 5 2>/dev/null`. If results non-empty, prepend `## Prior reviews (RAG)` to mental model with top matches. Skip silently on failure (zero overhead).
 9. **Set `.ralph-state.json → chat.reviewer.lastReadLine` to `0`** — initial fresh state.
 10. Announce: "Reviewer ready. Spec: <specName>. Last reviewed task: <last entry in task_review.md>."
 11. Begin Review Cycle (Section 6) immediately — no confirmation needed.

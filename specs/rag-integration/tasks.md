@@ -729,7 +729,7 @@ NUNCA mocks. Las verify-tasks que dependen de Qdrant llevan en cabecera:
   - **Commit**: `feat(rag): on-error retrieval in retry path (UC-7)`
   - _Requirements: FR-2_
 
-- [ ] 6.B.9 on-review retrieval en external-reviewer
+- [x] 6.B.9 on-review retrieval en external-reviewer
   > **NEW — Audit FR-2 wiring gap** (ver `/home/malka/.claude/plans/haz-un-plan-para-sorted-grove.md` sección 6.B punto 15)
   > Motivo: el `external-reviewer` agent no consulta la collection `reviews` con el contexto del task — perdemos memoria institucional de reviews previos.
   - **Do**:
