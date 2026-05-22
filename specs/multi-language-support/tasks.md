@@ -173,7 +173,7 @@ Focus: add the remaining 6 detectors and the `./`-token filter patch with honest
   - _Requirements: FR-6, AC-6.1, AC-6.2, AC-6.3, AC-6.4_
   - _Design: detect_dotnet marker guard_
 
-- [ ] 2.8 [VERIFY] Quality checkpoint: syntax + legacy after all 6 detectors
+- [x] 2.8 [VERIFY] Quality checkpoint: syntax + legacy after all 6 detectors
   - **Do**: Run `bash -n` and full legacy bats; confirm all detectors wired into `detect_ci_commands`.
   - **Verify**: `bash -n plugins/ralphharness/hooks/scripts/detect-ci-commands.sh && bats tests/ci-autodetect.bats && grep -q 'detect_dotnet "\$SPEC_PATH"' plugins/ralphharness/hooks/scripts/detect-ci-commands.sh && echo CHECKPOINT_OK`
   - **Done when**: `bash -n` clean, 17/17 legacy pass, all 11 detectors wired.
