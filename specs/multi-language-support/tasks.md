@@ -76,14 +76,14 @@ Focus: prove the FR-13 refactor (sourceable function + BASH_SOURCE guard) works 
   - _Requirements: FR-2, AC-2.1, AC-2.2, AC-2.3_
   - _Design: 6 new detectors_
 
-- [ ] 1.7 [VERIFY] Quality checkpoint: syntax + legacy + new detector
+- [x] 1.7 [VERIFY] Quality checkpoint: syntax + legacy + new detector
   - **Do**: Run `bash -n` and full legacy bats; confirm Gemfile detector works inline.
   - **Verify**: `bash -n plugins/ralphharness/hooks/scripts/detect-ci-commands.sh && bats tests/ci-autodetect.bats && echo CHECKPOINT_OK`
   - **Done when**: `bash -n` clean, 17/17 legacy pass, Gemfile detector proven (1.6).
   - **Commit**: `chore(detect-ci): pass quality checkpoint` (only if fixes needed)
   - _Requirements: NFR-4, NFR-5_
 
-- [ ] 1.8 POC Checkpoint: full pipeline demonstrable
+- [x] 1.8 POC Checkpoint: full pipeline demonstrable
   - **Do**: Run the sourced consumer path against a multi-marker temp dir (Gemfile + package.json) and confirm both ecosystems appear in one valid JSON array.
   - **Done when**: Sourced `detect_ci_commands` emits a single valid JSON array containing both Ruby and Node entries — feature demonstrably works end-to-end.
   - **Verify**: `tmp=$(mktemp -d); touch "$tmp/Gemfile"; echo '{"scripts":{}}' > "$tmp/package.json"; sb=$(mktemp -d); for b in bundle npm; do printf '#!/bin/sh\n' > "$sb/$b"; chmod +x "$sb/$b"; done; PATH="$sb:$PATH" bash -c 'source plugins/ralphharness/hooks/scripts/detect-ci-commands.sh; detect_ci_commands "'"$tmp"'"' | jq -e 'length>=1' >/dev/null && echo POC_DONE; rm -rf "$tmp" "$sb"`
