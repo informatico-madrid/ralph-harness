@@ -375,7 +375,7 @@ Focus: one bats `@test` per Test Coverage Table row + filter regression + source
   - **Verify**: `gh pr view --json url -q .url && echo PR_OK`
   - **Commit**: None
 
-- [ ] 5.2 Monitor CI and resolve failures
+- [x] 5.2 Monitor CI and resolve failures
   - **Do**:
     1. Watch CI: `gh pr checks --watch`.
     2. If failing: read `gh pr checks`, fix locally, `git push`, re-verify.
