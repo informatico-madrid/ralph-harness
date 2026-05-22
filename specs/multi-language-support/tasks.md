@@ -118,7 +118,7 @@ Focus: add the remaining 6 detectors and the `./`-token filter patch with honest
   - _Requirements: FR-3, AC-3.1, AC-3.4_
   - _Design: 6 new detectors_
 
-- [ ] 2.3 Add `detect_maven` (wrapper-aware, mvn package build)
+- [x] 2.3 Add `detect_maven` (wrapper-aware, mvn package build)
   - **Do**:
     1. Add `detect_maven() { local base="$1"; [[ -f "$base/pom.xml" ]] || return 0; local M; if [[ -x "$base/mvnw" ]]; then M="./mvnw"; else M="mvn"; fi; ENTRIES+=("{\"command\":\"$M test\",\"category\":\"test\"}"); ENTRIES+=("{\"command\":\"$M package\",\"category\":\"build\"}"); }`.
     2. Independent of Gradle. Wire into `detect_ci_commands`.
