@@ -349,7 +349,7 @@ Focus: one bats `@test` per Test Coverage Table row + filter regression + source
   - **Verify**: `! test -f /tmp/ve-mls.txt && echo VE3_PASS`
   - **Commit**: None
 
-- [ ] V4 [VERIFY] Full local CI: bash -n + bats + version/doc consistency
+- [x] V4 [VERIFY] Full local CI: bash -n + bats + version/doc consistency
   - **Do**: Run the complete local gate: `bash -n`, full bats, version assertions, doc-row assertions.
   - **Files**: none
   - **Done when**: All checks pass — script syntax clean, all tests green, version 5.10.0 in both manifests, PHP+C# doc rows present.
@@ -357,7 +357,7 @@ Focus: one bats `@test` per Test Coverage Table row + filter regression + source
   - **Commit**: `chore(detect-ci): pass local CI` (only if fixes needed)
   - _Requirements: NFR-1, NFR-4, NFR-5, FR-11, FR-12_
 
-- [ ] V5 [VERIFY] Phase 4 exit gate
+- [x] V5 [VERIFY] Phase 4 exit gate
   - **Do**: Confirm Phase 4 quality gate met: doc rows, version bump, full bats, `bash -n` all green before advancing to PR.
   - **Verify**: `bash -n plugins/ralphharness/hooks/scripts/detect-ci-commands.sh && bats tests/ci-autodetect.bats && echo PHASE4_GATE_OK`
   - **Done when**: All Phase 4 gates satisfied.
