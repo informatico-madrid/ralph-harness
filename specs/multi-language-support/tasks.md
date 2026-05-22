@@ -230,7 +230,7 @@ Focus: one bats `@test` per Test Coverage Table row + filter regression + source
   - **Commit**: `test(detect-ci): add gemfile + deno detector tests`
   - _Requirements: FR-2, FR-5, FR-10, AC-2.*, AC-5.*_
 
-- [ ] 3.4 [VERIFY] Quality checkpoint: bats + syntax
+- [x] 3.4 [VERIFY] Quality checkpoint: bats + syntax
   - **Do**: Run full bats suite and `bash -n`.
   - **Verify**: `bash -n plugins/ralphharness/hooks/scripts/detect-ci-commands.sh && bats tests/ci-autodetect.bats && echo CHECKPOINT_OK`
   - **Done when**: All tests (legacy + new) pass, `bash -n` clean.
@@ -261,7 +261,7 @@ Focus: one bats `@test` per Test Coverage Table row + filter regression + source
   - **Commit**: `test(detect-ci): add mix + dotnet detector tests`
   - _Requirements: FR-4, FR-6, FR-10, AC-4.*, AC-6.*_
 
-- [ ] 3.8 [VERIFY] Quality checkpoint: bats + syntax
+- [x] 3.8 [VERIFY] Quality checkpoint: bats + syntax
   - **Do**: Run full bats suite and `bash -n`.
   - **Verify**: `bash -n plugins/ralphharness/hooks/scripts/detect-ci-commands.sh && bats tests/ci-autodetect.bats && echo CHECKPOINT_OK`
   - **Done when**: All tests pass, `bash -n` clean.
@@ -293,7 +293,7 @@ Focus: one bats `@test` per Test Coverage Table row + filter regression + source
 
 ## Phase 4: Quality Gates
 
-- [x] 4.1 Add PHP + C#/.NET doc rows
+ - [x] 4.1 Add PHP + C#/.NET doc rows
   - **Do**: In `references/quality-commands.md` config table (~lines 64-72), add a PHP (`composer.json`) row and a C#/.NET (`*.csproj`/`*.sln`) row. Do NOT duplicate the existing Ruby/JVM/Elixir/Deno rows.
   - **Files**: plugins/ralphharness/references/quality-commands.md
   - **Done when**: PHP and C#/.NET rows present; no duplicate ecosystem rows.
@@ -301,7 +301,7 @@ Focus: one bats `@test` per Test Coverage Table row + filter regression + source
   - **Commit**: `docs(quality-commands): add PHP + C#/.NET ecosystem rows`
   - _Requirements: FR-11, AC-8.1, AC-8.2_
 
-- [ ] 4.2 Version bump 5.9.5 → 5.10.0 in both manifests
+- [x] 4.2 Version bump 5.9.5 → 5.10.0 in both manifests
   - **Do**: Bump `version` to `5.10.0` in `plugins/ralphharness/.claude-plugin/plugin.json` AND the ralphharness entry in `.claude-plugin/marketplace.json`.
   - **Files**: plugins/ralphharness/.claude-plugin/plugin.json, .claude-plugin/marketplace.json
   - **Done when**: Both manifests show 5.10.0 for ralphharness.
