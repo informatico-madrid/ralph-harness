@@ -397,10 +397,93 @@ Focus: one bats `@test` per Test Coverage Table row + filter regression + source
   - **Done when**: PR ready for review with all completion criteria met.
   - **Commit**: None
 
+## Post-Implementation Fix Phase
+
+Detected by adversarial review 2026-05-22. Six confirmed defects in the green suite (36/36 bats pass). Each hypothesis was reproduced by running the script against temp fixtures. Two hypotheses refuted by testing (17 legacy tests unchanged, detectors return 0).
+
+**Fix files**: `plugins/ralphharness/hooks/scripts/detect-ci-commands.sh` (F-1/2/3/4/5), `plugins/ralphharness/references/quality-commands.md` (F-6), version bump in `plugin.json` + `marketplace.json` + `CLAUDE.md` (F-8), `tests/ci-autodetect.bats` (6 regression tests).
+
+- [x] F1 Fix `analysz*` typo → `analyse*` in category maps
+  - **Do**: Replace `analysz*` with `analyse*` in both `detect_composer` (line 115) and `detect_deno` (line 201). British `analyse` then categorizes as `typecheck` per AC-1.1.
+  - **Files**: plugins/ralphharness/hooks/scripts/detect-ci-commands.sh (2 lines)
+  - **Done when**: `composer.json` with `"analyse"` script emits `typecheck`; deno task `analyse` also `typecheck`.
+  - **Verify**: `tmp=$(mktemp -d); echo '{"scripts":{"analyse":"phpstan"}}' > "$tmp/composer.json"; sb=$(mktemp -d); printf '#!/bin/sh\n' > "$sb/composer"; chmod +x "$sb/composer"; PATH="$sb:$PATH" bash plugins/ralphharness/hooks/scripts/detect-ci-commands.sh "$tmp" | jq -e '[.[]|select(.command=="composer run analyse" and .category=="typecheck")]|length==1' >/dev/null && echo F1_OK; rm -rf "$tmp" "$sb"`
+  - **Commit**: `fix(detect-ci): correct analysz* typo → analyse* in composer/deno category maps`
+  - _Requirements: AC-1.1_
+
+- [x] F2 Fix wrapper detection `-f` → `-x` in gradle and maven
+  - **Do**: `detect_gradle` line 132: `-f "$base/gradlew"` → `-x "$base/gradlew"`. `detect_maven` line 145: `-f "$base/mvnw"` → `-x "$base/mvnw"`. Matches design Technical Decisions row (chose `-x` to "degrade to PATH-resolvable so output is never empty").
+  - **Files**: plugins/ralphharness/hooks/scripts/detect-ci-commands.sh (2 lines)
+  - **Done when**: Non-executable `gradlew`/`mvnw` with system bin on PATH → emits `gradle test`/`gradle build` (not `[]`).
+  - **Verify**: `tmp=$(mktemp -d); touch "$tmp/build.gradle"; echo '#!/bin/sh' > "$tmp/gradlew"; sb=$(mktemp -d); printf '#!/bin/sh\n' > "$sb/gradle"; chmod +x "$sb/gradle"; PATH="$sb:$PATH" bash plugins/ralphharness/hooks/scripts/detect-ci-commands.sh "$tmp" 2>/dev/null | jq -e '[.[]|select(.command=="gradle test")]|length==1' >/dev/null && echo F2_OK; rm -rf "$tmp" "$sb"`
+  - **Commit**: `fix(detect-ci): use -x (not -f) for wrapper detection — degrades to PATH bin when wrapper not executable`
+  - _Requirements: AC-3.3, AC-3.5_
+
+- [x] F3 Fix deno discovery category map (remove PHP patterns, add check→typecheck)
+  - **Do**: Replace lines 197-203 deno discovery case arms with deno-honest mapping: `test*`→test; `lint*`→lint; `fmt*|format*`→lint; `check*|typecheck*`→typecheck; `build*|bundle*`→build. Removes `phpstan*|psalm*|cs*|fix*|analysz*`. Discovery now agrees with canonical fallback (AC-5.2).
+  - **Files**: plugins/ralphharness/hooks/scripts/detect-ci-commands.sh (7 lines)
+  - **Done when**: `deno task check` → `typecheck`; no PHP pattern artifacts.
+  - **Verify**: `tmp=$(mktemp -d); echo '{"tasks":{"check":"deno check","test":"deno test"}}' > "$tmp/deno.json"; sb=$(mktemp -d); printf '#!/bin/sh\n' > "$sb/deno"; chmod +x "$sb/deno"; PATH="$sb:$PATH" bash plugins/ralphharness/hooks/scripts/detect-ci-commands.sh "$tmp" | jq -e '[.[]|select(.command=="deno task check" and .category=="typecheck")]|length==1' >/dev/null && echo F3_OK; rm -rf "$tmp" "$sb"`
+  - **Commit**: `fix(detect-ci): replace PHP category patterns in deno discovery with deno-honest mapping`
+  - _Requirements: AC-5.1, AC-5.2_
+
+- [x] F4 Fix deno.jsonc tasks discovery (best-effort, fall through to canonical)
+  - **Do**: Generalize deno config selection (lines 190-208) so `.jsonc` is attempted too. Select config: prefer `deno.json` if present, else `deno.jsonc`. Pass selected config to jq. If jq fails on `.jsonc` (commented JSON), fall through to canonical fallback. Comment-free `.jsonc` discovers tasks; broken `.jsonc` degrades gracefully.
+  - **Files**: plugins/ralphharness/hooks/scripts/detect-ci-commands.sh (~7 lines)
+  - **Done when**: `deno.jsonc` with tasks → `deno task <name>` discovered; `.jsonc` without tasks → canonical fallback.
+  - **Verify**: `tmp=$(mktemp -d); echo '{/* comment */"tasks":{"mytest":"deno test"}}' > "$tmp/deno.jsonc"; sb=$(mktemp -d); printf '#!/bin/sh\n' > "$sb/deno"; chmod +x "$sb/deno"; PATH="$sb:$PATH" bash plugins/ralphharness/hooks/scripts/detect-ci-commands.sh "$tmp" | jq -e '[.[]|select(.command=="deno task mytest")]|length==1' >/dev/null && echo F4_OK; rm -rf "$tmp" "$sb"`
+  - **Commit**: `fix(detect-ci): generalize deno task discovery to .jsonc (best-effort)`
+  - _Requirements: AC-5.1, AC-5.4_
+
+- [x] F5 Fix mix alias parser to match atom keys (not quoted values)
+  - **Do**: Replace lines 158-177 (broken `sed` range + value-match) with key-match grep for known alias keys anywhere in `mix.exs`. Pattern matches `test:`, `"test":`, `"test.all":` etc. — recognized keys `test`, `lint`, `credo`, `dialyzer`, `format`. Project-config keys (`app:`, `version:`, `deps:`) never collide. Iterate keys, emit `mix <key>` with existing name→category map; fall back to canonical when empty.
+  - **Files**: plugins/ralphharness/hooks/scripts/detect-ci-commands.sh (~15 lines)
+  - **Done when**: Realistic atom-keyed `mix.exs` with `credo:`, `dialyzer:` alias keys → discovered. Existing "aliases" bats test still passes.
+  - **Verify**: `tmp=$(mktemp -d); cat > "$tmp/mix.exs" <<'EOF'; defmodule M.MixProject; use Mix.Project; def project, do: [deps: deps(), aliases: aliases()]; defp deps, do: [{:credo, "~> 1.7"}, {:dialyxir, "~> 1.4"}]; defp aliases, do: [credo: ["credo --strict"], dialyzer: ["dialyzer"]]; end; EOF; sb=$(mktemp -d); printf '#!/bin/sh\n' > "$sb/mix"; chmod +x "$sb/mix"; PATH="$sb:$PATH" bash plugins/ralphharness/hooks/scripts/detect-ci-commands.sh "$tmp" | jq -e '([.[]|select(.command=="mix credo" and .category=="lint")]|length==1) and ([.[]|select(.command=="mix dialyzer" and .category=="typecheck")]|length==1)' >/dev/null && echo F5_OK; rm -rf "$tmp" "$sb"`
+  - **Commit**: `fix(detect-ci): rewrite mix alias parser to match atom-keyed aliases (not quoted values)`
+  - _Requirements: AC-4.1_
+
+- [x] F6 Fix quality-commands.md stale rows to match emitted commands
+  - **Do**: Rewrite 4 rows whose listed commands the detector does NOT emit:
+    - JVM: `./gradlew test, ./gradlew build, mvn test, mvn package` (drop `check`/`verify`; AC-3.4 forbids aggregates as typecheck)
+    - Ruby: `bundle exec rspec, bundle exec rubocop` (drop non-existent `rake build`)
+    - Elixir: `mix test, mix credo, mix dialyzer, mix format --check-formatted` (drop `mix compile`)
+    - Deno: `deno test, deno lint, deno check, deno fmt --check` (add `fmt --check`)
+  - **Files**: plugins/ralphharness/references/quality-commands.md
+  - **Done when**: All 4 rows list commands the detector actually emits. No contradiction between doc and code.
+  - **Verify**: `grep -A1 'Java/Kotlin' plugins/ralphharness/references/quality-commands.md | grep -qv 'check.*verify' && grep -A1 'Ruby' plugins/ralphharness/references/quality-commands.md | grep -qv 'rake' && echo F6_OK`
+  - **Commit**: `docs(quality-commands): fix stale rows to match emitted detector commands`
+  - _Requirements: US-8_
+
+- [x] F7 Version bump 5.10.0 → 5.10.1 + CLAUDE.md note
+  - **Do**: Bump `5.10.0` → `5.10.1` (patch) in `plugins/ralphharness/.claude-plugin/plugin.json` and `.claude-plugin/marketplace.json` (ralphharness entry). Update `CLAUDE.md:74` "Current version: 5.9.0" → "5.10.1".
+  - **Files**: 3 files
+  - **Done when**: Both manifests 5.10.1; CLAUDE.md note consistent.
+  - **Verify**: `grep -q '"version": "5.10.1"' plugins/ralphharness/.claude-plugin/plugin.json && echo F7_OK`
+  - **Commit**: `chore(release): bump ralphharness 5.10.0 -> 5.10.1`
+
+- [x] F8 Add 6 regression tests to ci-autodetect.bats
+  - **Do**: Append 6 `@test`s (append to end of `tests/ci-autodetect.bats`, extend STUBBIN loop with 7 new stub bins if not already present):
+    1. `composer analyse` (British) → `typecheck` (F-1)
+    2. `deno task check` → `typecheck` (F-3)
+    3. `deno.jsonc` with tasks → `deno task` discovered (F-4)
+    4. Non-executable `gradlew` + `gradle` on PATH → `gradle test`/`build` not `[]` (F-2)
+    5. Non-executable `mvnw` + `mvn` on PATH → `mvn test`/`package` not `[]` (F-2)
+    6. Realistic atom-keyed `mix.exs` → `mix credo`/`mix dialyzer` discovered (F-5)
+  - **Files**: tests/ci-autodetect.bats
+  - **Done when**: All 6 new tests pass alongside existing 36 (42/42 total).
+  - **Verify**: `bats tests/ci-autodetect.bats | grep -q '42 tests, 0 failures' && echo F8_OK`
+  - **Commit**: `test(detect-ci): add regression tests for F-1 through F-5`
+
+- [x] F9 Final verification: bash -n + shellcheck + bats 42/42 + manual spot-checks
+  - **Do**: Run full verification suite.
+  - **Verify**: `bash -n plugins/ralphharness/hooks/scripts/detect-ci-commands.sh && { command -v shellcheck >/dev/null 2>&1 && shellcheck plugins/ralphharness/hooks/scripts/detect-ci-commands.sh || echo "shellcheck not installed"; } && bats tests/ci-autodetect.bats && echo FINAL_OK`
+  - **Commit**: `fix(detect-ci): pass full post-fix CI`
+
 ## Notes
 
 - **POC milestone**: task 1.5 — sourceable `detect_ci_commands()` + BASH_SOURCE main-guard proven via `source` (zero side effects) + 17 legacy bats green. Until this works, no detector reaches the loop (implement.md:215,221). Sequenced FIRST.
-- **Hard invariant**: the 17 legacy `tests/ci-autodetect.bats` tests pass — verified at checkpoints 1.4, 1.7, 2.4, 2.8, 2.10, 3.4, 3.8, 3.11, V4, V5.
+- **Hard invariant**: the 17 legacy `tests/ci-autodetect.bats` tests pass — verified at checkpoints 1.4, 1.7, 2.4, 2.8, 2.10, 3.4, 3.8, 3.11, V4, V5, and all fix tasks.
 - **POC shortcuts**: Phase 1 adds only `detect_gemfile` to prove the pattern; remaining 6 detectors + filter patch deferred to Phase 2; all new bats tests deferred to Phase 3.
 - **shellcheck**: NOT installed locally — `bash -n` is the enforced syntax gate; shellcheck runs only if available (advisory / CI-side), never blocks (design Unresolved Question).
 - **No new source files**: only `detect-ci-commands.sh` (modify), `tests/ci-autodetect.bats` (modify), `quality-commands.md` (doc), and the two manifests (version). Fixtures built inline in temp dirs.

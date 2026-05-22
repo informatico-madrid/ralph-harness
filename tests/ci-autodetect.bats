@@ -1076,3 +1076,158 @@ JSON
     echo "$output" | jq -e '.[] | select(.command == "npm run test" and .category == "test")' >/dev/null
     echo "$output" | jq -e '.[] | select(.command == "npm run lint" and .category == "lint")' >/dev/null
 }
+
+@test "composer.json with British 'analyse' script emits typecheck" {
+    local spec_dir="$SPECIAL_DIR/composer-analyse-spec"
+    mkdir -p "$spec_dir"
+
+    cat > "$spec_dir/composer.json" << 'JSON'
+{
+  "name": "test-composer",
+  "scripts": {
+    "analyse": "phpstan analyse",
+    "analyze": "phpstan analyse --strict"
+  }
+}
+JSON
+
+    local output
+    output=$(PATH="$STUBBIN:$PATH" bash "$DETECT_SCRIPT" "$spec_dir" 2>/dev/null)
+    [ -n "$output" ]
+    echo "$output" | jq -e . >/dev/null
+
+    # British 'analyse' → typecheck (F-1 fix)
+    echo "$output" | jq -e '.[] | select(.command == "composer run analyse" and .category == "typecheck")' >/dev/null
+    # US 'analyze' → typecheck too
+    echo "$output" | jq -e '.[] | select(.command == "composer run analyze" and .category == "typecheck")' >/dev/null
+}
+
+@test "deno task check categorizes as typecheck not other" {
+    local spec_dir="$SPECIAL_DIR/deno-check-spec"
+    mkdir -p "$spec_dir"
+
+    cat > "$spec_dir/deno.json" << 'JSON'
+{
+  "tasks": {
+    "check": "deno check",
+    "lint": "deno lint",
+    "test": "deno test"
+  }
+}
+JSON
+
+    local output
+    output=$(PATH="$STUBBIN:$PATH" bash "$DETECT_SCRIPT" "$spec_dir" 2>/dev/null)
+    [ -n "$output" ]
+    echo "$output" | jq -e . >/dev/null
+
+    # F-3: 'check' task → typecheck (PHP patterns removed, deno-honest map)
+    echo "$output" | jq -e '.[] | select(.command == "deno task check" and .category == "typecheck")' >/dev/null
+    echo "$output" | jq -e '.[] | select(.command == "deno task lint" and .category == "lint")' >/dev/null
+}
+
+@test "deno.jsonc with tasks emits deno task per key" {
+    local spec_dir="$SPECIAL_DIR/deno-jsonc-spec"
+    mkdir -p "$spec_dir"
+
+    # Valid .jsonc without comments (jq can parse this; // comments make jq fail → fallback)
+    cat > "$spec_dir/deno.jsonc" << 'JSON'
+{
+  "tasks": {
+    "mytest": "deno test",
+    "mylint": "deno lint"
+  }
+}
+JSON
+
+    local output
+    output=$(PATH="$STUBBIN:$PATH" bash "$DETECT_SCRIPT" "$spec_dir" 2>/dev/null)
+    [ -n "$output" ]
+    echo "$output" | jq -e . >/dev/null
+
+    # F-4: .jsonc with tasks → deno task entries discovered
+    echo "$output" | jq -e '.[] | select(.command == "deno task mytest")' >/dev/null
+    echo "$output" | jq -e '.[] | select(.command == "deno task mylint")' >/dev/null
+}
+
+@test "gradle with non-executable gradlew degrades to gradle test and build" {
+    local spec_dir="$SPECIAL_DIR/gradle-noexec-spec"
+    mkdir -p "$spec_dir"
+
+    echo 'plugins { id "java" }' > "$spec_dir/build.gradle"
+    printf '#!/bin/sh\n' > "$spec_dir/gradlew"  # present but NOT executable
+
+    local output
+    output=$(PATH="$STUBBIN:$PATH" bash "$DETECT_SCRIPT" "$spec_dir" 2>/dev/null)
+    [ -n "$output" ]
+    echo "$output" | jq -e . >/dev/null
+
+    # F-2: non-executable wrapper → system gradle on PATH (not empty [])
+    echo "$output" | jq -e '.[] | select(.command == "gradle test" and .category == "test")' >/dev/null
+    echo "$output" | jq -e '.[] | select(.command == "gradle build" and .category == "build")' >/dev/null
+    # Should NOT have ./gradlew entries (wrapper not executable → filter drops them)
+    local dotcount
+    dotcount=$(echo "$output" | jq '[.[]|select(.command | startswith("./"))]|length')
+    [ "$dotcount" -eq 0 ]
+}
+
+@test "maven with non-executable mvnw degrades to mvn test and package" {
+    local spec_dir="$SPECIAL_DIR/maven-noexec-spec"
+    mkdir -p "$spec_dir"
+
+    cat > "$spec_dir/pom.xml" << 'XML'
+<project><modelVersion>4.0.0</modelVersion></project>
+XML
+    printf '#!/bin/sh\n' > "$spec_dir/mvnw"  # present but NOT executable
+
+    local output
+    output=$(PATH="$STUBBIN:$PATH" bash "$DETECT_SCRIPT" "$spec_dir" 2>/dev/null)
+    [ -n "$output" ]
+    echo "$output" | jq -e . >/dev/null
+
+    # F-2: non-executable wrapper → system mvn on PATH (not empty [])
+    echo "$output" | jq -e '.[] | select(.command == "mvn test" and .category == "test")' >/dev/null
+    echo "$output" | jq -e '.[] | select(.command == "mvn package" and .category == "build")' >/dev/null
+}
+
+@test "realistic atom-keyed mix.exs discovers credo and dialyzer aliases" {
+    local spec_dir="$SPECIAL_DIR/mix-real-spec"
+    mkdir -p "$spec_dir"
+
+    cat > "$spec_dir/mix.exs" << 'EXS'
+defmodule MyProject.MixProject do
+  use Mix.Project
+
+  def project do
+    [
+      app: :my_project,
+      deps: deps(),
+      aliases: aliases()
+    ]
+  end
+
+  defp deps do
+    [
+      {:credo, "~> 1.7", only: [:dev, :test]},
+      {:dialyxir, "~> 1.4", only: [:dev], runtime: false}
+    ]
+  end
+
+  defp aliases do
+    [
+      credo: ["credo --strict"],
+      dialyzer: ["dialyzer --format github"]
+    ]
+  end
+end
+EXS
+
+    local output
+    output=$(PATH="$STUBBIN:$PATH" bash "$DETECT_SCRIPT" "$spec_dir" 2>/dev/null)
+    [ -n "$output" ]
+    echo "$output" | jq -e . >/dev/null
+
+    # F-5: atom-keyed aliases discovered (credo → lint, dialyzer → typecheck)
+    echo "$output" | jq -e '.[] | select(.command == "mix credo" and .category == "lint")' >/dev/null
+    echo "$output" | jq -e '.[] | select(.command == "mix dialyzer" and .category == "typecheck")' >/dev/null
+}

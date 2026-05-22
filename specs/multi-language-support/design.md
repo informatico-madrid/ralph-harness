@@ -283,3 +283,53 @@ Discovered from `tests/ci-autodetect.bats`:
 6. **Doc (FR-11)**: add PHP + C#/.NET rows to `references/quality-commands.md` config table. Do NOT duplicate Ruby/JVM/Elixir/Deno rows.
 7. **Version (FR-12)**: bump 5.9.5 → 5.10.0 in `plugin.json` and `marketplace.json`.
 8. **Gate**: `bats tests/ci-autodetect.bats` 17/17 + new tests green; `bash -n` clean; `shellcheck` if available.
+
+---
+
+## Post-Implementation Adversarial Review (2026-05-22)
+
+Six confirmed behavioral defects found in the green suite (36/36 bats). Two claims refuted by testing. Each hypothesis reproduced against temp fixtures.
+
+### Verified defects
+
+| ID | Defect | Where | Live evidence |
+|----|--------|-------|---------------|
+| F-1 | `analysz*` typo → British `analyse` mis-categorized as `other` | Lines 115, 201 | `composer run analyse`→`other` (should be `typecheck`) |
+| F-2 | Wrapper detection uses `-f` not `-x` → non-executable wrapper yields `[]` | Lines 132, 145 | Contradicts design's Technical Decisions (`-x`); filter `-x` disagrees with detector `-f` |
+| F-3 | Deno discovery map copy-pasted PHP (`phpstan*|psalm*`); no `check`→typecheck | Lines 197-203 | `deno task check`→`other`; discovery disagrees with fallback (`deno check`→typecheck) |
+| F-4 | `deno.jsonc` tasks never discovered | Line 191 gated on `deno.json` only | `.jsonc` w/ tasks → canonical fallback, ignoring user-defined tasks |
+| F-5 | Mix alias parser matches quoted values, not atom keys | Lines 158-177 | `sed /aliases/,/end(/p` + `"test"`-match fires on coincidental quoted substrings |
+| F-6 | `quality-commands.md` 4 stale rows contradict emitted commands | JVM/Ruby/Elixir/Deno rows | JVM says `./gradlew check`/`mvn verify` (AC-3.4 forbids); Ruby `rake build`; Elixir `mix compile` |
+
+### Refuted
+
+- **"17 legacy tests wrong"** — git diff `17a18,36` proves all 17 unchanged. NFR-4 met.
+- **"Detectors return non-zero"** — bash `if cond; then…; fi` returns 0 on false. Verified rc=0, survives caller `set -e`.
+
+### DOWNGRADED
+
+- **F-8 (version drift)** — manifests 5.10.0 correct; CLAUDE.md:74 stale doc.
+- **F-9 (shellcheck)** — `bash -n` is the enforced gate per design footnote.
+- **F-10 (state pollution)** — source is `discover-ci.sh:37`, out of scope per NFR-6.
+
+### Design Corrections
+
+**F-2**: wrapper detection must use `-x` (design Technical Decisions line 155 chose `-x` to "degrade to `gradle`/`mvn` (PATH-resolvable) so output is never empty"). Fix: `-f` → `-x` at lines 132, 145.
+
+**F-3**: deno discovery map must mirror AC-5.2 fallback categories. Replace PHP pattern arms with deno-honest mapping including `check*|typecheck*`→typecheck.
+
+**F-4**: deno config selection should generalize to `.jsonc` as assumed in the Unresolved Questions. Best-effort jq parse, fall through to canonical on jq-fail.
+
+**F-5**: mix alias parser must match key-names not quoted values. Replace `sed` range + value-match with grep for atom-keyed pattern `key:` anywhere in `mix.exs`.
+
+### Fix scope
+
+| ID | Area | Change | Risk |
+|----|------|--------|------|
+| F-1 | Script lines 115, 201 | `analysz*` → `analyse*` | None |
+| F-2 | Script lines 132, 145 | `-f "$base/gradlew"` → `-x` (same for mvnw) | Low |
+| F-3 | Script lines 197-203 | Replace deno discovery map (remove PHP, add `check`→typecheck) | Low |
+| F-4 | Script lines 191-208 | Generalize deno config to `.jsonc` | Low |
+| F-5 | Script lines 158-177 | Replace sed+value-match with key-match | Medium |
+| F-6 | quality-commands.md | Rewrite 4 stale rows | None |
+| F-8 | 3 files | Bump 5.10.0→5.10.1 + CLAUDE.md note | None |

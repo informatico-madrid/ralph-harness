@@ -112,7 +112,7 @@ detect_composer() {
         case "$script_name" in
           test*)             category="test" ;;
           lint*|cs*|fix*)    category="lint" ;;
-          analyze*|analysz*|phpstan*|psalm*) category="typecheck" ;;
+          analyze*|analyse*|phpstan*|psalm*) category="typecheck" ;;
           build*)            category="build" ;;
         esac
         ENTRIES+=("{\"command\":\"composer run ${script_name}\",\"category\":\"${category}\"}")
@@ -129,7 +129,7 @@ detect_gradle() {
   local base="$1"
   [[ -f "$base/build.gradle" || -f "$base/build.gradle.kts" ]] || return 0
   # Always emit ./gradlew so the filter can decide (executable check + WARN on stderr)
-  if [[ -f "$base/gradlew" ]]; then
+  if [[ -x "$base/gradlew" ]]; then
     ENTRIES+=('{"command":"./gradlew test","category":"test"}')
     ENTRIES+=('{"command":"./gradlew build","category":"build"}')
   else
@@ -142,7 +142,7 @@ detect_maven() {
   local base="$1"
   [[ -f "$base/pom.xml" ]] || return 0
   # Always emit ./mvnw so the filter can decide (executable check + WARN on stderr)
-  if [[ -f "$base/mvnw" ]]; then
+  if [[ -x "$base/mvnw" ]]; then
     ENTRIES+=('{"command":"./mvnw test","category":"test"}')
     ENTRIES+=('{"command":"./mvnw package","category":"build"}')
   else
@@ -155,24 +155,23 @@ detect_mix() {
   local base="$1"
   [[ -f "$base/mix.exs" ]] || return 0
 
-  # Best-effort: grep-scan mix.exs aliases block for known alias names
-  local aliases
-  aliases=$(sed -n '/aliases/,/end(/p' "$base/mix.exs" 2>/dev/null \
-    | grep -oE '"(test|lint|credo|dialyzer|format)[a-zA-Z0-9_-]*"' || true)
-  if [[ -n "$aliases" ]]; then
+  # Best-effort: grep known alias keys anywhere in mix.exs (atom-keyed: test:, "test:", "test.all:")
+  local keys
+  keys=$(grep -oE '(^|[^a-zA-Z0-9_])"?(test|lint|credo|dialyzer|format)[a-zA-Z0-9_.]*"?[[:space:]]*:' "$base/mix.exs" 2>/dev/null \
+    | grep -oE '(test|lint|credo|dialyzer|format)[a-zA-Z0-9_.]*' || true)
+  if [[ -n "$keys" ]]; then
     while IFS= read -r alias_name; do
       [[ -n "$alias_name" ]] || continue
-      local name="${alias_name//\"/}"
       local category="other"
-      case "$name" in
+      case "$alias_name" in
         test*)    category="test" ;;
         lint*)    category="lint" ;;
         credo)    category="lint" ;;
         dialyz*)  category="typecheck" ;;
         format*)  category="lint" ;;
       esac
-      ENTRIES+=("{\"command\":\"mix ${name}\",\"category\":\"${category}\"}")
-    done <<< "$aliases"
+      ENTRIES+=("{\"command\":\"mix ${alias_name}\",\"category\":\"${category}\"}")
+    done <<< "$keys"
     return 0
   fi
 
@@ -187,19 +186,23 @@ detect_deno() {
   local base="$1"
   [[ -f "$base/deno.json" || -f "$base/deno.jsonc" ]] || return 0
 
-  # Best-effort: parse deno.json (not .jsonc) with jq, emit deno task <name> per key
-  if [[ -f "$base/deno.json" ]] && command -v jq >/dev/null 2>&1; then
+  # Best-effort: parse deno.json or deno.jsonc with jq, emit deno task <name> per key
+  local cfg=""
+  [[ -f "$base/deno.json" ]] && cfg="$base/deno.json"
+  if [[ -z "$cfg" && -f "$base/deno.jsonc" ]]; then cfg="$base/deno.jsonc"; fi
+  if [[ -n "$cfg" ]] && command -v jq >/dev/null 2>&1; then
     local tasks
-    tasks=$(jq -r '.tasks // {} | keys[]' "$base/deno.json" 2>/dev/null || true)
+    tasks=$(jq -r '.tasks // {} | keys[]' "$cfg" 2>/dev/null || true)
     if [[ -n "$tasks" ]]; then
       while IFS= read -r task_name; do
         [[ -n "$task_name" ]] || continue
         local category="other"
         case "$task_name" in
-          test*)             category="test" ;;
-          lint*|cs*|fix*)    category="lint" ;;
-          analyze*|analysz*|phpstan*|psalm*) category="typecheck" ;;
-          build*)            category="build" ;;
+          test*)              category="test" ;;
+          lint*)              category="lint" ;;
+          fmt*|format*)       category="lint" ;;
+          check*|typecheck*)  category="typecheck" ;;
+          build*|bundle*)     category="build" ;;
         esac
         ENTRIES+=("{\"command\":\"deno task ${task_name}\",\"category\":\"${category}\"}")
       done <<< "$tasks"
@@ -207,7 +210,7 @@ detect_deno() {
     fi
   fi
 
-  # Fallback: no tasks key / .jsonc / no jq
+  # Fallback: no tasks key / jq-fail / no tasks → canonical
   ENTRIES+=('{"command":"deno test","category":"test"}')
   ENTRIES+=('{"command":"deno lint","category":"lint"}')
   ENTRIES+=('{"command":"deno check","category":"typecheck"}')

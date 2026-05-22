@@ -208,6 +208,25 @@ Extend `detect-ci-commands.sh` top-level-marker CI auto-detection from 5 ecosyst
 - Maven build category: emit `mvn package` vs `mvn compile` as the canonical build command — design to pick one (lean `package`).
 - Deno config: should `deno.jsonc` be treated identically to `deno.json`? (Assumed yes.)
 
+## Post-Implementation Defects (Adversarial Review — 2026-05-22)
+
+Six confirmed behavioral defects were found in the green suite (36/36 bats pass).
+Each hypothesis was reproduced by running the script against temp fixtures.
+Two hypotheses (F-7: "17 legacy tests wrong" and F-11: "detectors return non-zero") were **refuted** by live testing (git diff confirms all 17 legacy tests unchanged; bash `if` without `else` returns 0, detectors are NFR-3-compliant).
+
+| ID | Defect | Severity | Status |
+|----|--------|----------|--------|
+| F-1 | `analysz*` typo in category map → British `analyse` mis-categorized as `other` (should be `typecheck`) | High | **FIX REQUIRED** |
+| F-2 | Wrapper detection uses `-f` (exists) instead of design's `-x` (executable) → non-executable `gradlew`/`mvnw` yields empty `[]`, gates lost | High | **FIX REQUIRED** |
+| F-3 | Deno discovery map copy-pasted from PHP (`phpstan*|psalm*` never valid for Deno); no `check`→typecheck mapping | High | **FIX REQUIRED** |
+| F-4 | `deno.jsonc` detection triggers, but task discovery is `.json`-only — contradicts design "treat identically" | Medium | **FIX REQUIRED** |
+| F-5 | Mix alias parser uses `sed /aliases/,/end(/p` + value-match (`"test"`) — never fires for real atom-keyed `mix.exs` | Medium | **FIX REQUIRED** |
+| F-6 | `quality-commands.md` 4 stale rows contradict emitted commands (JVM: `./gradlew check`/`mvn verify`; Ruby: `rake build`; Elixir: `mix compile`) | Low | **FIX REQUIRED** |
+| F-8 | `CLAUDE.md:74` still says "5.9.0" while manifests are 5.10.0 | Low | **FIX REQUIRED** |
+| F-9 | NFR-5: `shellcheck` never enforced — only `bash -n` ran | Advisory | Documented |
+
+AC-1.1 is superseded by F-1 (British `analyse` must map to `typecheck`).
+
 ## Next Steps
 1. User approves requirements.
 2. Run `/ralphharness:design` to specify detector function signatures, the exact filter patch, and category mappings.
@@ -215,3 +234,5 @@ Extend `detect-ci-commands.sh` top-level-marker CI auto-detection from 5 ecosyst
 4. `/ralphharness:implement`.
 
 <!-- Changed: added US-9/FR-13 (sourceable detect_ci_commands() + BASH_SOURCE main-guard, the real implement.md:215,221 consumer); added NFR-6 (accepted exact-tuple semantic-dup limitation); fixed AC-6.1 glob-marker pitfall (compgen/nullglob not [[ -f ]]); added monorepo + semantic-dedupe out-of-scope lines; expanded Verification Contract entry points/invariants/dependency map/escalate-if. Supersedes nothing — corrective pass from smart-ralph-review consensus (SR-001..006). -->
+
+<!-- Post-implementation adversarial review 2026-05-22: 6 confirmed defects in green suite, 2 refuted. See Post-Implementation Defects table above. -->
