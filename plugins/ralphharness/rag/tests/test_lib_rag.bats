@@ -2,6 +2,9 @@
 # bats tests for lib-rag.sh
 
 setup() {
+    # Force RAG disabled for these tests so they are hermetic and
+    # independent of any ~/.config/smart-ralph/.ralphharness.local.md
+    export RALPH_RAG_ENABLED=false
     source "$(dirname "$BATS_TEST_FILENAME")/../../hooks/scripts/lib-rag.sh"
 }
 
