@@ -330,7 +330,7 @@ Focus: one bats `@test` per Test Coverage Table row + filter regression + source
   - **Verify**: `test -s /tmp/ve-mls.txt && head -1 /tmp/ve-mls.txt | xargs test -d && echo VE1_PASS`
   - **Commit**: None
 
-- [ ] VE2 [VERIFY] E2E check: run bats suite + detect against real fixtures (CLI + sourced)
+- [x] VE2 [VERIFY] E2E check: run bats suite + detect against real fixtures (CLI + sourced)
   - **Do**:
     1. Run the full bats e2e suite: `bats tests/ci-autodetect.bats`.
     2. CLI path: `VE_TMP=$(head -1 /tmp/ve-mls.txt); VE_STUB=$(sed -n 2p /tmp/ve-mls.txt); PATH="$VE_STUB:$PATH" bash plugins/ralphharness/hooks/scripts/detect-ci-commands.sh "$VE_TMP"` → assert expected tuples via jq (`bundle exec rspec`/test, `mvn package`/build, `composer test`/test).
