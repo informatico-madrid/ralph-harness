@@ -183,6 +183,37 @@ detect_mix() {
   ENTRIES+=('{"command":"mix format --check-formatted","category":"lint"}')
 }
 
+detect_deno() {
+  local base="$1"
+  [[ -f "$base/deno.json" || -f "$base/deno.jsonc" ]] || return 0
+
+  # Best-effort: parse deno.json (not .jsonc) with jq, emit deno task <name> per key
+  if [[ -f "$base/deno.json" ]] && command -v jq >/dev/null 2>&1; then
+    local tasks
+    tasks=$(jq -r '.tasks // {} | keys[]' "$base/deno.json" 2>/dev/null || true)
+    if [[ -n "$tasks" ]]; then
+      while IFS= read -r task_name; do
+        [[ -n "$task_name" ]] || continue
+        local category="other"
+        case "$task_name" in
+          test*)             category="test" ;;
+          lint*|cs*|fix*)    category="lint" ;;
+          analyze*|analysz*|phpstan*|psalm*) category="typecheck" ;;
+          build*)            category="build" ;;
+        esac
+        ENTRIES+=("{\"command\":\"deno task ${task_name}\",\"category\":\"${category}\"}")
+      done <<< "$tasks"
+      return 0
+    fi
+  fi
+
+  # Fallback: no tasks key / .jsonc / no jq
+  ENTRIES+=('{"command":"deno test","category":"test"}')
+  ENTRIES+=('{"command":"deno lint","category":"lint"}')
+  ENTRIES+=('{"command":"deno check","category":"typecheck"}')
+  ENTRIES+=('{"command":"deno fmt --check","category":"lint"}')
+}
+
 detect_ci_commands() {
   local SPEC_PATH="$1"
   local ENTRIES=()
@@ -199,6 +230,7 @@ detect_ci_commands() {
   detect_gradle "$SPEC_PATH"
   detect_maven "$SPEC_PATH"
   detect_mix "$SPEC_PATH"
+  detect_deno "$SPEC_PATH"
 
   # --- Write-time command -v filter (AC-2.4, D5) ---
   for entry in "${ENTRIES[@]}"; do

@@ -149,7 +149,7 @@ Focus: add the remaining 6 detectors and the `./`-token filter patch with honest
   - _Requirements: FR-4, AC-4.1, AC-4.2, AC-4.3, AC-4.4_
   - _Design: 6 new detectors_
 
-- [ ] 2.6 Add `detect_deno` (tasks-discovery + fallback, .json/.jsonc)
+- [x] 2.6 Add `detect_deno` (tasks-discovery + fallback, .json/.jsonc)
   - **Do**:
     1. Add `detect_deno() { local base="$1"; [[ -f "$base/deno.json" || -f "$base/deno.jsonc" ]] || return 0; ... }`.
     2. If `command -v jq` and `.tasks` present (on `deno.json`): emit `deno task <name>` per key, name-pattern categorized (same map as composer).
