@@ -45,14 +45,14 @@ Focus: prove the FR-13 refactor (sourceable function + BASH_SOURCE guard) works 
   - _Requirements: FR-13, AC-9.2, AC-9.3_
   - _Design: BASH_SOURCE main-guard + CLI block_
 
-- [ ] 1.4 [VERIFY] Quality checkpoint: legacy tests + syntax after refactor
+- [x] 1.4 [VERIFY] Quality checkpoint: legacy tests + syntax after refactor
   - **Do**: Run `bash -n` and the full legacy bats suite to prove the refactor is behavior-preserving.
   - **Verify**: `bash -n plugins/ralphharness/hooks/scripts/detect-ci-commands.sh && bats tests/ci-autodetect.bats && echo CHECKPOINT_OK`
   - **Done when**: `bash -n` clean and 17/17 legacy tests pass unchanged.
   - **Commit**: `fix(detect-ci): restore legacy parity after refactor` (only if fixes needed)
   - _Requirements: NFR-4, NFR-5, AC-9.5_
 
-- [ ] 1.5 POC milestone: prove sourcing works end-to-end (function reachable, CLI unchanged)
+- [x] 1.5 POC milestone: prove sourcing works end-to-end (function reachable, CLI unchanged)
   - **Do**:
     1. In a sub-shell, `source plugins/ralphharness/hooks/scripts/detect-ci-commands.sh` with NO args; confirm exit `$?` == 0, no stdout, shell not exited.
     2. After sourcing, call `detect_ci_commands "<tmp fixture dir with package.json>"`; confirm a valid JSON array is printed via `jq -e .`.
