@@ -192,7 +192,7 @@ Focus: add the remaining 6 detectors and the `./`-token filter patch with honest
   - _Requirements: FR-7, AC-7.1, AC-7.2, AC-9.3_
   - _Design: Write-time filter patch_
 
-- [ ] 2.10 [VERIFY] Quality checkpoint: syntax + legacy + categories enum
+- [x] 2.10 [VERIFY] Quality checkpoint: syntax + legacy + categories enum
   - **Do**: Run `bash -n`, full legacy bats, and assert all emitted categories ∈ {lint,typecheck,test,build,other} across a multi-marker fixture.
   - **Verify**: `bash -n plugins/ralphharness/hooks/scripts/detect-ci-commands.sh && bats tests/ci-autodetect.bats && tmp=$(mktemp -d); touch "$tmp/Gemfile" "$tmp/pom.xml"; sb=$(mktemp -d); for b in bundle mvn; do printf '#!/bin/sh\n' > "$sb/$b"; chmod +x "$sb/$b"; done; PATH="$sb:$PATH" bash plugins/ralphharness/hooks/scripts/detect-ci-commands.sh "$tmp" | jq -e 'all(.category; .=="lint" or .=="typecheck" or .=="test" or .=="build" or .=="other")' >/dev/null && echo CHECKPOINT_OK; rm -rf "$tmp" "$sb"`
   - **Done when**: `bash -n` clean, 17/17 legacy pass, categories strictly within the enum.
