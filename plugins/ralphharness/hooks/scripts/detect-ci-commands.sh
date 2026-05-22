@@ -138,6 +138,19 @@ detect_gradle() {
   ENTRIES+=("{\"command\":\"$W build\",\"category\":\"build\"}")
 }
 
+detect_maven() {
+  local base="$1"
+  [[ -f "$base/pom.xml" ]] || return 0
+  local M
+  if [[ -x "$base/mvnw" ]]; then
+    M="./mvnw"
+  else
+    M="mvn"
+  fi
+  ENTRIES+=("{\"command\":\"$M test\",\"category\":\"test\"}")
+  ENTRIES+=("{\"command\":\"$M package\",\"category\":\"build\"}")
+}
+
 detect_ci_commands() {
   local SPEC_PATH="$1"
   local ENTRIES=()
@@ -152,6 +165,7 @@ detect_ci_commands() {
   detect_gemfile "$SPEC_PATH"
   detect_composer "$SPEC_PATH"
   detect_gradle "$SPEC_PATH"
+  detect_maven "$SPEC_PATH"
 
   # --- Write-time command -v filter (AC-2.4, D5) ---
   for entry in "${ENTRIES[@]}"; do
