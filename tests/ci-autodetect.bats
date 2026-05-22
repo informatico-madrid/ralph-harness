@@ -533,3 +533,85 @@ JSON
     vendor_count=$(echo "$output" | jq '[.[] | select(.command | startswith("vendor/bin/"))] | length')
     [ "$vendor_count" -eq 0 ]
 }
+
+# =============================================================================
+# Task 3.3: gemfile + deno detector tests
+# =============================================================================
+
+@test "gemfile detector emits bundle exec rspec and rubocop" {
+    local spec_dir="$SPECIAL_DIR/gemfile-spec"
+    mkdir -p "$spec_dir"
+
+    cat > "$spec_dir/Gemfile" << 'RB'
+source 'https://rubygems.org'
+gem 'rspec'
+gem 'rubocop'
+RB
+
+    local output
+    output=$(PATH="$STUBBIN:$PATH" bash "$DETECT_SCRIPT" "$spec_dir" 2>/dev/null)
+    [ -n "$output" ]
+    echo "$output" | jq -e . >/dev/null
+
+    # Should emit: bundle exec rspec (test) + bundle exec rubocop (lint)
+    echo "$output" | jq -e '.[] | select(.command == "bundle exec rspec" and .category == "test")' >/dev/null
+    echo "$output" | jq -e '.[] | select(.command == "bundle exec rubocop" and .category == "lint")' >/dev/null
+
+    local count
+    count=$(echo "$output" | jq 'length')
+    [ "$count" -eq 2 ]
+}
+
+@test "deno tasks-discovery emits deno task per key from deno.json" {
+    local spec_dir="$SPECIAL_DIR/deno-tasks-spec"
+    mkdir -p "$spec_dir"
+
+    cat > "$spec_dir/deno.json" << 'JSON'
+{
+  "name": "test-deno-tasks",
+  "tasks": {
+    "test": "deno test",
+    "lint": "deno lint",
+    "build": "deno compile"
+  }
+}
+JSON
+
+    local output
+    output=$(PATH="$STUBBIN:$PATH" bash "$DETECT_SCRIPT" "$spec_dir" 2>/dev/null)
+    [ -n "$output" ]
+    echo "$output" | jq -e . >/dev/null
+
+    # tasks-discovery should emit deno task <name> per key with name-pattern categorization
+    echo "$output" | jq -e '.[] | select(.command == "deno task test" and .category == "test")' >/dev/null
+    echo "$output" | jq -e '.[] | select(.command == "deno task lint" and .category == "lint")' >/dev/null
+    echo "$output" | jq -e '.[] | select(.command == "deno task build" and .category == "build")' >/dev/null
+
+    # deno check should NOT be emitted from tasks-discovery (anti-pattern)
+    local check_count
+    check_count=$(echo "$output" | jq '[.[] | select(.command == "deno task build")] | length')
+    [ "$check_count" -eq 1 ]
+}
+
+@test "deno fallback emits deno test lint check and fmt --check from deno.jsonc" {
+    local spec_dir="$SPECIAL_DIR/deno-fallback-spec"
+    mkdir -p "$spec_dir"
+
+    # Use .jsonc (triggers fallback path)
+    cat > "$spec_dir/deno.jsonc" << 'JSON'
+{
+  "name": "test-deno-fallback"
+}
+JSON
+
+    local output
+    output=$(PATH="$STUBBIN:$PATH" bash "$DETECT_SCRIPT" "$spec_dir" 2>/dev/null)
+    [ -n "$output" ]
+    echo "$output" | jq -e . >/dev/null
+
+    # Fallback: should emit 4 canonical deno commands
+    echo "$output" | jq -e '.[] | select(.command == "deno test" and .category == "test")' >/dev/null
+    echo "$output" | jq -e '.[] | select(.command == "deno lint" and .category == "lint")' >/dev/null
+    echo "$output" | jq -e '.[] | select(.command == "deno check" and .category == "typecheck")' >/dev/null
+    echo "$output" | jq -e '.[] | select(.command == "deno fmt --check" and .category == "lint")' >/dev/null
+}

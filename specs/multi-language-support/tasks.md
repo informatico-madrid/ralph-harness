@@ -222,7 +222,7 @@ Focus: one bats `@test` per Test Coverage Table row + filter regression + source
   - **Commit**: `test(detect-ci): add composer scripts + fallback tests`
   - _Requirements: FR-1, FR-10, AC-1.1, AC-1.2_
 
-- [ ] 3.3 gemfile + deno tests
+- [x] 3.3 gemfile + deno tests
   - **Do**: Add `@test`s — each `@test` description string MUST contain a keyword matched by the `-f 'gemfile|deno'` Verify filter (the gemfile test description must contain `gemfile`; the two deno test descriptions must contain `deno`): gemfile → `bundle exec rspec`(test)/`bundle exec rubocop`(lint); deno tasks-discovery (`deno.json` with `tasks`) → `deno task <name>` categorized; deno fallback (`deno.jsonc`) → `deno test`/`deno lint`/`deno check`(typecheck)/`deno fmt --check`(lint).
   - **Files**: tests/ci-autodetect.bats
   - **Done when**: gemfile + both deno tests exist and pass.
