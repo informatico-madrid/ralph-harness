@@ -699,7 +699,7 @@ JSON
 
     # --- Branch 1: gradlew NOT executable — ./gradlew DROPPED, WARN on stderr ---
     local output1 stderr1
-    PATH="$stub_dir:$PATH" bash "$DETECT_SCRIPT" "$spec_dir" >"$SPECIAL_DIR/out1.txt" 2>"$SPECIAL_DIR/stderr1.txt"
+    PATH="$stub_dir:$PATH" bash "$DETECT_SCRIPT" "$spec_dir" >"$SPECIAL_DIR/out1.txt" 2>"$SPECIAL_DIR/warn1.txt"
     output1=$(cat "$SPECIAL_DIR/out1.txt")
     [ -n "$output1" ]
     echo "$output1" | jq -e . >/dev/null
@@ -709,8 +709,15 @@ JSON
     dropped=$(echo "$output1" | jq '[.[] | select(.command | startswith("./gradlew"))] | length')
     [ "$dropped" -eq 0 ]
 
-    # WARN must appear on stderr
-    grep -qi "WARN" "$SPECIAL_DIR/stderr1.txt"
+    # WARN must appear on stderr — use run command for bats 1.10 compatibility
+    local warn_found=0
+    while IFS= read -r line; do
+        if echo "$line" | grep -qi "WARN"; then
+            warn_found=1
+            break
+        fi
+    done < "$SPECIAL_DIR/warn1.txt"
+    [ "$warn_found" -eq 1 ]
 
     # PATH gradle still emitted (command -v stub-bin will handle it if present, else empty array fine)
 
@@ -718,7 +725,7 @@ JSON
     chmod +x "$spec_dir/gradlew"
 
     local output2
-    PATH="$stub_dir:$PATH" bash "$DETECT_SCRIPT" "$spec_dir" >"$SPECIAL_DIR/out2.txt" 2>"$SPECIAL_DIR/stderr2.txt"
+    PATH="$stub_dir:$PATH" bash "$DETECT_SCRIPT" "$spec_dir" >"$SPECIAL_DIR/out2.txt" 2>"$SPECIAL_DIR/warn2.txt"
     output2=$(cat "$SPECIAL_DIR/out2.txt")
     [ -n "$output2" ]
     echo "$output2" | jq -e . >/dev/null
@@ -761,7 +768,14 @@ JSON
     [ "$dropped" -eq 0 ]
 
     # WARN must appear on stderr
-    grep -qi "WARN" "$SPECIAL_DIR/warn1.txt"
+    local warn_found=0
+    while IFS= read -r line; do
+        if echo "$line" | grep -qi "WARN"; then
+            warn_found=1
+            break
+        fi
+    done < "$SPECIAL_DIR/warn1.txt"
+    [ "$warn_found" -eq 1 ]
 
     # --- Branch 2: chmod +x gradlew — ./gradlew SURVIVES ---
     chmod +x "$spec_dir/gradlew"
