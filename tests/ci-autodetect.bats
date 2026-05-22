@@ -472,3 +472,64 @@ WRAPPER
     bash "$DETECT_SCRIPT" "/nonexistent/path" 2>/dev/null || exit_code=$?
     [[ "$exit_code" -ne 0 ]] || skip "expected error on non-existent path"
 }
+
+# =============================================================================
+# Task 3.2: composer scripts + fallback tests
+# =============================================================================
+
+@test "composer.json with scripts test lint analyze build emits run variants" {
+    local spec_dir="$SPECIAL_DIR/composer-scripts-spec"
+    mkdir -p "$spec_dir"
+
+    cat > "$spec_dir/composer.json" << 'JSON'
+{
+  "name": "test-composer",
+  "scripts": {
+    "test": "phpunit",
+    "lint": "php-cs-fixer fix",
+    "analyze": "phpstan analyse",
+    "build": "compile"
+  }
+}
+JSON
+
+    local output
+    output=$(PATH="$STUBBIN:$PATH" bash "$DETECT_SCRIPT" "$spec_dir" 2>/dev/null)
+    [ -n "$output" ]
+    echo "$output" | jq -e . >/dev/null
+
+    # Each script should emit composer run <name> with correct category
+    echo "$output" | jq -e '.[] | select(.command == "composer run test" and .category == "test")' >/dev/null
+    echo "$output" | jq -e '.[] | select(.command == "composer run lint" and .category == "lint")' >/dev/null
+    echo "$output" | jq -e '.[] | select(.command == "composer run analyze" and .category == "typecheck")' >/dev/null
+    echo "$output" | jq -e '.[] | select(.command == "composer run build" and .category == "build")' >/dev/null
+
+    # No vendor/bin/ entries should be present
+    local vendor_count
+    vendor_count=$(echo "$output" | jq '[.[] | select(.command | startswith("vendor/bin/"))] | length')
+    [ "$vendor_count" -eq 0 ]
+}
+
+@test "composer.json with no scripts falls back to composer test" {
+    local spec_dir="$SPECIAL_DIR/composer-fallback-spec"
+    mkdir -p "$spec_dir"
+
+    cat > "$spec_dir/composer.json" << 'JSON'
+{
+  "name": "test-composer-no-scripts"
+}
+JSON
+
+    local output
+    output=$(PATH="$STUBBIN:$PATH" bash "$DETECT_SCRIPT" "$spec_dir" 2>/dev/null)
+    [ -n "$output" ]
+    echo "$output" | jq -e . >/dev/null
+
+    # Fallback: should emit composer test (test)
+    echo "$output" | jq -e '.[] | select(.command == "composer test" and .category == "test")' >/dev/null
+
+    # No vendor/bin/ entries should be present
+    local vendor_count
+    vendor_count=$(echo "$output" | jq '[.[] | select(.command | startswith("vendor/bin/"))] | length')
+    [ "$vendor_count" -eq 0 ]
+}

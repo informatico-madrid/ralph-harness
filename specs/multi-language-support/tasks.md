@@ -214,7 +214,7 @@ Focus: one bats `@test` per Test Coverage Table row + filter regression + source
   - _Requirements: FR-10_
   - _Design: Fixtures & Test Data_
 
-- [ ] 3.2 composer tests (scripts + no-scripts)
+- [x] 3.2 composer tests (scripts + no-scripts)
   - **Do**: Add 2 `@test`s — each `@test` description string MUST contain the keyword `composer` so the `-f composer` Verify filter matches them: (a) `composer.json` with `scripts:{test,lint,analyze,build}` → asserts `composer run test`(test), `composer run lint`(lint), `composer run analyze`(typecheck), `composer run build`(build); (b) `composer.json` with no scripts → `composer test`(test), and no `vendor/bin/*`.
   - **Files**: tests/ci-autodetect.bats
   - **Done when**: Both composer tests exist and pass.
