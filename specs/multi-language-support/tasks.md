@@ -10,7 +10,7 @@
 
 Focus: prove the FR-13 refactor (sourceable function + BASH_SOURCE guard) works end-to-end and the CLI path is unchanged, then prove the detector-add pattern with one new detector. No new tests beyond the legacy smoke.
 
-- [ ] 1.1 Snapshot baseline: capture green legacy suite + script syntax
+- [x] 1.1 Snapshot baseline: capture green legacy suite + script syntax
   - **Do**:
     1. Run `bats tests/ci-autodetect.bats` and confirm 17/17 pass (baseline before any edit).
     2. Run `bash -n plugins/ralphharness/hooks/scripts/detect-ci-commands.sh` (must be clean).
@@ -21,7 +21,7 @@ Focus: prove the FR-13 refactor (sourceable function + BASH_SOURCE guard) works 
   - _Requirements: NFR-4, NFR-5_
   - _Design: Test Strategy_
 
-- [ ] 1.2 Wrap detect→filter→emit in `detect_ci_commands()` with local scope
+- [x] 1.2 Wrap detect→filter→emit in `detect_ci_commands()` with local scope
   - **Do**:
     1. In `detect-ci-commands.sh`, define `detect_ci_commands() { local SPEC_PATH="$1"; local ENTRIES=() FILTERED=(); ... }` wrapping the existing run block (lines ~119-123), the write-time filter (~125-139), and the JSON-array emit block.
     2. Keep the 5 existing detectors (`detect_pyproject`/`detect_package_json`/`detect_makefile`/`detect_cargo`/`detect_go_mod`) as top-level functions, called from inside `detect_ci_commands` in the same deterministic order.

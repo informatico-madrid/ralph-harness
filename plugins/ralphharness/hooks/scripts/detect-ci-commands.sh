@@ -27,8 +27,7 @@ if [[ ! -d "$SPEC_PATH" ]]; then
   exit 1
 fi
 
-# Accumulator — lines of JSON objects
-ENTRIES=()
+# Accumulator — lines of JSON objects (initialized inside detect_ci_commands)
 
 # --- Marker detection functions ---
 
@@ -115,42 +114,50 @@ detect_go_mod() {
   ENTRIES+=('{"command":"go test ./...","category":"test"}')
 }
 
-# --- Run all detect functions ---
-detect_pyproject "$SPEC_PATH"
-detect_package_json "$SPEC_PATH"
-detect_makefile "$SPEC_PATH"
-detect_cargo "$SPEC_PATH"
-detect_go_mod "$SPEC_PATH"
+detect_ci_commands() {
+  local SPEC_PATH="$1"
+  local ENTRIES=()
+  local FILTERED=()
 
-# --- Write-time command -v filter (AC-2.4, D5) ---
-# Filter each entry: drop if binary is absent from PATH.
-FILTERED=()
-for entry in "${ENTRIES[@]}"; do
-  # Extract the binary name (first token of command string) using pure bash
-  # entry: {"command":"ruff check .","category":"lint"}
-  cmd="${entry#*\"command\":\"}"   # ruff check .","category":"lint"}
-  cmd="${cmd%%\",*}"               # ruff check .
-  bin="${cmd%% *}"
-  if command -v "$bin" >/dev/null 2>&1; then
-    FILTERED+=("$entry")
-  else
-    echo "[detect-ci-commands] WARN: skipping $cmd binary $bin not on PATH" >&2
-  fi
-done
+  # --- Run all detect functions ---
+  detect_pyproject "$SPEC_PATH"
+  detect_package_json "$SPEC_PATH"
+  detect_makefile "$SPEC_PATH"
+  detect_cargo "$SPEC_PATH"
+  detect_go_mod "$SPEC_PATH"
 
-# --- Output ---
-if [[ ${#FILTERED[@]} -eq 0 ]]; then
-  echo "[]"
-else
-  ENTRIES=("${FILTERED[@]}")
-  last_idx=$(( ${#ENTRIES[@]} - 1 ))
-  echo "["
-  for i in "${!ENTRIES[@]}"; do
-    if [[ $i -eq $last_idx ]]; then
-      echo "  ${ENTRIES[$i]}"
+  # --- Write-time command -v filter (AC-2.4, D5) ---
+  for entry in "${ENTRIES[@]}"; do
+    # Extract the binary name (first token of command string) using pure bash
+    # entry: {"command":"ruff check .","category":"lint"}
+    local cmd="${entry#*\"command\":\"}"
+    cmd="${cmd%%\",*}"
+    local bin="${cmd%% *}"
+    if command -v "$bin" >/dev/null 2>&1; then
+      FILTERED+=("$entry")
     else
-      echo "  ${ENTRIES[$i]},"
+      echo "[detect-ci-commands] WARN: skipping $cmd binary $bin not on PATH" >&2
     fi
   done
-  echo "]"
-fi
+
+  # --- Output ---
+  if [[ ${#FILTERED[@]} -eq 0 ]]; then
+    echo "[]"
+  else
+    ENTRIES=("${FILTERED[@]}")
+    local last_idx=$(( ${#ENTRIES[@]} - 1 ))
+    echo "["
+    local i
+    for i in "${!ENTRIES[@]}"; do
+      if [[ $i -eq $last_idx ]]; then
+        echo "  ${ENTRIES[$i]}"
+      else
+        echo "  ${ENTRIES[$i]},"
+      fi
+    done
+    echo "]"
+  fi
+  return 0
+}
+
+detect_ci_commands "$SPEC_PATH"
