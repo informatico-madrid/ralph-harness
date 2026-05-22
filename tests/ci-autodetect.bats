@@ -677,3 +677,87 @@ JSON
     echo "$output" | jq -e '.[] | select(.command == "./gradlew test" and .category == "test")' >/dev/null
     echo "$output" | jq -e '.[] | select(.command == "./gradlew build" and .category == "build")' >/dev/null
 }
+
+# =============================================================================
+# Task 3.6: maven + coexist detector tests
+# =============================================================================
+
+@test "maven pom.xml emits mvn test and mvn package" {
+    local spec_dir="$SPECIAL_DIR/maven-spec"
+    mkdir -p "$spec_dir"
+
+    cat > "$spec_dir/pom.xml" << 'XML'
+<?xml version="1.0" encoding="UTF-8"?>
+<project>
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.example</groupId>
+  <artifactId>test-project</artifactId>
+  <version>1.0.0</version>
+</project>
+XML
+
+    local output
+    output=$(PATH="$STUBBIN:$PATH" bash "$DETECT_SCRIPT" "$spec_dir" 2>/dev/null)
+    [ -n "$output" ]
+    echo "$output" | jq -e . >/dev/null
+
+    # Should emit: mvn test (test) + mvn package (build)
+    echo "$output" | jq -e '.[] | select(.command == "mvn test" and .category == "test")' >/dev/null
+    echo "$output" | jq -e '.[] | select(.command == "mvn package" and .category == "build")' >/dev/null
+}
+
+@test "maven executable wrapper ./mvnw test and package survive filter" {
+    local spec_dir="$SPECIAL_DIR/maven-wrapper-spec"
+    mkdir -p "$spec_dir"
+
+    cat > "$spec_dir/pom.xml" << 'XML'
+<?xml version="1.0"?>
+<project>
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.example</groupId>
+  <artifactId>wrapper-test</artifactId>
+</project>
+XML
+
+    # Create an executable ./mvnw wrapper (no ./ in STUBBIN)
+    printf '#!/bin/sh\nexec "$@"\n' > "$spec_dir/mvnw"
+    chmod +x "$spec_dir/mvnw"
+
+    # Run without mvn on PATH — only SPEC_PATH/mvnw is executable
+    local output
+    output=$(PATH="$STUBBIN:$PATH" bash "$DETECT_SCRIPT" "$spec_dir" 2>/dev/null)
+    [ -n "$output" ]
+    echo "$output" | jq -e . >/dev/null
+
+    # ./mvnw test and ./mvnw package should SURVIVE the ./-filter
+    echo "$output" | jq -e '.[] | select(.command == "./mvnw test" and .category == "test")' >/dev/null
+    echo "$output" | jq -e '.[] | select(.command == "./mvnw package" and .category == "build")' >/dev/null
+}
+
+@test "gradle + maven coexist both command sets present" {
+    local spec_dir="$SPECIAL_DIR/coexist-spec"
+    mkdir -p "$spec_dir"
+
+    touch "$spec_dir/build.gradle"
+    cat > "$spec_dir/pom.xml" << 'XML'
+<?xml version="1.0"?>
+<project>
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.example</groupId>
+  <artifactId>coexist-test</artifactId>
+</project>
+XML
+
+    local output
+    output=$(PATH="$STUBBIN:$PATH" bash "$DETECT_SCRIPT" "$spec_dir" 2>/dev/null)
+    [ -n "$output" ]
+    echo "$output" | jq -e . >/dev/null
+
+    # Gradle commands
+    echo "$output" | jq -e '.[] | select(.command == "gradle test" and .category == "test")' >/dev/null
+    echo "$output" | jq -e '.[] | select(.command == "gradle build" and .category == "build")' >/dev/null
+
+    # Maven commands
+    echo "$output" | jq -e '.[] | select(.command == "mvn test" and .category == "test")' >/dev/null
+    echo "$output" | jq -e '.[] | select(.command == "mvn package" and .category == "build")' >/dev/null
+}

@@ -245,7 +245,7 @@ Focus: one bats `@test` per Test Coverage Table row + filter regression + source
   - **Commit**: `test(detect-ci): add gradle (DSL + wrapper) tests`
   - _Requirements: FR-3, FR-10, AC-3.1, AC-3.4, AC-3.5_
 
-- [ ] 3.6 maven + coexist tests
+- [x] 3.6 maven + coexist tests
   - **Do**: Add `@test`s — each `@test` description string MUST contain a keyword matched by the `-f 'maven|coexist'` Verify filter (the pom.xml and `./mvnw` test descriptions must contain `maven`; the Gradle+Maven test description must contain `coexist`): `pom.xml` → `mvn test`/`mvn package`; `./mvnw` fixture → wrapper analog survives; Gradle+Maven coexist → both command sets present.
   - **Files**: tests/ci-autodetect.bats
   - **Done when**: maven + coexist tests exist and pass.
