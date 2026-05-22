@@ -320,7 +320,7 @@ Focus: one bats `@test` per Test Coverage Table row + filter regression + source
   - **Commit**: `fix(detect-ci): address lint/syntax issues` (only if fixes needed)
   - _Requirements: NFR-5_
 
-- [ ] VE1 [VERIFY] E2E startup: build temp fixtures + PATH stub bins
+- [x] VE1 [VERIFY] E2E startup: build temp fixtures + PATH stub bins
   - **Do**:
     1. Create a temp fixture root: `VE_TMP=$(mktemp -d); echo "$VE_TMP" > /tmp/ve-mls.txt`.
     2. Create a STUBBIN dir with stub binaries: `VE_STUB=$(mktemp -d); echo "$VE_STUB" >> /tmp/ve-mls.txt; for b in composer bundle mix deno dotnet gradle mvn npm; do printf '#!/bin/sh\n' > "$VE_STUB/$b"; chmod +x "$VE_STUB/$b"; done`.
