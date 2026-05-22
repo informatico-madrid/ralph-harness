@@ -125,6 +125,19 @@ detect_composer() {
   ENTRIES+=('{"command":"composer test","category":"test"}')
 }
 
+detect_gradle() {
+  local base="$1"
+  [[ -f "$base/build.gradle" || -f "$base/build.gradle.kts" ]] || return 0
+  local W
+  if [[ -x "$base/gradlew" ]]; then
+    W="./gradlew"
+  else
+    W="gradle"
+  fi
+  ENTRIES+=("{\"command\":\"$W test\",\"category\":\"test\"}")
+  ENTRIES+=("{\"command\":\"$W build\",\"category\":\"build\"}")
+}
+
 detect_ci_commands() {
   local SPEC_PATH="$1"
   local ENTRIES=()
@@ -138,6 +151,7 @@ detect_ci_commands() {
   detect_go_mod "$SPEC_PATH"
   detect_gemfile "$SPEC_PATH"
   detect_composer "$SPEC_PATH"
+  detect_gradle "$SPEC_PATH"
 
   # --- Write-time command -v filter (AC-2.4, D5) ---
   for entry in "${ENTRIES[@]}"; do

@@ -107,7 +107,7 @@ Focus: add the remaining 6 detectors and the `./`-token filter patch with honest
   - _Requirements: FR-1, AC-1.1, AC-1.2, AC-1.3, AC-1.4_
   - _Design: 6 new detectors_
 
-- [ ] 2.2 Add `detect_gradle` (both DSLs, wrapper-aware)
+- [x] 2.2 Add `detect_gradle` (both DSLs, wrapper-aware)
   - **Do**:
     1. Add `detect_gradle() { local base="$1"; [[ -f "$base/build.gradle" || -f "$base/build.gradle.kts" ]] || return 0; local W; if [[ -x "$base/gradlew" ]]; then W="./gradlew"; else W="gradle"; fi; ENTRIES+=("{\"command\":\"$W test\",\"category\":\"test\"}"); ENTRIES+=("{\"command\":\"$W build\",\"category\":\"build\"}"); }`.
     2. NO `check`-as-typecheck (AC-3.4). Wire into `detect_ci_commands`.
