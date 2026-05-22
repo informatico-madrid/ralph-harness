@@ -301,7 +301,7 @@ Focus: one bats `@test` per Test Coverage Table row + filter regression + source
   - **Commit**: `docs(quality-commands): add PHP + C#/.NET ecosystem rows`
   - _Requirements: FR-11, AC-8.1, AC-8.2_
 
-- [x] 4.2 Version bump 5.9.5 → 5.10.0 in both manifests
+ - [x] 4.2 Version bump 5.9.5 → 5.10.0 in both manifests
   - **Do**: Bump `version` to `5.10.0` in `plugins/ralphharness/.claude-plugin/plugin.json` AND the ralphharness entry in `.claude-plugin/marketplace.json`.
   - **Files**: plugins/ralphharness/.claude-plugin/plugin.json, .claude-plugin/marketplace.json
   - **Done when**: Both manifests show 5.10.0 for ralphharness.

@@ -996,3 +996,83 @@ Delegating task 3.9 to spec-executor:
 - Do: Add ./-filter wrapper regression test to bats
 - Files: tests/ci-autodetect.bats
 - Verify: bats -f 'filter|gradlew|wrapper' --count >= 1 + bats -f 'filter|gradlew|wrapper'
+### [2026-05-22 19:55:00] coordinator → external-reviewer
+**Task**: T26
+**Signal**: CONTINUE
+
+Task complete. Advancing to T27.
+### [2026-05-22 19:50:00] coordinator → external-reviewer
+**Task**: T26
+**Signal**: CONTINUE
+
+Delegating task 3.9 [VERIFY] to qa-engineer:
+- Do: Run bash -n, full bats (regression test for ./-filter)
+- Verify: bash -n + bats + echo CHECKPOINT_OK
+### [2026-05-22 20:00:00] coordinator → external-reviewer
+**Task**: T26
+**Signal**: CONTINUE
+
+Verification PASS for task 3.9. Advancing to T27.
+### [2026-05-22 20:00:00] coordinator → external-reviewer
+**Task**: T27
+**Signal**: CONTINUE
+
+Delegating task 3.10 to spec-executor:
+- Do: Add source-no-side-effects + sourced-call integration tests
+- Files: tests/ci-autodetect.bats
+- Verify: bats -f 'source|sourced' --count >= 2 + bats -f 'source|sourced'
+### [2026-05-22 19:36:37] spec-executor → external-reviewer
+**Task**: T3.10
+**Signal**: OVER
+
+Task 3.10 complete — source-no-side-effects + sourced-call integration tests added.
+
+**Changes**:
+- tests/ci-autodetect.bats: added 2 integration tests
+  - `source detect-ci-commands.sh with no args has no side effects` — verifies exit 0, no stdout, set -e not leaked
+  - `sourced detect_ci_commands emits valid JSON for a multi-marker fixture` — verifies Gemfile + package.json fixture produces valid JSON array with correct tuples
+
+**Verification**:
+- `bats tests/ci-autodetect.bats -f 'source|sourced' --count` → 2 ✓
+- `bats tests/ci-autodetect.bats -f 'source|sourced'` → 2/2 PASS ✓
+- Full suite: 36/36 (35 pass + 1 skipped pre-existing, test 13) ✓
+
+**Commit**: f2294cc
+
+**Expected Response**: ACK
+### [2026-05-22 20:05:00] coordinator → external-reviewer
+**Task**: T27
+**Signal**: CONTINUE
+
+Task complete. Advancing to T28.
+### [2026-05-22 19:45:00] Spec-Executor → Task 4.1 Complete
+**Task**: T4.1
+**Signal**: ACK
+
+Completed: Added PHP (`composer.json`) and C#/.NET (`*.csproj`/`*.sln`) rows to quality-commands.md config table (lines 73-74). No duplicate ecosystem rows added.
+
+**Commit**: 15536e1
+**Verify**: DOC_OK (grep confirmed both rows present)
+
+**Expected Response**: ACK
+
+### [2026-05-22 20:15:00] spec-executor → external-reviewer
+**Task**: T4.2
+**Signal**: OVER
+
+Task 4.2 complete — version bump 5.9.5 → 5.10.0 in both manifests.
+
+**Changes**:
+- plugins/ralphharness/.claude-plugin/plugin.json: version 5.9.5 → 5.10.0
+- .claude-plugin/marketplace.json: ralphharness version 5.9.5 → 5.10.0
+- tasks.md: task 4.2 already [x] (marked in prior session)
+- .progress.md: updated with 4.2 and 4.3 completion entries
+
+**Verification**:
+- grep version 5.10.0 in plugin.json → found ✓
+- jq ralphharness version in marketplace.json → 5.10.0 ✓
+- Verify command: VERSION_OK ✓
+
+**Commit**: aba8c55
+
+**Expected Response**: ACK

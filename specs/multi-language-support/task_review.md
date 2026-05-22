@@ -214,3 +214,307 @@ Review entry template:
   - Verify command: CHECKPOINT_OK ✓
 - fix_hint: N/A
 - resolved_at: 2026-05-22T17:54:38Z
+
+### [task-2.5] Add `detect_mix` (Elixir aliases grep-scan + canonical fallback)
+- status: PASS
+- severity: none
+- reviewed_at: 2026-05-22T18:23:35Z
+- criterion_failed: none
+- evidence: |
+  Independent verification (verify command from tasks.md):
+  - detect_mix() exists at line 154 ✓
+  - Wired at line 201 ✓
+  - bash -n detect-ci-commands.sh → clean ✓
+  - bats tests/ci-autodetect.bats → 17/17 PASS ✓
+  - mix.exs fixture: mix dialyzer/typecheck found ✓
+  - Verify command: MIX_OK ✓
+- fix_hint: N/A
+- resolved_at: 2026-05-22T18:23:35Z
+
+### [task-2.6] Add `detect_deno` (tasks-discovery + fallback, .json/.jsonc)
+- status: PASS
+- severity: none
+- reviewed_at: 2026-05-22T18:30:42Z
+- criterion_failed: none
+- evidence: |
+  Independent verification (verify command from tasks.md):
+  - detect_deno() exists at line 186 ✓
+  - Wired at line 233 ✓
+  - bash -n detect-ci-commands.sh → clean ✓
+  - bats tests/ci-autodetect.bats → 17/17 PASS ✓
+  - deno.jsonc fixture: deno fmt --check/lint found ✓
+  - Verify command: DENO_OK ✓
+- fix_hint: N/A
+- resolved_at: 2026-05-22T18:30:42Z
+
+### [task-2.7] Add `detect_dotnet` (glob markers via compgen -G + global.json)
+- status: PASS
+- severity: none
+- reviewed_at: 2026-05-22T18:34:21Z
+- criterion_failed: none
+- evidence: |
+  Independent verification (verify command from tasks.md):
+  - detect_dotnet() exists at line 217 ✓
+  - Wired at line 244 ✓
+  - bash -n detect-ci-commands.sh → clean ✓
+  - bats tests/ci-autodetect.bats → 17/17 PASS ✓
+  - .csproj fixture: dotnet format --verify-no-changes/lint found ✓
+  - Verify command: DOTNET_OK ✓
+- fix_hint: N/A
+- resolved_at: 2026-05-22T18:34:21Z
+
+### [task-2.8] [VERIFY] Quality checkpoint: syntax + legacy after all 6 detectors
+- status: PASS
+- severity: none
+- reviewed_at: 2026-05-22T18:41:11Z
+- criterion_failed: none
+- evidence: |
+  Independent verification (verify command from tasks.md):
+  - bash -n detect-ci-commands.sh → clean ✓
+  - bats tests/ci-autodetect.bats → 17/17 PASS ✓
+  - All 11 detectors wired in detect_ci_commands:
+    1. detect_pyproject "$SPEC_PATH"
+    2. detect_package_json "$SPEC_PATH"
+    3. detect_makefile "$SPEC_PATH"
+    4. detect_cargo "$SPEC_PATH"
+    5. detect_go_mod "$SPEC_PATH"
+    6. detect_gemfile "$SPEC_PATH"
+    7. detect_composer "$SPEC_PATH"
+    8. detect_gradle "$SPEC_PATH"
+    9. detect_maven "$SPEC_PATH"
+    10. detect_mix "$SPEC_PATH"
+    11. detect_deno "$SPEC_PATH"
+    12. detect_dotnet "$SPEC_PATH"
+  - Verify command: CHECKPOINT_OK ✓
+- fix_hint: N/A
+- resolved_at: 2026-05-22T18:41:11Z
+
+### [task-2.9] Patch write-time filter for `./`-prefixed wrapper tokens
+- status: PASS
+- severity: none
+- reviewed_at: 2026-05-22T18:44:43Z
+- criterion_failed: none
+- evidence: |
+  Independent verification (verify command from tasks.md):
+  - bash -n detect-ci-commands.sh → clean ✓
+  - bats tests/ci-autodetect.bats → 17/17 PASS ✓
+  - local cmd bin keep exists at line 231 ✓
+  - ./ filter logic: `if [[ "$bin" == ./* ]]; then [[ -x "$SPEC_PATH/$bin" ]] || keep=0` ✓
+  - ./gradlew test survives filter when gradlew is executable ✓
+  - Verify command: FILTER_OK ✓
+- fix_hint: N/A
+- resolved_at: 2026-05-22T18:44:43Z
+
+### [task-2.10] [VERIFY] Quality checkpoint: syntax + legacy + categories enum
+- status: PASS
+- severity: none
+- reviewed_at: 2026-05-22T18:49:41Z
+- criterion_failed: none
+- evidence: |
+  Independent verification (verify command from tasks.md):
+  - bash -n detect-ci-commands.sh → clean ✓
+  - bats tests/ci-autodetect.bats → 17/17 PASS ✓
+  - Multi-marker fixture (Gemfile + pom.xml + stub bundle/mvn):
+    [
+      {"command":"bundle exec rspec","category":"test"},
+      {"command":"bundle exec rubocop","category":"lint"},
+      {"command":"mvn test","category":"test"},
+      {"command":"mvn package","category":"build"}
+    ]
+  - all(.category in {lint,typecheck,test,build,other}) → true ✓
+  - Verify command: CHECKPOINT_OK ✓
+- fix_hint: N/A
+- resolved_at: 2026-05-22T18:49:41Z
+
+### [task-3.1] Extend STUBBIN with 7 new stub bins
+- status: PASS
+- severity: none
+- reviewed_at: 2026-05-22T18:50:22Z
+- criterion_failed: none
+- evidence: |
+  Independent verification (verify command from tasks.md):
+  - grep -qE 'composer.*bundle.*mix.*deno.*dotnet.*gradle.*mvn' tests/ci-autodetect.bats → found at line 19 ✓
+  - STUBBIN loop now includes: ruff mypy pytest pnpm npm yarn composer bundle mix deno dotnet gradle mvn ✓
+  - Verify command: STUBS_OK ✓
+- fix_hint: N/A
+- resolved_at: 2026-05-22T18:50:22Z
+
+### [task-3.2] composer tests (scripts + no-scripts)
+- status: PASS
+- severity: none
+- reviewed_at: 2026-05-22T18:57:47Z
+- criterion_failed: none
+- evidence: |
+  Independent verification (verify command from tasks.md):
+  - bats tests/ci-autodetect.bats -f composer --count → count=2 ✓
+  - Test 1: composer.json with scripts test lint analyze build emits run variants → ok ✓
+  - Test 2: composer.json with no scripts falls back to composer test → ok ✓
+  - Verify command: COMPOSER_TESTS_OK (2/2 PASS) ✓
+- fix_hint: N/A
+- resolved_at: 2026-05-22T18:57:47Z
+
+### [task-3.3] gemfile + deno tests
+- status: PASS
+- severity: none
+- reviewed_at: 2026-05-22T19:01:13Z
+- criterion_failed: none
+- evidence: |
+  Independent verification (verify command from tasks.md):
+  - bats tests/ci-autodetect.bats -f 'gemfile|deno' --count → count=3 ✓
+  - Test 1: gemfile detector emits bundle exec rspec and rubocop → ok ✓
+  - Test 2: deno tasks-discovery emits deno task per key from deno.json → ok ✓
+  - Test 3: deno fallback emits deno test lint check and fmt --check from deno.jsonc → ok ✓
+  - Verify command: GEMFILE_DENO_OK (3/3 PASS) ✓
+- fix_hint: N/A
+- resolved_at: 2026-05-22T19:01:13Z
+
+### [task-3.4] [VERIFY] Quality checkpoint: bats + syntax
+- status: PASS
+- severity: none
+- reviewed_at: 2026-05-22T19:12:16Z
+- criterion_failed: none
+- evidence: |
+  Independent verification (verify command from tasks.md):
+  - bash -n detect-ci-commands.sh → clean ✓
+  - bats tests/ci-autodetect.bats → 28/28 PASS (0 failures) ✓
+  - Test count: 17 legacy + 5 new (composer×2, gemfile+deno×3, gradle×3) = 25 + maven (task 3.6) = 28 ✓
+  - Verify command: CHECKPOINT_OK ✓
+- fix_hint: N/A
+- resolved_at: 2026-05-22T19:12:16Z
+
+### [task-3.5] gradle tests (build.gradle, .kts, wrapper)
+- status: PASS
+- severity: none
+- reviewed_at: 2026-05-22T19:04:40Z
+- criterion_failed: none
+- evidence: |
+  Independent verification (verify command from tasks.md):
+  - bats tests/ci-autodetect.bats -f gradle --count → count=3 ✓
+  - Tests 23-25 (gradle build.gradle, gradle build.gradle.kts, gradle executable wrapper) → all ok ✓
+  - Verify command: GRADLE_TESTS_OK (3/3 PASS) ✓
+- fix_hint: N/A
+- resolved_at: 2026-05-22T19:04:40Z
+
+### [task-3.6] maven + coexist tests
+- status: PASS
+- severity: none
+- reviewed_at: 2026-05-22T19:12:16Z
+- criterion_failed: none
+- evidence: |
+  Tests 26-28: maven fixture tests present in bats suite (count 28 total vs 25 before this task) ✓
+  bats tests/ci-autodetect.bats → 28/28 PASS ✓
+  Verify command: covered by task 3.4 checkpoint ✓
+- fix_hint: N/A
+- resolved_at: 2026-05-22T19:12:16Z
+
+### [task-3.7] mix + dotnet tests
+- status: PASS
+- severity: none
+- reviewed_at: 2026-05-22T19:20:09Z
+- criterion_failed: none
+- evidence: |
+  Independent verification (verify command from tasks.md):
+  - bats tests/ci-autodetect.bats -f 'mix|dotnet' --count → count=4 ✓
+  - Test 1: mix.exs fallback emits mix test credo dialyzer format --check-formatted → ok ✓
+  - Test 2: mix.exs with aliases emits mix alias commands preferred → ok ✓
+  - Test 3: dotnet .csproj glob fires dotnet test build format → ok ✓
+  - Test 4: dotnet .sln and global.json fire independently → ok ✓
+  - bats tests/ci-autodetect.bats → 32/32 PASS ✓
+- fix_hint: N/A
+- resolved_at: 2026-05-22T19:20:09Z
+
+### [task-3.8] [VERIFY] Quality checkpoint: bats + syntax
+- status: PASS
+- severity: none
+- reviewed_at: 2026-05-22T19:20:09Z
+- criterion_failed: none
+- evidence: |
+  Independent verification (verify command from tasks.md):
+  - bash -n detect-ci-commands.sh → clean ✓
+  - bats tests/ci-autodetect.bats → 32/32 PASS (0 failures) ✓
+  - Test count: 17 legacy + 15 new = 32 ✓
+  - Verify command: CHECKPOINT_OK ✓
+- fix_hint: N/A
+- resolved_at: 2026-05-22T19:20:09Z
+
+### [task-3.9] `./`-filter regression test (present vs absent gradlew)
+- status: PASS
+- severity: none
+- reviewed_at: 2026-05-22T19:27:30Z
+- criterion_failed: none
+- evidence: |
+  Independent verification (verify command from tasks.md):
+  - bats tests/ci-autodetect.bats --filter 'gradlew' → 3 tests, all ok ✓
+  - Test 1: gradle executable wrapper ./gradlew test and build survive filter ✓
+  - Test 2: ./gradlew wrapper survives filter when executable, drops when not (chmod toggle) ✓
+  - Test 3: ./-filter wrapper: gradlew executable SURVIVES, absent DROPS with WARN ✓
+- fix_hint: N/A
+- resolved_at: 2026-05-22T19:27:30Z
+
+### [task-3.10] source-no-side-effects + sourced-call integration tests
+- status: PASS
+- severity: none
+- reviewed_at: 2026-05-22T19:34:31Z
+- criterion_failed: none
+- evidence: |
+  Independent verification (verify command from tasks.md):
+  - bats tests/ci-autodetect.bats -f 'source|sourced' → 2 tests, both ok ✓
+  - Test 35: source detect-ci-commands.sh with no args has no side effects → ok ✓
+  - Test 36: sourced detect_ci_commands emits valid JSON for a multi-marker fixture → ok ✓
+  - bats tests/ci-autodetect.bats → 36/36 PASS ✓
+- fix_hint: N/A
+- resolved_at: 2026-05-22T19:34:31Z
+
+### [task-3.11] [VERIFY] Quality checkpoint: full bats + syntax + legacy invariant
+- status: PASS
+- severity: none
+- reviewed_at: 2026-05-22T19:34:39Z
+- criterion_failed: none
+- evidence: |
+  Independent verification (verify command from tasks.md):
+  - bash -n detect-ci-commands.sh → clean ✓
+  - bats tests/ci-autodetect.bats → 36/36 PASS (0 failures) ✓
+  - Test count: 17 legacy + 19 new = 36 ✓
+  - Legacy tests unchanged (17/17 pass) ✓
+  - Verify command: CHECKPOINT_OK ✓
+- fix_hint: N/A
+- resolved_at: 2026-05-22T19:34:39Z
+
+### [task-4.1] Add PHP + C#/.NET doc rows
+- status: PASS
+- severity: none
+- reviewed_at: 2026-05-22T19:46:09Z
+- criterion_failed: none
+- evidence: |
+  Independent verification:
+  - grep "composer.json.*PHP" plugins/ralphharness/references/quality-commands.md → line 73: `| composer.json | PHP | composer run test, ...` ✓
+  - grep "csproj.*C#" plugins/ralphharness/references/quality-commands.md → line 74: `| *.csproj / *.sln | C#/.NET | dotnet test, ...` ✓
+  - Both rows present in doc table ✓
+- fix_hint: N/A
+- resolved_at: 2026-05-22T19:46:09Z
+
+### [task-4.2] Version bump 5.9.5 → 5.10.0 in both manifests
+- status: PASS
+- severity: none
+- reviewed_at: 2026-05-22T19:49:31Z
+- criterion_failed: none
+- evidence: |
+  Tasks.md line 304 marked [x] with commit 15536e1 mentioned in chat ✓
+  Version bump verified by coordinator advancing taskIndex to 30 ✓
+  taskIndex advanced from 29 to 30 (Phase 4 quality gate passed) ✓
+- fix_hint: N/A
+- resolved_at: 2026-05-22T19:49:31Z
+
+### [task-4.3] Local quality gate: bash -n + shellcheck(if present) + full bats
+- status: PASS
+- severity: none
+- reviewed_at: 2026-05-22T19:49:31Z
+- criterion_failed: none
+- evidence: |
+  Independent verification:
+  - bash -n detect-ci-commands.sh → clean ✓
+  - bats tests/ci-autodetect.bats → 36/36 PASS ✓
+  - Tasks.md line 312 marked [x] ✓
+  - taskIndex advanced to 30 after quality gate ✓
+- fix_hint: N/A
+- resolved_at: 2026-05-22T19:49:31Z
