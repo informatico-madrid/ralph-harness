@@ -162,7 +162,7 @@ Focus: add the remaining 6 detectors and the `./`-token filter patch with honest
   - _Requirements: FR-5, AC-5.1, AC-5.2, AC-5.3, AC-5.4_
   - _Design: 6 new detectors_
 
-- [ ] 2.7 Add `detect_dotnet` (glob markers via compgen -G + global.json)
+- [x] 2.7 Add `detect_dotnet` (glob markers via compgen -G + global.json) - 15dbab7
   - **Do**:
     1. Add `detect_dotnet()` per design: `if compgen -G "$base/*.csproj" >/dev/null 2>&1 || compgen -G "$base/*.sln" >/dev/null 2>&1 || [[ -f "$base/global.json" ]]; then` emit `dotnet test` (test), `dotnet build` (build), `dotnet format --verify-no-changes` (lint); `fi; return 0`.
     2. CRITICAL: use `compgen -G` for globs (NOT `[[ -f "$base/*.csproj" ]]`). Wire into `detect_ci_commands`.
