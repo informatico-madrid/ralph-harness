@@ -10,7 +10,7 @@
     {
       "name": "ralphharness",
       "description": "Spec-driven development with bidirectional chat protocol, RAG integration, and smart compaction. Research, requirements, design, tasks, autonomous execution, epic triage, and interactive onboarding. Fresh context per task.",
-      "version": "5.9.4",
+      "version": "5.9.5",
       "author": {
         "name": "informatico-madrid"
       },
