@@ -136,7 +136,7 @@ Focus: add the remaining 6 detectors and the `./`-token filter patch with honest
   - **Commit**: `chore(detect-ci): pass quality checkpoint` (only if fixes needed)
   - _Requirements: NFR-4, NFR-5_
 
-- [ ] 2.5 Add `detect_mix` (Elixir aliases grep-scan + canonical fallback)
+- [x] 2.5 Add `detect_mix` (Elixir aliases grep-scan + canonical fallback)
   - **Do**:
     1. Add `detect_mix() { local base="$1"; [[ -f "$base/mix.exs" ]] || return 0; ... }`.
     2. Best-effort grep-scan `mix.exs` for alias names via `grep -oE` of known names (test/lint/credo/dialyzer/format) inside the aliases block; emit `mix <alias>` for matches.
