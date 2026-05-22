@@ -151,6 +151,38 @@ detect_maven() {
   ENTRIES+=("{\"command\":\"$M package\",\"category\":\"build\"}")
 }
 
+detect_mix() {
+  local base="$1"
+  [[ -f "$base/mix.exs" ]] || return 0
+
+  # Best-effort: grep-scan mix.exs aliases block for known alias names
+  local aliases
+  aliases=$(sed -n '/aliases/,/end(/p' "$base/mix.exs" 2>/dev/null \
+    | grep -oE '"(test|lint|credo|dialyzer|format)[a-zA-Z0-9_-]*"' || true)
+  if [[ -n "$aliases" ]]; then
+    while IFS= read -r alias_name; do
+      [[ -n "$alias_name" ]] || continue
+      local name="${alias_name//\"/}"
+      local category="other"
+      case "$name" in
+        test*)    category="test" ;;
+        lint*)    category="lint" ;;
+        credo)    category="lint" ;;
+        dialyz*)  category="typecheck" ;;
+        format*)  category="lint" ;;
+      esac
+      ENTRIES+=("{\"command\":\"mix ${name}\",\"category\":\"${category}\"}")
+    done <<< "$aliases"
+    return 0
+  fi
+
+  # Canonical fallback
+  ENTRIES+=('{"command":"mix test","category":"test"}')
+  ENTRIES+=('{"command":"mix credo","category":"lint"}')
+  ENTRIES+=('{"command":"mix dialyzer","category":"typecheck"}')
+  ENTRIES+=('{"command":"mix format --check-formatted","category":"lint"}')
+}
+
 detect_ci_commands() {
   local SPEC_PATH="$1"
   local ENTRIES=()
@@ -166,6 +198,7 @@ detect_ci_commands() {
   detect_composer "$SPEC_PATH"
   detect_gradle "$SPEC_PATH"
   detect_maven "$SPEC_PATH"
+  detect_mix "$SPEC_PATH"
 
   # --- Write-time command -v filter (AC-2.4, D5) ---
   for entry in "${ENTRIES[@]}"; do

@@ -129,7 +129,7 @@ Focus: add the remaining 6 detectors and the `./`-token filter patch with honest
   - _Requirements: FR-3, AC-3.2, AC-3.3_
   - _Design: 6 new detectors_
 
-- [ ] 2.4 [VERIFY] Quality checkpoint: syntax + legacy after PHP/JVM detectors
+- [x] 2.4 [VERIFY] Quality checkpoint: syntax + legacy after PHP/JVM detectors
   - **Do**: Run `bash -n` and full legacy bats.
   - **Verify**: `bash -n plugins/ralphharness/hooks/scripts/detect-ci-commands.sh && bats tests/ci-autodetect.bats && echo CHECKPOINT_OK`
   - **Done when**: `bash -n` clean, 17/17 legacy pass.
