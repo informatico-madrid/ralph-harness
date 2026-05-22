@@ -205,7 +205,7 @@ Focus: one bats `@test` per Test Coverage Table row + filter regression + source
 
 > Phase 3 test tasks append serially to the single file `tests/ci-autodetect.bats` — they are logically independent but must NOT be run as concurrent file writers.
 
-- [ ] 3.1 Extend STUBBIN with 7 new stub bins
+- [x] 3.1 Extend STUBBIN with 7 new stub bins
   - **Do**: In `setup()`, extend the existing `for bin in ...` loop to also create stubs for `composer bundle mix deno dotnet gradle mvn` in `STUBBIN`.
   - **Files**: tests/ci-autodetect.bats
   - **Done when**: All 7 new stub bins are created and executable in `STUBBIN`.

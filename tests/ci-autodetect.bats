@@ -16,7 +16,7 @@ setup() {
     TEST_ROOT="$REPO_ROOT"
     # Create stub binaries so write-time command -v filter doesn't drop entries
     STUBBIN=$(mktemp -d)
-    for bin in ruff mypy pytest pnpm npm yarn; do
+    for bin in ruff mypy pytest pnpm npm yarn composer bundle mix deno dotnet gradle mvn; do
         printf '#!/bin/sh\nexec "$@"\n' > "$STUBBIN/$bin"
         chmod +x "$STUBBIN/$bin"
     done
