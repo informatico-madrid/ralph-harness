@@ -65,7 +65,7 @@ Focus: prove the FR-13 refactor (sourceable function + BASH_SOURCE guard) works 
   - _Requirements: FR-13, AC-9.1, AC-9.3, AC-9.4_
   - _Design: Data Flow_
 
-- [ ] 1.6 Prove detector-add pattern: implement `detect_gemfile`
+- [x] 1.6 Prove detector-add pattern: implement `detect_gemfile`
   - **Do**:
     1. Add top-level `detect_gemfile() { local base="$1"; [[ -f "$base/Gemfile" ]] || return 0; ENTRIES+=('{"command":"bundle exec rspec","category":"test"}'); ENTRIES+=('{"command":"bundle exec rubocop","category":"lint"}'); }`.
     2. Wire `detect_gemfile "$SPEC_PATH"` into `detect_ci_commands` in deterministic order (after the existing 5).

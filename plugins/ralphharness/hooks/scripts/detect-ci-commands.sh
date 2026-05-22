@@ -89,6 +89,14 @@ detect_go_mod() {
   ENTRIES+=('{"command":"go test ./...","category":"test"}')
 }
 
+detect_gemfile() {
+  local base="$1"
+  [[ -f "$base/Gemfile" ]] || return 0
+
+  ENTRIES+=('{"command":"bundle exec rspec","category":"test"}')
+  ENTRIES+=('{"command":"bundle exec rubocop","category":"lint"}')
+}
+
 detect_ci_commands() {
   local SPEC_PATH="$1"
   local ENTRIES=()
@@ -100,6 +108,7 @@ detect_ci_commands() {
   detect_makefile "$SPEC_PATH"
   detect_cargo "$SPEC_PATH"
   detect_go_mod "$SPEC_PATH"
+  detect_gemfile "$SPEC_PATH"
 
   # --- Write-time command -v filter (AC-2.4, D5) ---
   for entry in "${ENTRIES[@]}"; do
