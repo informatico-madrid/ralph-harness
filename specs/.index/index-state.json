@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "updated": "2026-05-22T18:09:18Z",
+  "updated": "2026-05-22T21:28:28Z",
   "directories": [
     {
       "path": "./specs",
@@ -396,8 +396,8 @@
     {
       "name": "multi-language-support",
       "path": "./specs/multi-language-support",
-      "phase": "execution",
-      "taskIndex": 0,
+      "phase": "completed",
+      "taskIndex": 41,
       "totalTasks": 41
     }
   ]

@@ -365,7 +365,7 @@ Focus: one bats `@test` per Test Coverage Table row + filter regression + source
 
 ## Phase 5: PR Lifecycle
 
-- [ ] 5.1 Create PR and verify CI
+ - [x] 5.1 Create PR and verify CI
   - **Do**:
     1. Verify current branch is a feature branch: `git branch --show-current` (if on `main`, STOP and alert — branch should be set at startup).
     2. Push branch: `git push -u origin <branch-name>`.
@@ -384,14 +384,14 @@ Focus: one bats `@test` per Test Coverage Table row + filter regression + source
   - **Verify**: `gh pr checks | grep -qiv fail && echo CI_GREEN`
   - **Commit**: `fix(detect-ci): resolve CI failures` (only if fixes needed)
 
-- [ ] V6 [VERIFY] AC checklist
+ - [x] V6 [VERIFY] AC checklist
   - **Do**: Read requirements.md and programmatically verify each AC. For each ecosystem run the detector against a temp fixture and assert the expected tuples; assert `./`-filter behavior, source-no-side-effects, version bump, doc rows, and 17-legacy-pass invariant.
   - **Files**: none
   - **Done when**: All AC-1.* through AC-9.* confirmed met via automated checks.
   - **Verify**: `bats tests/ci-autodetect.bats && grep -q '"version": "5.10.0"' plugins/ralphharness/.claude-plugin/plugin.json && echo AC_CHECKLIST_OK`
   - **Commit**: None
 
-- [ ] V7 [VERIFY] Phase 5 exit gate
+ - [x] V7 [VERIFY] Phase 5 exit gate
   - **Do**: Confirm PR created, CI green, all ACs satisfied.
   - **Verify**: `gh pr checks | grep -qiv fail && echo PHASE5_GATE_OK`
   - **Done when**: PR ready for review with all completion criteria met.
