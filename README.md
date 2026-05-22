@@ -237,6 +237,123 @@ Each phase transition uses targeted compaction:
 | Tasks | Task list, dependencies, quality gates |
 | Per-task | Current task context only |
 
+### RAG Integration
+
+RAG (Retrieval-Augmented Generation) is an opt-in layer that enriches the Ralph Loop with past spec data. Enable via `/ralphharness:rag-onboard`.
+
+#### Architecture
+
+```mermaid
+flowchart TB
+    subgraph Plugin["RalphHarness Plugin (Bash + MD)"]
+        agents[agents/*.md]
+        cmds[commands/*.md]
+        hooks[hooks/scripts/*.sh]
+        sig[signals.jsonl]
+    end
+
+    subgraph RAG["rag/ Python Module"]
+        lib[lib-rag.sh<br/>Bash entry point]
+        cli[__main__.py<br/>CLI dispatch]
+        svc[service.py<br/>RAGService facade]
+        cfg[config.py<br/>YAML + env config]
+        sec[security.py<br/>Allowlist sanitization]
+        chk[chunker.py<br/>Artifact splitter]
+        prov[providers/<br/>Qdrant + FAISS]
+        emb[embedder/<br/>Local · OpenAI · Azure]
+    end
+
+    subgraph VectorDB["Vector Storage"]
+        qd[Qdrant<br/>primary]
+        fa[FAISS<br/>fallback]
+    end
+
+    Plugin -->|calls| lib
+    lib -->|subprocess| cli
+    cli --> svc
+    cfg -.->|loads| svc
+    svc --> sec --> chk --> emb --> prov
+    prov --> qd
+    prov -.->|fallback| fa
+```
+
+#### Retrieval Flows
+
+RAG integrates at four points in the Ralph Loop — each call uses a short timeout (2–5s) and never blocks the loop on failure:
+
+```mermaid
+flowchart LR
+    subgraph Triggers["Ralph Loop Triggers"]
+        pre[Pre-Task<br/>Similar tasks]
+        err[On-Error<br/>Past solutions]
+        post[Post-Task<br/>Indexing]
+        rev[On-Review<br/>Context lookup]
+    end
+
+    subgraph RAG["RAGService"]
+        retrieve["retrieve(query, collection, top-k)"]
+        index["index(source, spec-name)"]
+    end
+
+    subgraph Output["Context Injection"]
+        sim[Similar Past Tasks<br/>→ spec-executor prompt]
+        past[Past Solutions<br/>→ retry prompt]
+        sig[signals.jsonl<br/>INDEXING_QUEUED / RETRIEVAL_FAILED]
+    end
+
+    pre -->|2s| retrieve
+    err -->|2s| retrieve
+    post -->|5s| index
+    rev -->|2s| retrieve
+
+    retrieve -->|chunks| sim
+    retrieve -->|error context| past
+    index -.->|success| sig
+    retrieve -.->|failure| sig
+```
+
+#### Configuration
+
+Configured in `.ralphharness.local.md` under the `rag:` YAML block. Environment variables override any setting.
+
+```mermaid
+flowchart TB
+    subgraph Sources["Configuration Sources"]
+        yml[".ralphharness.local.md<br/>rag: YAML block"]
+        env["RALPH_RAG_ENABLED<br/>RALPH_RAG_ENDPOINT<br/>EMBED_API_KEY<br/>QDRANT_API_KEY"]
+    end
+
+    subgraph Strategy["Provider Strategy"]
+        emb["Embedder: local → openai → azure"]
+        db["VectorDB: Qdrant primary → FAISS fallback"]
+    end
+
+    subgraph Onboard["7-Step Onboarding (/ralphharness:rag-onboard)"]
+        s1[Python check]
+        s2[Python deps]
+        s3[Vector DB]
+        s4[Embedder]
+        s5[Config]
+        s6[Index bootstrap]
+        s7[Doctor check]
+        s1 --> s2 --> s3 --> s4 --> s5 --> s6 --> s7
+    end
+
+    subgraph Collections["6 Collections"]
+        c1[specs_tasks]
+        c2[specs_requirements]
+        c3[specs_design]
+        c4[specs_research]
+        c5[execution_memory]
+        c6[reviews]
+    end
+
+    yml --> cfg[config.py] --> Strategy
+    env -->|overrides| Strategy
+    Onboard -->|writes| yml
+    Strategy --> Collections
+```
+
 ### Progress File
 
 The `.ralph-progress.md` file carries state across compactions:
@@ -319,13 +436,34 @@ RalphHarness/
 │   ├── cancel-ralph.md
 │   ├── approve.md
 │   └── help.md
+│   └── rag-onboard.md
+│   └── rag-search.md
+│   └── rag-doctor.md
+│   └── index-all.md
 ├── skills/
 │   └── spec-workflow/
 │       └── SKILL.md
 ├── hooks/
 │   ├── hooks.json
 │   └── scripts/
-│       └── stop-handler.sh
+│       ├── stop-handler.sh
+│       └── lib-rag.sh
+├── rag/
+│   ├── __main__.py
+│   ├── service.py
+│   ├── config.py
+│   ├── security.py
+│   ├── chunker.py
+│   ├── signals.py
+│   ├── onboarding.py
+│   ├── providers/
+│   │   ├── qdrant.py
+│   │   └── faiss.py
+│   └── embedder/
+│       ├── base.py
+│       ├── local.py
+│       ├── openai.py
+│       └── azure.py
 ├── templates/
 │   ├── requirements.md
 │   ├── design.md
