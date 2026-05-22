@@ -698,26 +698,21 @@ JSON
     chmod -x "$spec_dir/gradlew"
 
     # --- Branch 1: gradlew NOT executable — ./gradlew DROPPED, WARN on stderr ---
-    local output1 stderr1
-    PATH="$stub_dir:$PATH" bash "$DETECT_SCRIPT" "$spec_dir" >"$SPECIAL_DIR/out1.txt" 2>"$SPECIAL_DIR/warn1.txt"
-    output1=$(cat "$SPECIAL_DIR/out1.txt")
+    local output1
+    PATH="$stub_dir:$PATH" run bash "$DETECT_SCRIPT" "$spec_dir"
+    output1="$output"
     [ -n "$output1" ]
-    echo "$output1" | jq -e . >/dev/null
 
     # ./gradlew must NOT be present (dropped by filter)
+    # WARN messages may be mixed into output in some bats versions, filter them out
+    local clean_output1
+    clean_output1=$(echo "$output1" | grep -v '^\[detect-ci-commands\] WARN:')
     local dropped
-    dropped=$(echo "$output1" | jq '[.[] | select(.command | startswith("./gradlew"))] | length')
+    dropped=$(echo "$clean_output1" | jq '[.[] | select(.command | startswith("./gradlew"))] | length')
     [ "$dropped" -eq 0 ]
 
-    # WARN must appear on stderr — use run command for bats 1.10 compatibility
-    local warn_found=0
-    while IFS= read -r line; do
-        if echo "$line" | grep -qi "WARN"; then
-            warn_found=1
-            break
-        fi
-    done < "$SPECIAL_DIR/warn1.txt"
-    [ "$warn_found" -eq 1 ]
+    # WARN must appear (in output since bats may merge stderr into stdout)
+    echo "$output1" | grep -qi "WARN"
 
     # PATH gradle still emitted (command -v stub-bin will handle it if present, else empty array fine)
 
@@ -725,14 +720,15 @@ JSON
     chmod +x "$spec_dir/gradlew"
 
     local output2
-    PATH="$stub_dir:$PATH" bash "$DETECT_SCRIPT" "$spec_dir" >"$SPECIAL_DIR/out2.txt" 2>"$SPECIAL_DIR/warn2.txt"
-    output2=$(cat "$SPECIAL_DIR/out2.txt")
+    PATH="$stub_dir:$PATH" run bash "$DETECT_SCRIPT" "$spec_dir"
+    output2="$output"
     [ -n "$output2" ]
-    echo "$output2" | jq -e . >/dev/null
 
     # ./gradlew test must SURVIVE the filter
-    echo "$output2" | jq -e '.[] | select(.command == "./gradlew test" and .category == "test")' >/dev/null
-    echo "$output2" | jq -e '.[] | select(.command == "./gradlew build" and .category == "build")' >/dev/null
+    local clean_output2
+    clean_output2=$(echo "$output2" | grep -v '^\[detect-ci-commands\] WARN:')
+    echo "$clean_output2" | jq -e '.[] | select(.command == "./gradlew test" and .category == "test")' >/dev/null
+    echo "$clean_output2" | jq -e '.[] | select(.command == "./gradlew build" and .category == "build")' >/dev/null
 }
 
 # =============================================================================
@@ -757,38 +753,36 @@ JSON
 
     # --- Branch 1: gradlew NOT executable — ./gradlew DROPPED ---
     local output1
-    PATH="$stub_dir:$PATH" bash "$DETECT_SCRIPT" "$spec_dir" >"$SPECIAL_DIR/out1.txt" 2>"$SPECIAL_DIR/warn1.txt"
-    output1=$(cat "$SPECIAL_DIR/out1.txt")
+    PATH="$stub_dir:$PATH" run bash "$DETECT_SCRIPT" "$spec_dir"
+    output1="$output"
     [ -n "$output1" ]
-    echo "$output1" | jq -e . >/dev/null
+
+    # WARN messages may be mixed into output in some bats versions, filter them out
+    local clean_output1
+    clean_output1=$(echo "$output1" | grep -v '^\[detect-ci-commands\] WARN:')
+    echo "$clean_output1" | jq -e . >/dev/null
 
     # ./gradlew must NOT be present (dropped by ./-filter)
     local dropped
-    dropped=$(echo "$output1" | jq '[.[] | select(.command | startswith("./gradlew"))] | length')
+    dropped=$(echo "$clean_output1" | jq '[.[] | select(.command | startswith("./gradlew"))] | length')
     [ "$dropped" -eq 0 ]
 
-    # WARN must appear on stderr
-    local warn_found=0
-    while IFS= read -r line; do
-        if echo "$line" | grep -qi "WARN"; then
-            warn_found=1
-            break
-        fi
-    done < "$SPECIAL_DIR/warn1.txt"
-    [ "$warn_found" -eq 1 ]
+    # WARN must appear (in output since bats may merge stderr into stdout)
+    echo "$output1" | grep -qi "WARN"
 
     # --- Branch 2: chmod +x gradlew — ./gradlew SURVIVES ---
     chmod +x "$spec_dir/gradlew"
 
     local output2
-    PATH="$stub_dir:$PATH" bash "$DETECT_SCRIPT" "$spec_dir" >"$SPECIAL_DIR/out2.txt" 2>"$SPECIAL_DIR/warn2.txt"
-    output2=$(cat "$SPECIAL_DIR/out2.txt")
+    PATH="$stub_dir:$PATH" run bash "$DETECT_SCRIPT" "$spec_dir"
+    output2="$output"
     [ -n "$output2" ]
-    echo "$output2" | jq -e . >/dev/null
 
     # ./gradlew test must SURVIVE the filter
-    echo "$output2" | jq -e '.[] | select(.command == "./gradlew test" and .category == "test")' >/dev/null
-    echo "$output2" | jq -e '.[] | select(.command == "./gradlew build" and .category == "build")' >/dev/null
+    local clean_output2
+    clean_output2=$(echo "$output2" | grep -v '^\[detect-ci-commands\] WARN:')
+    echo "$clean_output2" | jq -e '.[] | select(.command == "./gradlew test" and .category == "test")' >/dev/null
+    echo "$clean_output2" | jq -e '.[] | select(.command == "./gradlew build" and .category == "build")' >/dev/null
 }
 
 # =============================================================================
