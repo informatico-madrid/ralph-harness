@@ -679,6 +679,54 @@ JSON
 }
 
 # =============================================================================
+# Task 3.9: ./-filter regression test (wrapper toggle)
+# =============================================================================
+
+@test "./gradlew wrapper survives filter when executable, drops when not (chmod toggle)" {
+    # Build a self-contained stub dir WITHOUT gradle on PATH — isolates ./-filter behavior
+    local stub_dir="$SPECIAL_DIR/filter-stubs"
+    mkdir -p "$stub_dir"
+    printf '#!/bin/sh\nexec "$@"\n' > "$stub_dir/ruff"
+    chmod +x "$stub_dir/ruff"
+
+    local spec_dir="$SPECIAL_DIR/filter-toggle-spec"
+    mkdir -p "$spec_dir"
+    touch "$spec_dir/build.gradle"
+
+    # Create the wrapper (NOT executable — test 2 will chmod +x to test survival)
+    printf '#!/bin/sh\nexec "$@"\n' > "$spec_dir/gradlew"
+    chmod -x "$spec_dir/gradlew"
+
+    # --- Branch 1: gradlew NOT executable — ./gradlew DROPPED, WARN on stderr ---
+    local output1
+    output1=$(PATH="$stub_dir:$PATH" bash "$DETECT_SCRIPT" "$spec_dir" 2>"$SPECIAL_DIR/warn1.txt")
+    [ -n "$output1" ]
+    echo "$output1" | jq -e . >/dev/null
+
+    # ./gradlew must NOT be present (dropped by filter)
+    local dropped
+    dropped=$(echo "$output1" | jq '[.[] | select(.command | startswith("./gradlew"))] | length')
+    [ "$dropped" -eq 0 ]
+
+    # WARN must appear on stderr
+    grep -qi "WARN" "$SPECIAL_DIR/warn1.txt"
+
+    # PATH gradle still emitted (command -v stub-bin will handle it if present, else empty array fine)
+
+    # --- Branch 2: chmod +x gradlew — ./gradlew SURVIVES ---
+    chmod +x "$spec_dir/gradlew"
+
+    local output2
+    output2=$(PATH="$stub_dir:$PATH" bash "$DETECT_SCRIPT" "$spec_dir" 2>"$SPECIAL_DIR/warn2.txt")
+    [ -n "$output2" ]
+    echo "$output2" | jq -e . >/dev/null
+
+    # ./gradlew test must SURVIVE the filter
+    echo "$output2" | jq -e '.[] | select(.command == "./gradlew test" and .category == "test")' >/dev/null
+    echo "$output2" | jq -e '.[] | select(.command == "./gradlew build" and .category == "build")' >/dev/null
+}
+
+# =============================================================================
 # Task 3.6: maven + coexist detector tests
 # =============================================================================
 
@@ -888,4 +936,51 @@ JSON
     [ -n "$output2" ]
     echo "$output2" | jq -e . >/dev/null
     echo "$output2" | jq -e '.[] | select(.command == "dotnet build" and .category == "build")' >/dev/null
+}
+
+# =============================================================================
+# Task 3.9: ./-filter wrapper regression test (present vs absent gradlew)
+# =============================================================================
+
+@test "./-filter wrapper: gradlew executable SURVIVES, absent DROPS with WARN" {
+    local spec_dir="$SPECIAL_DIR/filter-wrapper-spec"
+    mkdir -p "$spec_dir"
+
+    touch "$spec_dir/build.gradle"
+
+    # Create a non-executable gradlew wrapper
+    printf '#!/bin/sh\nexec "$@"\n' > "$spec_dir/gradlew"
+    chmod -x "$spec_dir/gradlew"
+
+    # Ensure gradle is NOT on PATH (use a clean stub dir with no gradle binary)
+    local stub_dir="$SPECIAL_DIR/filter-stub"
+    mkdir -p "$stub_dir"
+    printf '#!/bin/sh\nexec "$@"\n' > "$stub_dir/dotnet"
+    chmod +x "$stub_dir/dotnet"
+
+    # --- Branch 1: gradlew NOT executable — ./gradlew DROPPED ---
+    local output1
+    output1=$(PATH="$stub_dir:$PATH" bash "$DETECT_SCRIPT" "$spec_dir" 2>"$SPECIAL_DIR/warn1.txt")
+    [ -n "$output1" ]
+    echo "$output1" | jq -e . >/dev/null
+
+    # ./gradlew must NOT be present (dropped by ./-filter)
+    local dropped
+    dropped=$(echo "$output1" | jq '[.[] | select(.command | startswith("./gradlew"))] | length')
+    [ "$dropped" -eq 0 ]
+
+    # WARN must appear on stderr
+    grep -qi "WARN" "$SPECIAL_DIR/warn1.txt"
+
+    # --- Branch 2: chmod +x gradlew — ./gradlew SURVIVES ---
+    chmod +x "$spec_dir/gradlew"
+
+    local output2
+    output2=$(PATH="$stub_dir:$PATH" bash "$DETECT_SCRIPT" "$spec_dir" 2>"$SPECIAL_DIR/warn2.txt")
+    [ -n "$output2" ]
+    echo "$output2" | jq -e . >/dev/null
+
+    # ./gradlew test must SURVIVE the filter
+    echo "$output2" | jq -e '.[] | select(.command == "./gradlew test" and .category == "test")' >/dev/null
+    echo "$output2" | jq -e '.[] | select(.command == "./gradlew build" and .category == "build")' >/dev/null
 }

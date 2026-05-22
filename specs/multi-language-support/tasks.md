@@ -268,7 +268,7 @@ Focus: one bats `@test` per Test Coverage Table row + filter regression + source
   - **Commit**: `chore(detect-ci): pass quality checkpoint` (only if fixes needed)
   - _Requirements: NFR-4, NFR-5_
 
-- [ ] 3.9 `./`-filter regression test (present vs absent gradlew)
+- [x] 3.9 `./`-filter regression test (present vs absent gradlew) - 5d8a20b
   - **Do**: Add a `@test` whose description string MUST contain a keyword matched by the `-f 'filter|gradlew|wrapper'` Verify filter (use `filter`, `gradlew`, or `wrapper` in the description) asserting `./gradlew test` SURVIVES when an executable `$base/gradlew` exists, and is DROPPED (with WARN on stderr) when absent — using a `chmod +x` toggle fixture.
   - **Files**: tests/ci-autodetect.bats
   - **Done when**: Regression test exists and passes both branches.
