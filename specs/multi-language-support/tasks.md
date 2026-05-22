@@ -33,7 +33,7 @@ Focus: prove the FR-13 refactor (sourceable function + BASH_SOURCE guard) works 
   - _Requirements: FR-13, AC-9.1_
   - _Design: detect_ci_commands(dir)_
 
-- [ ] 1.3 Add BASH_SOURCE main-guard; scope `set -euo pipefail` to direct execution
+- [x] 1.3 Add BASH_SOURCE main-guard; scope `set -euo pipefail` to direct execution
   - **Do**:
     1. Move `set -euo pipefail` from top-level (line 2) into a `if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then ... fi` main-guard.
     2. Inside the guard: keep `FORCE=0`, the arg-parse `while/case` (`--force`, `-*` usage error, positional `SPEC_PATH`), the empty/`-d` validation with `exit 1`, then call `detect_ci_commands "$SPEC_PATH"`.

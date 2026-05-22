@@ -1,33 +1,8 @@
 #!/usr/bin/env bash
-set -euo pipefail
 
 # detect-ci-commands.sh — Scan project markers and emit per-category CI commands.
 # Usage: detect-ci-commands.sh <spec-path> [--force]
 # Output: JSON array [{command, category}, ...]
-
-FORCE=0
-SPEC_PATH=""
-
-# Parse arguments
-while [[ $# -gt 0 ]]; do
-  case "$1" in
-    --force) FORCE=1; shift ;;
-    -*)      echo "Usage: $0 <spec-path> [--force]" >&2; exit 1 ;;
-    *)       SPEC_PATH="$1"; shift ;;
-  esac
-done
-
-if [[ -z "$SPEC_PATH" ]]; then
-  echo "Usage: $0 <spec-path> [--force]" >&2
-  exit 1
-fi
-
-if [[ ! -d "$SPEC_PATH" ]]; then
-  echo "Error: spec path '$SPEC_PATH' does not exist" >&2
-  exit 1
-fi
-
-# Accumulator — lines of JSON objects (initialized inside detect_ci_commands)
 
 # --- Marker detection functions ---
 
@@ -160,4 +135,30 @@ detect_ci_commands() {
   return 0
 }
 
-detect_ci_commands "$SPEC_PATH"
+# CLI body: only runs when executed directly (not sourced).
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+  set -euo pipefail
+  FORCE=0
+  SPEC_PATH=""
+
+  # Parse arguments
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --force) FORCE=1; shift ;;
+      -*)      echo "Usage: $0 <spec-path> [--force]" >&2; exit 1 ;;
+      *)       SPEC_PATH="$1"; shift ;;
+    esac
+  done
+
+  if [[ -z "$SPEC_PATH" ]]; then
+    echo "Usage: $0 <spec-path> [--force]" >&2
+    exit 1
+  fi
+
+  if [[ ! -d "$SPEC_PATH" ]]; then
+    echo "Error: spec path '$SPEC_PATH' does not exist" >&2
+    exit 1
+  fi
+
+  detect_ci_commands "$SPEC_PATH"
+fi
