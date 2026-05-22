@@ -228,6 +228,7 @@ detect_ci_commands() {
   local SPEC_PATH="$1"
   local ENTRIES=()
   local FILTERED=()
+  local cmd bin keep
 
   # --- Run all detect functions ---
   detect_pyproject "$SPEC_PATH"
@@ -247,10 +248,16 @@ detect_ci_commands() {
   for entry in "${ENTRIES[@]}"; do
     # Extract the binary name (first token of command string) using pure bash
     # entry: {"command":"ruff check .","category":"lint"}
-    local cmd="${entry#*\"command\":\"}"
+    cmd="${entry#*\"command\":\"}"
     cmd="${cmd%%\",*}"
-    local bin="${cmd%% *}"
-    if command -v "$bin" >/dev/null 2>&1; then
+    bin="${cmd%% *}"
+    keep=1
+    if [[ "$bin" == ./* ]]; then
+      [[ -x "$SPEC_PATH/$bin" ]] || keep=0
+    else
+      command -v "$bin" >/dev/null 2>&1 || keep=0
+    fi
+    if [[ "$keep" -eq 1 ]]; then
       FILTERED+=("$entry")
     else
       echo "[detect-ci-commands] WARN: skipping $cmd binary $bin not on PATH" >&2

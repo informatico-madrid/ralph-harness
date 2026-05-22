@@ -180,7 +180,7 @@ Focus: add the remaining 6 detectors and the `./`-token filter patch with honest
   - **Commit**: `chore(detect-ci): pass quality checkpoint` (only if fixes needed)
   - _Requirements: FR-8, NFR-4, NFR-5_
 
-- [ ] 2.9 Patch write-time filter for `./`-prefixed wrapper tokens
+- [x] 2.9 Patch write-time filter for `./`-prefixed wrapper tokens
   - **Do**:
     1. In the filter loop inside `detect_ci_commands`, declare `local cmd bin keep` (all three — AC-9.3 hygiene).
     2. For first token `bin`: `if [[ "$bin" == ./* ]]; then [[ -x "$SPEC_PATH/$bin" ]] || keep=0; else command -v "$bin" >/dev/null 2>&1 || keep=0; fi`.
