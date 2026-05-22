@@ -94,7 +94,7 @@ Focus: prove the FR-13 refactor (sourceable function + BASH_SOURCE guard) works 
 
 Focus: add the remaining 6 detectors and the `./`-token filter patch with honest categories. No new tests yet (Phase 3).
 
-- [ ] 2.1 Add `detect_composer` (PHP scripts-discovery + fallback)
+- [x] 2.1 Add `detect_composer` (PHP scripts-discovery + fallback)
   - **Do**:
     1. Add `detect_composer() { local base="$1"; [[ -f "$base/composer.json" ]] || return 0; ... }`.
     2. If `command -v jq` and `composer.json` has `.scripts`: emit `composer run <name>` per key, categorized by name (`test*`→test; `lint*|cs*|fix*`→lint; `analy[sz]e*|phpstan*|psalm*`→typecheck; `build*`→build; else→other) — mirror `detect_package_json`.

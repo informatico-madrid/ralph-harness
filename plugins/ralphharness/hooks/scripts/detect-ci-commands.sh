@@ -97,6 +97,34 @@ detect_gemfile() {
   ENTRIES+=('{"command":"bundle exec rubocop","category":"lint"}')
 }
 
+detect_composer() {
+  local base="$1"
+  [[ -f "$base/composer.json" ]] || return 0
+
+  # Parse scripts and categorize by name pattern
+  if command -v jq >/dev/null 2>&1; then
+    local scripts
+    scripts=$(jq -r '.scripts // {} | keys[]' "$base/composer.json" 2>/dev/null || true)
+    if [[ -n "$scripts" ]]; then
+      while IFS= read -r script_name; do
+        [[ -n "$script_name" ]] || continue
+        local category="other"
+        case "$script_name" in
+          test*)             category="test" ;;
+          lint*|cs*|fix*)    category="lint" ;;
+          analyze*|analysz*|phpstan*|psalm*) category="typecheck" ;;
+          build*)            category="build" ;;
+        esac
+        ENTRIES+=("{\"command\":\"composer run ${script_name}\",\"category\":\"${category}\"}")
+      done <<< "$scripts"
+      return 0
+    fi
+  fi
+
+  # Fallback: no scripts key / no jq
+  ENTRIES+=('{"command":"composer test","category":"test"}')
+}
+
 detect_ci_commands() {
   local SPEC_PATH="$1"
   local ENTRIES=()
@@ -109,6 +137,7 @@ detect_ci_commands() {
   detect_cargo "$SPEC_PATH"
   detect_go_mod "$SPEC_PATH"
   detect_gemfile "$SPEC_PATH"
+  detect_composer "$SPEC_PATH"
 
   # --- Write-time command -v filter (AC-2.4, D5) ---
   for entry in "${ENTRIES[@]}"; do
