@@ -128,27 +128,27 @@ detect_composer() {
 detect_gradle() {
   local base="$1"
   [[ -f "$base/build.gradle" || -f "$base/build.gradle.kts" ]] || return 0
-  local W
-  if [[ -x "$base/gradlew" ]]; then
-    W="./gradlew"
+  # Always emit ./gradlew so the filter can decide (executable check + WARN on stderr)
+  if [[ -f "$base/gradlew" ]]; then
+    ENTRIES+=('{"command":"./gradlew test","category":"test"}')
+    ENTRIES+=('{"command":"./gradlew build","category":"build"}')
   else
-    W="gradle"
+    ENTRIES+=('{"command":"gradle test","category":"test"}')
+    ENTRIES+=('{"command":"gradle build","category":"build"}')
   fi
-  ENTRIES+=("{\"command\":\"$W test\",\"category\":\"test\"}")
-  ENTRIES+=("{\"command\":\"$W build\",\"category\":\"build\"}")
 }
 
 detect_maven() {
   local base="$1"
   [[ -f "$base/pom.xml" ]] || return 0
-  local M
-  if [[ -x "$base/mvnw" ]]; then
-    M="./mvnw"
+  # Always emit ./mvnw so the filter can decide (executable check + WARN on stderr)
+  if [[ -f "$base/mvnw" ]]; then
+    ENTRIES+=('{"command":"./mvnw test","category":"test"}')
+    ENTRIES+=('{"command":"./mvnw package","category":"build"}')
   else
-    M="mvn"
+    ENTRIES+=('{"command":"mvn test","category":"test"}')
+    ENTRIES+=('{"command":"mvn package","category":"build"}')
   fi
-  ENTRIES+=("{\"command\":\"$M test\",\"category\":\"test\"}")
-  ENTRIES+=("{\"command\":\"$M package\",\"category\":\"build\"}")
 }
 
 detect_mix() {
