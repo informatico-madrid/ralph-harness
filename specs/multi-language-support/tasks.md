@@ -237,7 +237,7 @@ Focus: one bats `@test` per Test Coverage Table row + filter regression + source
   - **Commit**: `chore(detect-ci): pass quality checkpoint` (only if fixes needed)
   - _Requirements: NFR-4, NFR-5_
 
-- [ ] 3.5 gradle tests (build.gradle, .kts, wrapper)
+- [x] 3.5 gradle tests (build.gradle, .kts, wrapper)
   - **Do**: Add `@test`s — each `@test` description string MUST contain the keyword `gradle` so the `-f gradle` Verify filter matches them: `build.gradle` → `gradle test`/`gradle build`, no typecheck; `.kts` fires same; executable `./gradlew` fixture → `./gradlew test`/`./gradlew build` SURVIVE filter.
   - **Files**: tests/ci-autodetect.bats
   - **Done when**: All three gradle tests exist and pass.

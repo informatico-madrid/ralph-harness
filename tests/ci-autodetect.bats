@@ -615,3 +615,65 @@ JSON
     echo "$output" | jq -e '.[] | select(.command == "deno check" and .category == "typecheck")' >/dev/null
     echo "$output" | jq -e '.[] | select(.command == "deno fmt --check" and .category == "lint")' >/dev/null
 }
+
+# =============================================================================
+# Task 3.5: gradle detector tests
+# =============================================================================
+
+@test "gradle build.gradle emits gradle test and gradle build without typecheck" {
+    local spec_dir="$SPECIAL_DIR/gradle-groovy-spec"
+    mkdir -p "$spec_dir"
+
+    touch "$spec_dir/build.gradle"
+
+    local output
+    output=$(PATH="$STUBBIN:$PATH" bash "$DETECT_SCRIPT" "$spec_dir" 2>/dev/null)
+    [ -n "$output" ]
+    echo "$output" | jq -e . >/dev/null
+
+    # Should emit: gradle test (test) + gradle build (build)
+    echo "$output" | jq -e '.[] | select(.command == "gradle test" and .category == "test")' >/dev/null
+    echo "$output" | jq -e '.[] | select(.command == "gradle build" and .category == "build")' >/dev/null
+
+    # gradle check should NOT be emitted (AC-3.4: check is NOT a typecheck)
+    local typecheck_count
+    typecheck_count=$(echo "$output" | jq '[.[] | select(.category == "typecheck")] | length')
+    [ "$typecheck_count" -eq 0 ]
+}
+
+@test "gradle build.gradle.kts fires same test and build commands" {
+    local spec_dir="$SPECIAL_DIR/gradle-kts-spec"
+    mkdir -p "$spec_dir"
+
+    touch "$spec_dir/build.gradle.kts"
+
+    local output
+    output=$(PATH="$STUBBIN:$PATH" bash "$DETECT_SCRIPT" "$spec_dir" 2>/dev/null)
+    [ -n "$output" ]
+    echo "$output" | jq -e . >/dev/null
+
+    # Kotlin DSL should produce the same entries as Groovy DSL
+    echo "$output" | jq -e '.[] | select(.command == "gradle test" and .category == "test")' >/dev/null
+    echo "$output" | jq -e '.[] | select(.command == "gradle build" and .category == "build")' >/dev/null
+}
+
+@test "gradle executable wrapper ./gradlew test and build survive filter" {
+    local spec_dir="$SPECIAL_DIR/gradle-wrapper-spec"
+    mkdir -p "$spec_dir"
+
+    touch "$spec_dir/build.gradle"
+
+    # Create an executable ./gradlew wrapper
+    printf '#!/bin/sh\nexec "$@"\n' > "$spec_dir/gradlew"
+    chmod +x "$spec_dir/gradlew"
+
+    # Run with gradlew not on PATH but SPEC_PATH/gradlew is executable
+    local output
+    output=$(bash "$DETECT_SCRIPT" "$spec_dir" 2>/dev/null)
+    [ -n "$output" ]
+    echo "$output" | jq -e . >/dev/null
+
+    # ./gradlew test and ./gradlew build should SURVIVE the ./-filter
+    echo "$output" | jq -e '.[] | select(.command == "./gradlew test" and .category == "test")' >/dev/null
+    echo "$output" | jq -e '.[] | select(.command == "./gradlew build" and .category == "build")' >/dev/null
+}
