@@ -698,21 +698,24 @@ JSON
     chmod -x "$spec_dir/gradlew"
 
     # --- Branch 1: gradlew NOT executable — ./gradlew DROPPED, WARN on stderr ---
-    local output1
+    local output1 stderr1
     PATH="$stub_dir:$PATH" run bash "$DETECT_SCRIPT" "$spec_dir"
     output1="$output"
+    stderr1="$stderr"
     [ -n "$output1" ]
 
     # ./gradlew must NOT be present (dropped by filter)
-    # WARN messages may be mixed into output in some bats versions, filter them out
     local clean_output1
     clean_output1=$(echo "$output1" | grep -v '^\[detect-ci-commands\] WARN:')
     local dropped
     dropped=$(echo "$clean_output1" | jq '[.[] | select(.command | startswith("./gradlew"))] | length')
     [ "$dropped" -eq 0 ]
 
-    # WARN must appear (in output since bats may merge stderr into stdout)
-    echo "$output1" | grep -qi "WARN"
+    # WARN must appear on stderr; also check combined output for bats compat
+    local warn_found=0
+    if echo "$stderr1" | grep -qi "WARN"; then warn_found=1; fi
+    if echo "$output1" | grep -qi "WARN"; then warn_found=1; fi
+    [ "$warn_found" -eq 1 ]
 
     # PATH gradle still emitted (command -v stub-bin will handle it if present, else empty array fine)
 
@@ -752,9 +755,10 @@ JSON
     chmod +x "$stub_dir/dotnet"
 
     # --- Branch 1: gradlew NOT executable — ./gradlew DROPPED ---
-    local output1
+    local output1 stderr1
     PATH="$stub_dir:$PATH" run bash "$DETECT_SCRIPT" "$spec_dir"
     output1="$output"
+    stderr1="$stderr"
     [ -n "$output1" ]
 
     # WARN messages may be mixed into output in some bats versions, filter them out
@@ -767,8 +771,11 @@ JSON
     dropped=$(echo "$clean_output1" | jq '[.[] | select(.command | startswith("./gradlew"))] | length')
     [ "$dropped" -eq 0 ]
 
-    # WARN must appear (in output since bats may merge stderr into stdout)
-    echo "$output1" | grep -qi "WARN"
+    # WARN must appear on stderr; also check combined output for bats compat
+    local warn_found=0
+    if echo "$stderr1" | grep -qi "WARN"; then warn_found=1; fi
+    if echo "$output1" | grep -qi "WARN"; then warn_found=1; fi
+    [ "$warn_found" -eq 1 ]
 
     # --- Branch 2: chmod +x gradlew — ./gradlew SURVIVES ---
     chmod +x "$spec_dir/gradlew"
