@@ -253,7 +253,7 @@ Focus: one bats `@test` per Test Coverage Table row + filter regression + source
   - **Commit**: `test(detect-ci): add maven + gradle/maven coexist tests`
   - _Requirements: FR-3, FR-10, AC-3.2, AC-3.3_
 
-- [ ] 3.7 mix + dotnet tests
+- [x] 3.7 mix + dotnet tests
   - **Do**: Add `@test`s — each `@test` description string MUST contain a keyword matched by the `-f 'mix|dotnet'` Verify filter (the `mix.exs` fallback and alias test descriptions must contain `mix`; the `.csproj`/`.sln`/`global.json` test descriptions must contain `dotnet`): `mix.exs` fallback → `mix test`/`mix credo`/`mix dialyzer`(typecheck)/`mix format --check-formatted`(lint); mix with aliases → `mix <alias>` preferred; dotnet `.csproj` glob fires (NOT skipped) → 3 commands; `.sln` and `global.json` each fire independently.
   - **Files**: tests/ci-autodetect.bats
   - **Done when**: mix + dotnet tests exist and pass.

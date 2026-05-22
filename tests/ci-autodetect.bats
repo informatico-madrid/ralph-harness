@@ -761,3 +761,131 @@ XML
     echo "$output" | jq -e '.[] | select(.command == "mvn test" and .category == "test")' >/dev/null
     echo "$output" | jq -e '.[] | select(.command == "mvn package" and .category == "build")' >/dev/null
 }
+
+# =============================================================================
+# Task 3.7: mix + dotnet detector tests
+# =============================================================================
+
+@test "mix.exs fallback emits mix test credo dialyzer format --check-formatted" {
+    local spec_dir="$SPECIAL_DIR/mix-fallback-spec"
+    mkdir -p "$spec_dir"
+
+    cat > "$spec_dir/mix.exs" << 'EXS'
+defmodule MyProject.MixProject do
+  def project do
+    [app: :my_project, version: "0.1.0"]
+  end
+end
+EXS
+
+    local output
+    output=$(PATH="$STUBBIN:$PATH" bash "$DETECT_SCRIPT" "$spec_dir" 2>/dev/null)
+    [ -n "$output" ]
+    echo "$output" | jq -e . >/dev/null
+
+    # Fallback: 4 canonical mix commands
+    echo "$output" | jq -e '.[] | select(.command == "mix test" and .category == "test")' >/dev/null
+    echo "$output" | jq -e '.[] | select(.command == "mix credo" and .category == "lint")' >/dev/null
+    echo "$output" | jq -e '.[] | select(.command == "mix dialyzer" and .category == "typecheck")' >/dev/null
+    echo "$output" | jq -e '.[] | select(.command == "mix format --check-formatted" and .category == "lint")' >/dev/null
+}
+
+@test "mix.exs with aliases emits mix alias commands preferred" {
+    local spec_dir="$SPECIAL_DIR/mix-aliases-spec"
+    mkdir -p "$spec_dir"
+
+    cat > "$spec_dir/mix.exs" << 'EXS'
+defmodule MyProject.MixProject do
+  use Mix.Project
+
+  def project do
+    [app: :my_project]
+  end
+
+  defp aliases do
+    [
+      test: "test",
+      lint: "lint",
+      dialyzer: "dialyzer",
+      format: "format"
+    ]
+  end
+end
+EXS
+
+    local output
+    output=$(PATH="$STUBBIN:$PATH" bash "$DETECT_SCRIPT" "$spec_dir" 2>/dev/null)
+    [ -n "$output" ]
+    echo "$output" | jq -e . >/dev/null
+
+    # Alias-based: mix test, mix lint, mix dialyzer, mix format (grep-scan finds these values)
+    echo "$output" | jq -e '.[] | select(.command == "mix test" and .category == "test")' >/dev/null
+    echo "$output" | jq -e '.[] | select(.command == "mix lint" and .category == "lint")' >/dev/null
+    echo "$output" | jq -e '.[] | select(.command == "mix dialyzer" and .category == "typecheck")' >/dev/null
+    echo "$output" | jq -e '.[] | select(.command == "mix format" and .category == "lint")' >/dev/null
+
+    # Should NOT have fallback commands when aliases are found
+    local fallback_count
+    fallback_count=$(echo "$output" | jq '[.[] | select(.command == "mix credo")] | length')
+    [ "$fallback_count" -eq 0 ]
+}
+
+@test "dotnet .csproj glob fires dotnet test build format" {
+    local spec_dir="$SPECIAL_DIR/dotnet-csproj-spec"
+    mkdir -p "$spec_dir"
+
+    cat > "$spec_dir/App.csproj" << 'CSHARP'
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+  </PropertyGroup>
+</Project>
+CSHARP
+
+    local output
+    output=$(PATH="$STUBBIN:$PATH" bash "$DETECT_SCRIPT" "$spec_dir" 2>/dev/null)
+    [ -n "$output" ]
+    echo "$output" | jq -e . >/dev/null
+
+    # Should emit 3 dotnet commands
+    echo "$output" | jq -e '.[] | select(.command == "dotnet test" and .category == "test")' >/dev/null
+    echo "$output" | jq -e '.[] | select(.command == "dotnet build" and .category == "build")' >/dev/null
+    echo "$output" | jq -e '.[] | select(.command == "dotnet format --verify-no-changes" and .category == "lint")' >/dev/null
+}
+
+@test "dotnet .sln and global.json fire independently" {
+    local spec_dir1="$SPECIAL_DIR/dotnet-sln-spec"
+    mkdir -p "$spec_dir1"
+
+    cat > "$spec_dir1/MySolution.sln" << 'SLN'
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+SLN
+
+    local spec_dir2="$SPECIAL_DIR/dotnet-global-spec"
+    mkdir -p "$spec_dir2"
+
+    cat > "$spec_dir2/global.json" << 'JSON'
+{
+  "sdk": {
+    "version": "8.0.0",
+    "rollForward": "latestMajor"
+  }
+}
+JSON
+
+    # Test .sln triggers dotnet
+    local output1
+    output1=$(PATH="$STUBBIN:$PATH" bash "$DETECT_SCRIPT" "$spec_dir1" 2>/dev/null)
+    [ -n "$output1" ]
+    echo "$output1" | jq -e . >/dev/null
+    echo "$output1" | jq -e '.[] | select(.command == "dotnet test" and .category == "test")' >/dev/null
+
+    # Test global.json triggers dotnet
+    local output2
+    output2=$(PATH="$STUBBIN:$PATH" bash "$DETECT_SCRIPT" "$spec_dir2" 2>/dev/null)
+    [ -n "$output2" ]
+    echo "$output2" | jq -e . >/dev/null
+    echo "$output2" | jq -e '.[] | select(.command == "dotnet build" and .category == "build")' >/dev/null
+}
