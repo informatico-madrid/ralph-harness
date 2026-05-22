@@ -284,7 +284,7 @@ Focus: one bats `@test` per Test Coverage Table row + filter regression + source
   - **Commit**: `test(detect-ci): add source-no-side-effects + sourced-call tests`
   - _Requirements: FR-13, AC-9.1, AC-9.3, AC-9.4_
 
-- [ ] 3.11 [VERIFY] Quality checkpoint: full bats + syntax + legacy invariant
+- [x] 3.11 [VERIFY] Quality checkpoint: full bats + syntax + legacy invariant
   - **Do**: Run full bats; confirm the original 17 legacy tests still pass alongside the new ones; `bash -n` clean.
   - **Verify**: `bash -n plugins/ralphharness/hooks/scripts/detect-ci-commands.sh && bats tests/ci-autodetect.bats && echo CHECKPOINT_OK`
   - **Done when**: All tests pass (legacy 17 unchanged + new), `bash -n` clean.
@@ -293,7 +293,7 @@ Focus: one bats `@test` per Test Coverage Table row + filter regression + source
 
 ## Phase 4: Quality Gates
 
-- [ ] 4.1 Add PHP + C#/.NET doc rows
+- [x] 4.1 Add PHP + C#/.NET doc rows
   - **Do**: In `references/quality-commands.md` config table (~lines 64-72), add a PHP (`composer.json`) row and a C#/.NET (`*.csproj`/`*.sln`) row. Do NOT duplicate the existing Ruby/JVM/Elixir/Deno rows.
   - **Files**: plugins/ralphharness/references/quality-commands.md
   - **Done when**: PHP and C#/.NET rows present; no duplicate ecosystem rows.

@@ -70,6 +70,8 @@ Common targets: `test`, `lint`, `build`, `check`, `ci`, `fmt`, `format`.
 | `build.gradle` / `pom.xml` | Java/Kotlin | `./gradlew test`, `./gradlew check`, `mvn test`, `mvn verify` |
 | `mix.exs` | Elixir | `mix test`, `mix credo`, `mix compile` |
 | `deno.json` | Deno | `deno test`, `deno lint`, `deno check` |
+| `composer.json` | PHP | `composer run test`, `composer run lint`, `composer run analyze`, `composer test` |
+| `*.csproj` / `*.sln` | C#/.NET | `dotnet test`, `dotnet build`, `dotnet format --verify-no-changes` |
 
 ### 5. Fallback Strategies
 
