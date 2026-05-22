@@ -309,7 +309,7 @@ Focus: one bats `@test` per Test Coverage Table row + filter regression + source
   - **Commit**: `chore(release): bump ralphharness 5.9.5 -> 5.10.0`
   - _Requirements: FR-12, AC-8.3_
 
-- [ ] 4.3 Local quality gate: bash -n + shellcheck(if present) + full bats
+- [x] 4.3 Local quality gate: bash -n + shellcheck(if present) + full bats
   - **Do**:
     1. Run `bash -n plugins/ralphharness/hooks/scripts/detect-ci-commands.sh` (enforced gate).
     2. Run `shellcheck` if available; if not installed, note manual/CI-side check (do NOT block on absence).
