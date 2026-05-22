@@ -214,6 +214,16 @@ detect_deno() {
   ENTRIES+=('{"command":"deno fmt --check","category":"lint"}')
 }
 
+detect_dotnet() {
+  local base="$1"
+  if compgen -G "$base/*.csproj" >/dev/null 2>&1 || compgen -G "$base/*.sln" >/dev/null 2>&1 || [[ -f "$base/global.json" ]]; then
+    ENTRIES+=('{"command":"dotnet test","category":"test"}')
+    ENTRIES+=('{"command":"dotnet build","category":"build"}')
+    ENTRIES+=('{"command":"dotnet format --verify-no-changes","category":"lint"}')
+  fi
+  return 0
+}
+
 detect_ci_commands() {
   local SPEC_PATH="$1"
   local ENTRIES=()
@@ -231,6 +241,7 @@ detect_ci_commands() {
   detect_maven "$SPEC_PATH"
   detect_mix "$SPEC_PATH"
   detect_deno "$SPEC_PATH"
+  detect_dotnet "$SPEC_PATH"
 
   # --- Write-time command -v filter (AC-2.4, D5) ---
   for entry in "${ENTRIES[@]}"; do
