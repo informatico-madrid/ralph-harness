@@ -340,7 +340,7 @@ Focus: one bats `@test` per Test Coverage Table row + filter regression + source
   - **Verify**: `bats tests/ci-autodetect.bats && VE_TMP=$(head -1 /tmp/ve-mls.txt); VE_STUB=$(sed -n 2p /tmp/ve-mls.txt); PATH="$VE_STUB:$PATH" bash -c 'source plugins/ralphharness/hooks/scripts/detect-ci-commands.sh; detect_ci_commands "'"$VE_TMP"'"' | jq -e '([.[]|select(.command=="mvn package" and .category=="build")]|length==1) and ([.[]|select(.command=="bundle exec rspec")]|length==1)' >/dev/null && echo VE2_PASS`
   - **Commit**: None
 
-- [ ] VE3 [VERIFY] E2E cleanup: remove temp fixtures + stub bins
+- [x] VE3 [VERIFY] E2E cleanup: remove temp fixtures + stub bins
   - **Do**:
     1. Remove fixture dirs: `while read -r d; do rm -rf "$d"; done < /tmp/ve-mls.txt`.
     2. Remove the tracking file: `rm -f /tmp/ve-mls.txt`.
