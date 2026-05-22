@@ -984,3 +984,75 @@ JSON
     echo "$output2" | jq -e '.[] | select(.command == "./gradlew test" and .category == "test")' >/dev/null
     echo "$output2" | jq -e '.[] | select(.command == "./gradlew build" and .category == "build")' >/dev/null
 }
+
+# =============================================================================
+# Task 3.10: source-no-side-effects + sourced-call integration tests
+# =============================================================================
+
+@test "source detect-ci-commands.sh with no args has no side effects" {
+    # Test (a): sourcing the script with no arguments must have zero side effects.
+    # - Exit code 0 (no abort)
+    # - No stdout emitted
+    # - set -e must NOT leak into the calling shell (a failing command after source must not abort)
+
+    local output exit_code fail_rc
+
+    # Source in a sub-shell and capture stdout + exit code
+    output=$(source "$DETECT_SCRIPT" 2>/dev/null) || true
+    exit_code=$?
+
+    # Exit code must be 0 (source must not abort the parent)
+    [[ "$exit_code" -eq 0 ]]
+
+    # No stdout must be produced
+    [[ -z "$output" ]]
+
+    # Verify set -e is NOT active in the calling shell: if set -e leaked,
+    # the following `false` would abort the shell before we reach the next line.
+    set +e
+    false
+    fail_rc=$?
+    set -e
+    # After a `false` command, $? should be 1 (not a shell exit)
+    [[ "$fail_rc" -ne 0 ]]
+}
+
+@test "sourced detect_ci_commands emits valid JSON for a multi-marker fixture" {
+    # Test (b): after source, detect_ci_commands "$dir" emits valid JSON array
+    # for a fixture with multiple markers (mirrors implement.md:221 consumer pattern).
+
+    local spec_dir="$SPECIAL_DIR/sourced-call-spec"
+    mkdir -p "$spec_dir"
+
+    # Create multiple markers to trigger multiple detectors
+    touch "$spec_dir/Gemfile"
+    cat > "$spec_dir/package.json" << 'JSON'
+{
+  "name": "sourced-test",
+  "scripts": {
+    "test": "jest",
+    "lint": "eslint ."
+  }
+}
+JSON
+
+    # Source the script and call detect_ci_commands in a sub-shell
+    # This mirrors the implement.md:221 pattern:
+    #   cmds=$(source detect-ci-commands.sh && detect_ci_commands "$PWD")
+    local output
+    output=$(PATH="$STUBBIN:$PATH" bash -c "source '$DETECT_SCRIPT' && detect_ci_commands '$spec_dir'" 2>/dev/null)
+    [ -n "$output" ]
+
+    # Must be a valid JSON array
+    echo "$output" | jq -e . >/dev/null
+
+    # At minimum: bundle exec rspec (Gemfile) + npm run test/lint (package.json)
+    local count
+    count=$(echo "$output" | jq 'length')
+    [ "$count" -ge 3 ]
+
+    # Verify specific entries are present
+    echo "$output" | jq -e '.[] | select(.command == "bundle exec rspec" and .category == "test")' >/dev/null
+    echo "$output" | jq -e '.[] | select(.command == "npm run test" and .category == "test")' >/dev/null
+    echo "$output" | jq -e '.[] | select(.command == "npm run lint" and .category == "lint")' >/dev/null
+}

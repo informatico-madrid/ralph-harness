@@ -268,7 +268,7 @@ Focus: one bats `@test` per Test Coverage Table row + filter regression + source
   - **Commit**: `chore(detect-ci): pass quality checkpoint` (only if fixes needed)
   - _Requirements: NFR-4, NFR-5_
 
-- [x] 3.9 `./`-filter regression test (present vs absent gradlew) - 5d8a20b
+- [x] 3.9 `./`-filter regression test (present vs absent gradlew) - 64f3e8a
   - **Do**: Add a `@test` whose description string MUST contain a keyword matched by the `-f 'filter|gradlew|wrapper'` Verify filter (use `filter`, `gradlew`, or `wrapper` in the description) asserting `./gradlew test` SURVIVES when an executable `$base/gradlew` exists, and is DROPPED (with WARN on stderr) when absent — using a `chmod +x` toggle fixture.
   - **Files**: tests/ci-autodetect.bats
   - **Done when**: Regression test exists and passes both branches.
@@ -276,7 +276,7 @@ Focus: one bats `@test` per Test Coverage Table row + filter regression + source
   - **Commit**: `test(detect-ci): add ./-filter wrapper regression test`
   - _Requirements: FR-7, AC-7.1, AC-7.4_
 
-- [ ] 3.10 source-no-side-effects + sourced-call integration tests
+- [x] 3.10 source-no-side-effects + sourced-call integration tests
   - **Do**: Add 2 integration `@test`s — each `@test` description string MUST contain a keyword matched by the `-f 'source|sourced'` Verify filter (use `source` or `sourced` in both descriptions): (a) `source detect-ci-commands.sh` in a sub-shell with no args → `$?`==0, no stdout, shell not exited, `set -e` not active afterward; (b) after source, `detect_ci_commands "$dir"` emits valid JSON array for a fixture (mirrors implement.md:221).
   - **Files**: tests/ci-autodetect.bats
   - **Done when**: Both integration tests exist and pass.
