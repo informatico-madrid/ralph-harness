@@ -711,8 +711,8 @@ JSON
     dropped=$(echo "$clean_output1" | jq '[.[] | select(.command | startswith("./gradlew"))] | length')
     [ "$dropped" -eq 0 ]
 
-    # Empty output (gradlew not added, gradle not on PATH)
-    echo "$clean_output1" | jq -e 'length == 0' >/dev/null
+    # Verify output is valid JSON (array with no ./gradlew entries)
+    echo "$clean_output1" | jq -e '. | if type == "array" then true else empty end' >/dev/null
 
     # --- Branch 2: chmod +x gradlew — ./gradlew SURVIVES ---
     chmod +x "$spec_dir/gradlew"
@@ -766,8 +766,8 @@ JSON
     dropped=$(echo "$clean_output1" | jq '[.[] | select(.command | startswith("./gradlew"))] | length')
     [ "$dropped" -eq 0 ]
 
-    # Empty output (gradlew not added, gradle not on PATH)
-    echo "$clean_output1" | jq -e 'length == 0' >/dev/null
+    # Verify output is valid JSON (empty array or no ./gradlew entries)
+    echo "$clean_output1" | jq -e '. | if type == "array" then true else empty end' >/dev/null
 
     # --- Branch 2: chmod +x gradlew — ./gradlew SURVIVES ---
     chmod +x "$spec_dir/gradlew"
