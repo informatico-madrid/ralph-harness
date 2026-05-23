@@ -1,10 +1,10 @@
 {
   "version": "1.0",
-  "updated": "2026-05-21T06:17:05Z",
+  "updated": "2026-05-22T21:28:28Z",
   "directories": [
     {
       "path": "./specs",
-      "specsCount": 56,
+      "specsCount": 57,
       "isDefault": true
     }
   ],
@@ -389,9 +389,16 @@
     {
       "name": "rag-integration",
       "path": "./specs/rag-integration",
-      "phase": "execution",
-      "taskIndex": 65,
+      "phase": "completed",
+      "taskIndex": 74,
       "totalTasks": 74
+    },
+    {
+      "name": "multi-language-support",
+      "path": "./specs/multi-language-support",
+      "phase": "completed",
+      "taskIndex": 41,
+      "totalTasks": 41
     }
   ]
 }

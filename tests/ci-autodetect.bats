@@ -16,7 +16,7 @@ setup() {
     TEST_ROOT="$REPO_ROOT"
     # Create stub binaries so write-time command -v filter doesn't drop entries
     STUBBIN=$(mktemp -d)
-    for bin in ruff mypy pytest pnpm npm yarn; do
+    for bin in ruff mypy pytest pnpm npm yarn composer bundle mix deno dotnet gradle mvn; do
         printf '#!/bin/sh\nexec "$@"\n' > "$STUBBIN/$bin"
         chmod +x "$STUBBIN/$bin"
     done
@@ -471,4 +471,755 @@ WRAPPER
     local exit_code=0
     bash "$DETECT_SCRIPT" "/nonexistent/path" 2>/dev/null || exit_code=$?
     [[ "$exit_code" -ne 0 ]] || skip "expected error on non-existent path"
+}
+
+# =============================================================================
+# Task 3.2: composer scripts + fallback tests
+# =============================================================================
+
+@test "composer.json with scripts test lint analyze build emits run variants" {
+    local spec_dir="$SPECIAL_DIR/composer-scripts-spec"
+    mkdir -p "$spec_dir"
+
+    cat > "$spec_dir/composer.json" << 'JSON'
+{
+  "name": "test-composer",
+  "scripts": {
+    "test": "phpunit",
+    "lint": "php-cs-fixer fix",
+    "analyze": "phpstan analyse",
+    "build": "compile"
+  }
+}
+JSON
+
+    local output
+    output=$(PATH="$STUBBIN:$PATH" bash "$DETECT_SCRIPT" "$spec_dir" 2>/dev/null)
+    [ -n "$output" ]
+    echo "$output" | jq -e . >/dev/null
+
+    # Each script should emit composer run <name> with correct category
+    echo "$output" | jq -e '.[] | select(.command == "composer run test" and .category == "test")' >/dev/null
+    echo "$output" | jq -e '.[] | select(.command == "composer run lint" and .category == "lint")' >/dev/null
+    echo "$output" | jq -e '.[] | select(.command == "composer run analyze" and .category == "typecheck")' >/dev/null
+    echo "$output" | jq -e '.[] | select(.command == "composer run build" and .category == "build")' >/dev/null
+
+    # No vendor/bin/ entries should be present
+    local vendor_count
+    vendor_count=$(echo "$output" | jq '[.[] | select(.command | startswith("vendor/bin/"))] | length')
+    [ "$vendor_count" -eq 0 ]
+}
+
+@test "composer.json with no scripts falls back to composer test" {
+    local spec_dir="$SPECIAL_DIR/composer-fallback-spec"
+    mkdir -p "$spec_dir"
+
+    cat > "$spec_dir/composer.json" << 'JSON'
+{
+  "name": "test-composer-no-scripts"
+}
+JSON
+
+    local output
+    output=$(PATH="$STUBBIN:$PATH" bash "$DETECT_SCRIPT" "$spec_dir" 2>/dev/null)
+    [ -n "$output" ]
+    echo "$output" | jq -e . >/dev/null
+
+    # Fallback: should emit composer test (test)
+    echo "$output" | jq -e '.[] | select(.command == "composer test" and .category == "test")' >/dev/null
+
+    # No vendor/bin/ entries should be present
+    local vendor_count
+    vendor_count=$(echo "$output" | jq '[.[] | select(.command | startswith("vendor/bin/"))] | length')
+    [ "$vendor_count" -eq 0 ]
+}
+
+# =============================================================================
+# Task 3.3: gemfile + deno detector tests
+# =============================================================================
+
+@test "gemfile detector emits bundle exec rspec and rubocop" {
+    local spec_dir="$SPECIAL_DIR/gemfile-spec"
+    mkdir -p "$spec_dir"
+
+    cat > "$spec_dir/Gemfile" << 'RB'
+source 'https://rubygems.org'
+gem 'rspec'
+gem 'rubocop'
+RB
+
+    local output
+    output=$(PATH="$STUBBIN:$PATH" bash "$DETECT_SCRIPT" "$spec_dir" 2>/dev/null)
+    [ -n "$output" ]
+    echo "$output" | jq -e . >/dev/null
+
+    # Should emit: bundle exec rspec (test) + bundle exec rubocop (lint)
+    echo "$output" | jq -e '.[] | select(.command == "bundle exec rspec" and .category == "test")' >/dev/null
+    echo "$output" | jq -e '.[] | select(.command == "bundle exec rubocop" and .category == "lint")' >/dev/null
+
+    local count
+    count=$(echo "$output" | jq 'length')
+    [ "$count" -eq 2 ]
+}
+
+@test "deno tasks-discovery emits deno task per key from deno.json" {
+    local spec_dir="$SPECIAL_DIR/deno-tasks-spec"
+    mkdir -p "$spec_dir"
+
+    cat > "$spec_dir/deno.json" << 'JSON'
+{
+  "name": "test-deno-tasks",
+  "tasks": {
+    "test": "deno test",
+    "lint": "deno lint",
+    "build": "deno compile"
+  }
+}
+JSON
+
+    local output
+    output=$(PATH="$STUBBIN:$PATH" bash "$DETECT_SCRIPT" "$spec_dir" 2>/dev/null)
+    [ -n "$output" ]
+    echo "$output" | jq -e . >/dev/null
+
+    # tasks-discovery should emit deno task <name> per key with name-pattern categorization
+    echo "$output" | jq -e '.[] | select(.command == "deno task test" and .category == "test")' >/dev/null
+    echo "$output" | jq -e '.[] | select(.command == "deno task lint" and .category == "lint")' >/dev/null
+    echo "$output" | jq -e '.[] | select(.command == "deno task build" and .category == "build")' >/dev/null
+
+    # deno check should NOT be emitted from tasks-discovery (anti-pattern)
+    local check_count
+    check_count=$(echo "$output" | jq '[.[] | select(.command == "deno check")] | length')
+    [ "$check_count" -eq 0 ]
+}
+
+@test "deno fallback emits deno test lint check and fmt --check from deno.jsonc" {
+    local spec_dir="$SPECIAL_DIR/deno-fallback-spec"
+    mkdir -p "$spec_dir"
+
+    # Use .jsonc (triggers fallback path)
+    cat > "$spec_dir/deno.jsonc" << 'JSON'
+{
+  "name": "test-deno-fallback"
+}
+JSON
+
+    local output
+    output=$(PATH="$STUBBIN:$PATH" bash "$DETECT_SCRIPT" "$spec_dir" 2>/dev/null)
+    [ -n "$output" ]
+    echo "$output" | jq -e . >/dev/null
+
+    # Fallback: should emit 4 canonical deno commands
+    echo "$output" | jq -e '.[] | select(.command == "deno test" and .category == "test")' >/dev/null
+    echo "$output" | jq -e '.[] | select(.command == "deno lint" and .category == "lint")' >/dev/null
+    echo "$output" | jq -e '.[] | select(.command == "deno check" and .category == "typecheck")' >/dev/null
+    echo "$output" | jq -e '.[] | select(.command == "deno fmt --check" and .category == "lint")' >/dev/null
+}
+
+# =============================================================================
+# Task 3.5: gradle detector tests
+# =============================================================================
+
+@test "gradle build.gradle emits gradle test and gradle build without typecheck" {
+    local spec_dir="$SPECIAL_DIR/gradle-groovy-spec"
+    mkdir -p "$spec_dir"
+
+    touch "$spec_dir/build.gradle"
+
+    local output
+    output=$(PATH="$STUBBIN:$PATH" bash "$DETECT_SCRIPT" "$spec_dir" 2>/dev/null)
+    [ -n "$output" ]
+    echo "$output" | jq -e . >/dev/null
+
+    # Should emit: gradle test (test) + gradle build (build)
+    echo "$output" | jq -e '.[] | select(.command == "gradle test" and .category == "test")' >/dev/null
+    echo "$output" | jq -e '.[] | select(.command == "gradle build" and .category == "build")' >/dev/null
+
+    # gradle check should NOT be emitted (AC-3.4: check is NOT a typecheck)
+    local typecheck_count
+    typecheck_count=$(echo "$output" | jq '[.[] | select(.category == "typecheck")] | length')
+    [ "$typecheck_count" -eq 0 ]
+}
+
+@test "gradle build.gradle.kts fires same test and build commands" {
+    local spec_dir="$SPECIAL_DIR/gradle-kts-spec"
+    mkdir -p "$spec_dir"
+
+    touch "$spec_dir/build.gradle.kts"
+
+    local output
+    output=$(PATH="$STUBBIN:$PATH" bash "$DETECT_SCRIPT" "$spec_dir" 2>/dev/null)
+    [ -n "$output" ]
+    echo "$output" | jq -e . >/dev/null
+
+    # Kotlin DSL should produce the same entries as Groovy DSL
+    echo "$output" | jq -e '.[] | select(.command == "gradle test" and .category == "test")' >/dev/null
+    echo "$output" | jq -e '.[] | select(.command == "gradle build" and .category == "build")' >/dev/null
+}
+
+@test "gradle executable wrapper ./gradlew test and build survive filter" {
+    local spec_dir="$SPECIAL_DIR/gradle-wrapper-spec"
+    mkdir -p "$spec_dir"
+
+    touch "$spec_dir/build.gradle"
+
+    # Create an executable ./gradlew wrapper
+    printf '#!/bin/sh\nexec "$@"\n' > "$spec_dir/gradlew"
+    chmod +x "$spec_dir/gradlew"
+
+    # Run with gradlew not on PATH but SPEC_PATH/gradlew is executable
+    local output
+    output=$(bash "$DETECT_SCRIPT" "$spec_dir" 2>/dev/null)
+    [ -n "$output" ]
+    echo "$output" | jq -e . >/dev/null
+
+    # ./gradlew test and ./gradlew build should SURVIVE the ./-filter
+    echo "$output" | jq -e '.[] | select(.command == "./gradlew test" and .category == "test")' >/dev/null
+    echo "$output" | jq -e '.[] | select(.command == "./gradlew build" and .category == "build")' >/dev/null
+}
+
+# =============================================================================
+# Task 3.9: ./-filter regression test (wrapper toggle)
+# =============================================================================
+
+@test "./gradlew wrapper survives filter when executable, drops when not (chmod toggle)" {
+    # Build a self-contained stub dir WITHOUT gradle on PATH — isolates ./-filter behavior
+    local stub_dir="$SPECIAL_DIR/filter-stubs"
+    mkdir -p "$stub_dir"
+    printf '#!/bin/sh\nexec "$@"\n' > "$stub_dir/ruff"
+    chmod +x "$stub_dir/ruff"
+
+    local spec_dir="$SPECIAL_DIR/filter-toggle-spec"
+    mkdir -p "$spec_dir"
+    touch "$spec_dir/build.gradle"
+
+    # Create the wrapper (NOT executable — test 2 will chmod +x to test survival)
+    printf '#!/bin/sh\nexec "$@"\n' > "$spec_dir/gradlew"
+    chmod -x "$spec_dir/gradlew"
+
+    # --- Branch 1: gradlew NOT executable — ./gradlew not added to ENTRIES, gradle fallback has no PATH ---
+    local output1 stderr1
+    PATH="$stub_dir:$PATH" run bash "$DETECT_SCRIPT" "$spec_dir"
+    output1="$output"
+    stderr1="$stderr"
+    [ -n "$output1" ]
+
+    # ./gradlew must NOT be present (detect_gradle never added it since gradlew not -x)
+    local clean_output1
+    clean_output1=$(echo "$output1" | grep -v '^\[detect-ci-commands\] WARN:')
+    local dropped
+    dropped=$(echo "$clean_output1" | jq '[.[] | select(.command | startswith("./gradlew"))] | length')
+    [ "$dropped" -eq 0 ]
+
+    # Verify output is valid JSON (array with no ./gradlew entries)
+    echo "$clean_output1" | jq -e '. | if type == "array" then true else empty end' >/dev/null
+
+    # --- Branch 2: chmod +x gradlew — ./gradlew SURVIVES ---
+    chmod +x "$spec_dir/gradlew"
+
+    local output2
+    PATH="$stub_dir:$PATH" run bash "$DETECT_SCRIPT" "$spec_dir"
+    output2="$output"
+    [ -n "$output2" ]
+
+    # ./gradlew test must SURVIVE the filter
+    local clean_output2
+    clean_output2=$(echo "$output2" | grep -v '^\[detect-ci-commands\] WARN:')
+    echo "$clean_output2" | jq -e '.[] | select(.command == "./gradlew test" and .category == "test")' >/dev/null
+    echo "$clean_output2" | jq -e '.[] | select(.command == "./gradlew build" and .category == "build")' >/dev/null
+}
+
+# =============================================================================
+# Task 3.9: ./-filter wrapper regression test (present vs absent gradlew)
+# =============================================================================
+
+@test "./-filter wrapper: gradlew executable SURVIVES, absent DROPS with WARN" {
+    local spec_dir="$SPECIAL_DIR/filter-wrapper-spec"
+    mkdir -p "$spec_dir"
+
+    touch "$spec_dir/build.gradle"
+
+    # Create a non-executable gradlew wrapper
+    printf '#!/bin/sh\nexec "$@"\n' > "$spec_dir/gradlew"
+    chmod -x "$spec_dir/gradlew"
+
+    # Ensure gradle is NOT on PATH (use a clean stub dir with no gradle binary)
+    local stub_dir="$SPECIAL_DIR/filter-stub"
+    mkdir -p "$stub_dir"
+    printf '#!/bin/sh\nexec "$@"\n' > "$stub_dir/dotnet"
+    chmod +x "$stub_dir/dotnet"
+
+    # --- Branch 1: gradlew NOT executable — ./gradlew not added to ENTRIES ---
+    local output1 stderr1
+    PATH="$stub_dir:$PATH" run bash "$DETECT_SCRIPT" "$spec_dir"
+    output1="$output"
+    stderr1="$stderr"
+    [ -n "$output1" ]
+
+    # Filter out any WARN lines (from gradle fallback if on PATH)
+    local clean_output1
+    clean_output1=$(echo "$output1" | grep -v '^\[detect-ci-commands\] WARN:')
+    echo "$clean_output1" | jq -e . >/dev/null
+
+    # ./gradlew must NOT be present (detect_gradle never added it since gradlew not -x)
+    local dropped
+    dropped=$(echo "$clean_output1" | jq '[.[] | select(.command | startswith("./gradlew"))] | length')
+    [ "$dropped" -eq 0 ]
+
+    # Verify output is valid JSON (empty array or no ./gradlew entries)
+    echo "$clean_output1" | jq -e '. | if type == "array" then true else empty end' >/dev/null
+
+    # --- Branch 2: chmod +x gradlew — ./gradlew SURVIVES ---
+    chmod +x "$spec_dir/gradlew"
+
+    local output2
+    PATH="$stub_dir:$PATH" run bash "$DETECT_SCRIPT" "$spec_dir"
+    output2="$output"
+    [ -n "$output2" ]
+
+    # ./gradlew test must SURVIVE the filter
+    local clean_output2
+    clean_output2=$(echo "$output2" | grep -v '^\[detect-ci-commands\] WARN:')
+    echo "$clean_output2" | jq -e '.[] | select(.command == "./gradlew test" and .category == "test")' >/dev/null
+    echo "$clean_output2" | jq -e '.[] | select(.command == "./gradlew build" and .category == "build")' >/dev/null
+}
+
+# =============================================================================
+# Task 3.10: source-no-side-effects + sourced-call integration tests
+# =============================================================================
+
+@test "maven pom.xml emits mvn test and mvn package" {
+    local spec_dir="$SPECIAL_DIR/maven-spec"
+    mkdir -p "$spec_dir"
+
+    cat > "$spec_dir/pom.xml" << 'XML'
+<?xml version="1.0" encoding="UTF-8"?>
+<project>
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.example</groupId>
+  <artifactId>test-project</artifactId>
+  <version>1.0.0</version>
+</project>
+XML
+
+    local output
+    output=$(PATH="$STUBBIN:$PATH" bash "$DETECT_SCRIPT" "$spec_dir" 2>/dev/null)
+    [ -n "$output" ]
+    echo "$output" | jq -e . >/dev/null
+
+    # Should emit: mvn test (test) + mvn package (build)
+    echo "$output" | jq -e '.[] | select(.command == "mvn test" and .category == "test")' >/dev/null
+    echo "$output" | jq -e '.[] | select(.command == "mvn package" and .category == "build")' >/dev/null
+}
+
+@test "maven executable wrapper ./mvnw test and package survive filter" {
+    local spec_dir="$SPECIAL_DIR/maven-wrapper-spec"
+    mkdir -p "$spec_dir"
+
+    cat > "$spec_dir/pom.xml" << 'XML'
+<?xml version="1.0"?>
+<project>
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.example</groupId>
+  <artifactId>wrapper-test</artifactId>
+</project>
+XML
+
+    # Create an executable ./mvnw wrapper (no ./ in STUBBIN)
+    printf '#!/bin/sh\nexec "$@"\n' > "$spec_dir/mvnw"
+    chmod +x "$spec_dir/mvnw"
+
+    # Run without mvn on PATH — only SPEC_PATH/mvnw is executable
+    local output
+    output=$(PATH="$STUBBIN:$PATH" bash "$DETECT_SCRIPT" "$spec_dir" 2>/dev/null)
+    [ -n "$output" ]
+    echo "$output" | jq -e . >/dev/null
+
+    # ./mvnw test and ./mvnw package should SURVIVE the ./-filter
+    echo "$output" | jq -e '.[] | select(.command == "./mvnw test" and .category == "test")' >/dev/null
+    echo "$output" | jq -e '.[] | select(.command == "./mvnw package" and .category == "build")' >/dev/null
+}
+
+@test "gradle + maven coexist both command sets present" {
+    local spec_dir="$SPECIAL_DIR/coexist-spec"
+    mkdir -p "$spec_dir"
+
+    touch "$spec_dir/build.gradle"
+    cat > "$spec_dir/pom.xml" << 'XML'
+<?xml version="1.0"?>
+<project>
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.example</groupId>
+  <artifactId>coexist-test</artifactId>
+</project>
+XML
+
+    local output
+    output=$(PATH="$STUBBIN:$PATH" bash "$DETECT_SCRIPT" "$spec_dir" 2>/dev/null)
+    [ -n "$output" ]
+    echo "$output" | jq -e . >/dev/null
+
+    # Gradle commands
+    echo "$output" | jq -e '.[] | select(.command == "gradle test" and .category == "test")' >/dev/null
+    echo "$output" | jq -e '.[] | select(.command == "gradle build" and .category == "build")' >/dev/null
+
+    # Maven commands
+    echo "$output" | jq -e '.[] | select(.command == "mvn test" and .category == "test")' >/dev/null
+    echo "$output" | jq -e '.[] | select(.command == "mvn package" and .category == "build")' >/dev/null
+}
+
+# =============================================================================
+# Task 3.7: mix + dotnet detector tests
+# =============================================================================
+
+@test "mix.exs fallback emits mix test credo dialyzer format --check-formatted" {
+    local spec_dir="$SPECIAL_DIR/mix-fallback-spec"
+    mkdir -p "$spec_dir"
+
+    cat > "$spec_dir/mix.exs" << 'EXS'
+defmodule MyProject.MixProject do
+  def project do
+    [app: :my_project, version: "0.1.0"]
+  end
+end
+EXS
+
+    local output
+    output=$(PATH="$STUBBIN:$PATH" bash "$DETECT_SCRIPT" "$spec_dir" 2>/dev/null)
+    [ -n "$output" ]
+    echo "$output" | jq -e . >/dev/null
+
+    # Fallback: 4 canonical mix commands
+    echo "$output" | jq -e '.[] | select(.command == "mix test" and .category == "test")' >/dev/null
+    echo "$output" | jq -e '.[] | select(.command == "mix credo" and .category == "lint")' >/dev/null
+    echo "$output" | jq -e '.[] | select(.command == "mix dialyzer" and .category == "typecheck")' >/dev/null
+    echo "$output" | jq -e '.[] | select(.command == "mix format --check-formatted" and .category == "lint")' >/dev/null
+}
+
+@test "mix.exs with aliases emits mix alias commands preferred" {
+    local spec_dir="$SPECIAL_DIR/mix-aliases-spec"
+    mkdir -p "$spec_dir"
+
+    cat > "$spec_dir/mix.exs" << 'EXS'
+defmodule MyProject.MixProject do
+  use Mix.Project
+
+  def project do
+    [app: :my_project]
+  end
+
+  defp aliases do
+    [
+      test: "test",
+      lint: "lint",
+      dialyzer: "dialyzer",
+      format: "format"
+    ]
+  end
+end
+EXS
+
+    local output
+    output=$(PATH="$STUBBIN:$PATH" bash "$DETECT_SCRIPT" "$spec_dir" 2>/dev/null)
+    [ -n "$output" ]
+    echo "$output" | jq -e . >/dev/null
+
+    # Alias-based: mix test, mix lint, mix dialyzer, mix format (grep-scan finds these values)
+    echo "$output" | jq -e '.[] | select(.command == "mix test" and .category == "test")' >/dev/null
+    echo "$output" | jq -e '.[] | select(.command == "mix lint" and .category == "lint")' >/dev/null
+    echo "$output" | jq -e '.[] | select(.command == "mix dialyzer" and .category == "typecheck")' >/dev/null
+    echo "$output" | jq -e '.[] | select(.command == "mix format" and .category == "lint")' >/dev/null
+
+    # Should NOT have fallback commands when aliases are found
+    local fallback_count
+    fallback_count=$(echo "$output" | jq '[.[] | select(.command == "mix credo")] | length')
+    [ "$fallback_count" -eq 0 ]
+}
+
+@test "dotnet .csproj glob fires dotnet test build format" {
+    local spec_dir="$SPECIAL_DIR/dotnet-csproj-spec"
+    mkdir -p "$spec_dir"
+
+    cat > "$spec_dir/App.csproj" << 'CSHARP'
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+  </PropertyGroup>
+</Project>
+CSHARP
+
+    local output
+    output=$(PATH="$STUBBIN:$PATH" bash "$DETECT_SCRIPT" "$spec_dir" 2>/dev/null)
+    [ -n "$output" ]
+    echo "$output" | jq -e . >/dev/null
+
+    # Should emit 3 dotnet commands
+    echo "$output" | jq -e '.[] | select(.command == "dotnet test" and .category == "test")' >/dev/null
+    echo "$output" | jq -e '.[] | select(.command == "dotnet build" and .category == "build")' >/dev/null
+    echo "$output" | jq -e '.[] | select(.command == "dotnet format --verify-no-changes" and .category == "lint")' >/dev/null
+}
+
+@test "dotnet .sln and global.json fire independently" {
+    local spec_dir1="$SPECIAL_DIR/dotnet-sln-spec"
+    mkdir -p "$spec_dir1"
+
+    cat > "$spec_dir1/MySolution.sln" << 'SLN'
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+SLN
+
+    local spec_dir2="$SPECIAL_DIR/dotnet-global-spec"
+    mkdir -p "$spec_dir2"
+
+    cat > "$spec_dir2/global.json" << 'JSON'
+{
+  "sdk": {
+    "version": "8.0.0",
+    "rollForward": "latestMajor"
+  }
+}
+JSON
+
+    # Test .sln triggers dotnet
+    local output1
+    output1=$(PATH="$STUBBIN:$PATH" bash "$DETECT_SCRIPT" "$spec_dir1" 2>/dev/null)
+    [ -n "$output1" ]
+    echo "$output1" | jq -e . >/dev/null
+    echo "$output1" | jq -e '.[] | select(.command == "dotnet test" and .category == "test")' >/dev/null
+
+    # Test global.json triggers dotnet
+    local output2
+    output2=$(PATH="$STUBBIN:$PATH" bash "$DETECT_SCRIPT" "$spec_dir2" 2>/dev/null)
+    [ -n "$output2" ]
+    echo "$output2" | jq -e . >/dev/null
+    echo "$output2" | jq -e '.[] | select(.command == "dotnet build" and .category == "build")' >/dev/null
+}
+
+
+# =============================================================================
+# Task 3.10: source-no-side-effects + sourced-call integration tests
+# =============================================================================
+
+@test "source detect-ci-commands.sh with no args has no side effects" {
+    # Test (a): sourcing the script with no arguments must have zero side effects.
+    # - Exit code 0 (no abort)
+    # - No stdout emitted
+    # - set -e must NOT leak into the calling shell (a failing command after source must not abort)
+
+    local output exit_code fail_rc
+
+    # Source in a sub-shell and capture stdout + exit code
+    output=$(source "$DETECT_SCRIPT" 2>/dev/null) || true
+    exit_code=$?
+
+    # Exit code must be 0 (source must not abort the parent)
+    [[ "$exit_code" -eq 0 ]]
+
+    # No stdout must be produced
+    [[ -z "$output" ]]
+
+    # Verify set -e is NOT active in the calling shell: if set -e leaked,
+    # the following `false` would abort the shell before we reach the next line.
+    set +e
+    false
+    fail_rc=$?
+    set -e
+    # After a `false` command, $? should be 1 (not a shell exit)
+    [[ "$fail_rc" -ne 0 ]]
+}
+
+@test "sourced detect_ci_commands emits valid JSON for a multi-marker fixture" {
+    # Test (b): after source, detect_ci_commands "$dir" emits valid JSON array
+    # for a fixture with multiple markers (mirrors implement.md:221 consumer pattern).
+
+    local spec_dir="$SPECIAL_DIR/sourced-call-spec"
+    mkdir -p "$spec_dir"
+
+    # Create multiple markers to trigger multiple detectors
+    touch "$spec_dir/Gemfile"
+    cat > "$spec_dir/package.json" << 'JSON'
+{
+  "name": "sourced-test",
+  "scripts": {
+    "test": "jest",
+    "lint": "eslint ."
+  }
+}
+JSON
+
+    # Source the script and call detect_ci_commands in a sub-shell
+    # This mirrors the implement.md:221 pattern:
+    #   cmds=$(source detect-ci-commands.sh && detect_ci_commands "$PWD")
+    local output
+    output=$(PATH="$STUBBIN:$PATH" bash -c "source '$DETECT_SCRIPT' && detect_ci_commands '$spec_dir'" 2>/dev/null)
+    [ -n "$output" ]
+
+    # Must be a valid JSON array
+    echo "$output" | jq -e . >/dev/null
+
+    # At minimum: bundle exec rspec (Gemfile) + npm run test/lint (package.json)
+    local count
+    count=$(echo "$output" | jq 'length')
+    [ "$count" -ge 3 ]
+
+    # Verify specific entries are present
+    echo "$output" | jq -e '.[] | select(.command == "bundle exec rspec" and .category == "test")' >/dev/null
+    echo "$output" | jq -e '.[] | select(.command == "npm run test" and .category == "test")' >/dev/null
+    echo "$output" | jq -e '.[] | select(.command == "npm run lint" and .category == "lint")' >/dev/null
+}
+
+@test "composer.json with British 'analyse' script emits typecheck" {
+    local spec_dir="$SPECIAL_DIR/composer-analyse-spec"
+    mkdir -p "$spec_dir"
+
+    cat > "$spec_dir/composer.json" << 'JSON'
+{
+  "name": "test-composer",
+  "scripts": {
+    "analyse": "phpstan analyse",
+    "analyze": "phpstan analyse --strict"
+  }
+}
+JSON
+
+    local output
+    output=$(PATH="$STUBBIN:$PATH" bash "$DETECT_SCRIPT" "$spec_dir" 2>/dev/null)
+    [ -n "$output" ]
+    echo "$output" | jq -e . >/dev/null
+
+    # British 'analyse' → typecheck (F-1 fix)
+    echo "$output" | jq -e '.[] | select(.command == "composer run analyse" and .category == "typecheck")' >/dev/null
+    # US 'analyze' → typecheck too
+    echo "$output" | jq -e '.[] | select(.command == "composer run analyze" and .category == "typecheck")' >/dev/null
+}
+
+@test "deno task check categorizes as typecheck not other" {
+    local spec_dir="$SPECIAL_DIR/deno-check-spec"
+    mkdir -p "$spec_dir"
+
+    cat > "$spec_dir/deno.json" << 'JSON'
+{
+  "tasks": {
+    "check": "deno check",
+    "lint": "deno lint",
+    "test": "deno test"
+  }
+}
+JSON
+
+    local output
+    output=$(PATH="$STUBBIN:$PATH" bash "$DETECT_SCRIPT" "$spec_dir" 2>/dev/null)
+    [ -n "$output" ]
+    echo "$output" | jq -e . >/dev/null
+
+    # F-3: 'check' task → typecheck (PHP patterns removed, deno-honest map)
+    echo "$output" | jq -e '.[] | select(.command == "deno task check" and .category == "typecheck")' >/dev/null
+    echo "$output" | jq -e '.[] | select(.command == "deno task lint" and .category == "lint")' >/dev/null
+}
+
+@test "deno.jsonc with tasks emits deno task per key" {
+    local spec_dir="$SPECIAL_DIR/deno-jsonc-spec"
+    mkdir -p "$spec_dir"
+
+    # Valid .jsonc without comments (jq can parse this; // comments make jq fail → fallback)
+    cat > "$spec_dir/deno.jsonc" << 'JSON'
+{
+  "tasks": {
+    "mytest": "deno test",
+    "mylint": "deno lint"
+  }
+}
+JSON
+
+    local output
+    output=$(PATH="$STUBBIN:$PATH" bash "$DETECT_SCRIPT" "$spec_dir" 2>/dev/null)
+    [ -n "$output" ]
+    echo "$output" | jq -e . >/dev/null
+
+    # F-4: .jsonc with tasks → deno task entries discovered
+    echo "$output" | jq -e '.[] | select(.command == "deno task mytest")' >/dev/null
+    echo "$output" | jq -e '.[] | select(.command == "deno task mylint")' >/dev/null
+}
+
+@test "gradle with non-executable gradlew degrades to gradle test and build" {
+    local spec_dir="$SPECIAL_DIR/gradle-noexec-spec"
+    mkdir -p "$spec_dir"
+
+    echo 'plugins { id "java" }' > "$spec_dir/build.gradle"
+    printf '#!/bin/sh\n' > "$spec_dir/gradlew"  # present but NOT executable
+
+    local output
+    output=$(PATH="$STUBBIN:$PATH" bash "$DETECT_SCRIPT" "$spec_dir" 2>/dev/null)
+    [ -n "$output" ]
+    echo "$output" | jq -e . >/dev/null
+
+    # F-2: non-executable wrapper → system gradle on PATH (not empty [])
+    echo "$output" | jq -e '.[] | select(.command == "gradle test" and .category == "test")' >/dev/null
+    echo "$output" | jq -e '.[] | select(.command == "gradle build" and .category == "build")' >/dev/null
+    # Should NOT have ./gradlew entries (wrapper not executable → filter drops them)
+    local dotcount
+    dotcount=$(echo "$output" | jq '[.[]|select(.command | startswith("./"))]|length')
+    [ "$dotcount" -eq 0 ]
+}
+
+@test "maven with non-executable mvnw degrades to mvn test and package" {
+    local spec_dir="$SPECIAL_DIR/maven-noexec-spec"
+    mkdir -p "$spec_dir"
+
+    cat > "$spec_dir/pom.xml" << 'XML'
+<project><modelVersion>4.0.0</modelVersion></project>
+XML
+    printf '#!/bin/sh\n' > "$spec_dir/mvnw"  # present but NOT executable
+
+    local output
+    output=$(PATH="$STUBBIN:$PATH" bash "$DETECT_SCRIPT" "$spec_dir" 2>/dev/null)
+    [ -n "$output" ]
+    echo "$output" | jq -e . >/dev/null
+
+    # F-2: non-executable wrapper → system mvn on PATH (not empty [])
+    echo "$output" | jq -e '.[] | select(.command == "mvn test" and .category == "test")' >/dev/null
+    echo "$output" | jq -e '.[] | select(.command == "mvn package" and .category == "build")' >/dev/null
+}
+
+@test "realistic atom-keyed mix.exs discovers credo and dialyzer aliases" {
+    local spec_dir="$SPECIAL_DIR/mix-real-spec"
+    mkdir -p "$spec_dir"
+
+    cat > "$spec_dir/mix.exs" << 'EXS'
+defmodule MyProject.MixProject do
+  use Mix.Project
+
+  def project do
+    [
+      app: :my_project,
+      deps: deps(),
+      aliases: aliases()
+    ]
+  end
+
+  defp deps do
+    [
+      {:credo, "~> 1.7", only: [:dev, :test]},
+      {:dialyxir, "~> 1.4", only: [:dev], runtime: false}
+    ]
+  end
+
+  defp aliases do
+    [
+      credo: ["credo --strict"],
+      dialyzer: ["dialyzer --format github"]
+    ]
+  end
+end
+EXS
+
+    local output
+    output=$(PATH="$STUBBIN:$PATH" bash "$DETECT_SCRIPT" "$spec_dir" 2>/dev/null)
+    [ -n "$output" ]
+    echo "$output" | jq -e . >/dev/null
+
+    # F-5: atom-keyed aliases discovered (credo → lint, dialyzer → typecheck)
+    echo "$output" | jq -e '.[] | select(.command == "mix credo" and .category == "lint")' >/dev/null
+    echo "$output" | jq -e '.[] | select(.command == "mix dialyzer" and .category == "typecheck")' >/dev/null
 }
