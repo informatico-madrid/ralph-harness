@@ -697,27 +697,22 @@ JSON
     printf '#!/bin/sh\nexec "$@"\n' > "$spec_dir/gradlew"
     chmod -x "$spec_dir/gradlew"
 
-    # --- Branch 1: gradlew NOT executable — ./gradlew DROPPED, WARN on stderr ---
+    # --- Branch 1: gradlew NOT executable — ./gradlew not added to ENTRIES, gradle fallback has no PATH ---
     local output1 stderr1
     PATH="$stub_dir:$PATH" run bash "$DETECT_SCRIPT" "$spec_dir"
     output1="$output"
     stderr1="$stderr"
     [ -n "$output1" ]
 
-    # ./gradlew must NOT be present (dropped by filter)
+    # ./gradlew must NOT be present (detect_gradle never added it since gradlew not -x)
     local clean_output1
     clean_output1=$(echo "$output1" | grep -v '^\[detect-ci-commands\] WARN:')
     local dropped
     dropped=$(echo "$clean_output1" | jq '[.[] | select(.command | startswith("./gradlew"))] | length')
     [ "$dropped" -eq 0 ]
 
-    # WARN must appear on stderr; also check combined output for bats compat
-    local warn_found=0
-    if echo "$stderr1" | grep -qi "WARN"; then warn_found=1; fi
-    if echo "$output1" | grep -qi "WARN"; then warn_found=1; fi
-    [ "$warn_found" -eq 1 ]
-
-    # PATH gradle still emitted (command -v stub-bin will handle it if present, else empty array fine)
+    # Empty output (gradlew not added, gradle not on PATH)
+    echo "$clean_output1" | jq -e 'length == 0' >/dev/null
 
     # --- Branch 2: chmod +x gradlew — ./gradlew SURVIVES ---
     chmod +x "$spec_dir/gradlew"
@@ -754,28 +749,25 @@ JSON
     printf '#!/bin/sh\nexec "$@"\n' > "$stub_dir/dotnet"
     chmod +x "$stub_dir/dotnet"
 
-    # --- Branch 1: gradlew NOT executable — ./gradlew DROPPED ---
+    # --- Branch 1: gradlew NOT executable — ./gradlew not added to ENTRIES ---
     local output1 stderr1
     PATH="$stub_dir:$PATH" run bash "$DETECT_SCRIPT" "$spec_dir"
     output1="$output"
     stderr1="$stderr"
     [ -n "$output1" ]
 
-    # WARN messages may be mixed into output in some bats versions, filter them out
+    # Filter out any WARN lines (from gradle fallback if on PATH)
     local clean_output1
     clean_output1=$(echo "$output1" | grep -v '^\[detect-ci-commands\] WARN:')
     echo "$clean_output1" | jq -e . >/dev/null
 
-    # ./gradlew must NOT be present (dropped by ./-filter)
+    # ./gradlew must NOT be present (detect_gradle never added it since gradlew not -x)
     local dropped
     dropped=$(echo "$clean_output1" | jq '[.[] | select(.command | startswith("./gradlew"))] | length')
     [ "$dropped" -eq 0 ]
 
-    # WARN must appear on stderr; also check combined output for bats compat
-    local warn_found=0
-    if echo "$stderr1" | grep -qi "WARN"; then warn_found=1; fi
-    if echo "$output1" | grep -qi "WARN"; then warn_found=1; fi
-    [ "$warn_found" -eq 1 ]
+    # Empty output (gradlew not added, gradle not on PATH)
+    echo "$clean_output1" | jq -e 'length == 0' >/dev/null
 
     # --- Branch 2: chmod +x gradlew — ./gradlew SURVIVES ---
     chmod +x "$spec_dir/gradlew"
