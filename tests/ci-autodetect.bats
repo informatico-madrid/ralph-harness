@@ -589,8 +589,8 @@ JSON
 
     # deno check should NOT be emitted from tasks-discovery (anti-pattern)
     local check_count
-    check_count=$(echo "$output" | jq '[.[] | select(.command == "deno task build")] | length')
-    [ "$check_count" -eq 1 ]
+    check_count=$(echo "$output" | jq '[.[] | select(.command == "deno check")] | length')
+    [ "$check_count" -eq 0 ]
 }
 
 @test "deno fallback emits deno test lint check and fmt --check from deno.jsonc" {
