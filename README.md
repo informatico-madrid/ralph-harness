@@ -435,10 +435,10 @@ RalphHarness/
 │   ├── ralph-loop.md
 │   ├── cancel-ralph.md
 │   ├── approve.md
-│   └── help.md
-│   └── rag-onboard.md
-│   └── rag-search.md
-│   └── rag-doctor.md
+│   ├── help.md
+│   ├── rag-onboard.md
+│   ├── rag-search.md
+│   ├── rag-doctor.md
 │   └── index-all.md
 ├── skills/
 │   └── spec-workflow/

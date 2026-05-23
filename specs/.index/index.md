@@ -71,7 +71,7 @@ See [index-state.json](./index-state.json) for machine-readable data.
 | reviewer-warmup | ./specs | execution | 1/19 tasks |
 | harness-enforcement-gates | ./specs | complete |  |
 | rag-integration | ./specs | completed | done |
-| multi-language-support | ./specs | completed |  |
+| multi-language-support | ./specs | completed | 41/41 |
 
 ---
 

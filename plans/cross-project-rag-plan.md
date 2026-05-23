@@ -25,7 +25,7 @@ Permitir que RAG recupere contexto de specs de **proyectos externos** al proyect
 ## Arquitectura Deseada
 
 ```
-Proyect A (RalphHarness)          Proyecto B (otro workspace)
+Project A (RalphHarness)          Proyecto B (otro workspace)
 ┌─────────────────────┐           ┌─────────────────────┐
 │ specs/               │           │ specs/               │
 │  └── my-spec/       │           │  └── auth-service/   │
