@@ -69,7 +69,7 @@ Common targets: `test`, `lint`, `build`, `check`, `ci`, `fmt`, `format`.
 | `Gemfile` | Ruby | `bundle exec rspec`, `bundle exec rubocop` |
 | `build.gradle` / `pom.xml` | Java/Kotlin | `./gradlew test`, `./gradlew build`, `mvn test`, `mvn package` |
 | `mix.exs` | Elixir | `mix test`, `mix credo`, `mix dialyzer`, `mix format --check-formatted` |
-| `deno.json` | Deno | `deno test`, `deno lint`, `deno check`, `deno fmt --check` |
+| `deno.json` / `deno.jsonc` | Deno | `deno test`, `deno lint`, `deno check`, `deno fmt --check` |
 | `composer.json` | PHP | `composer run test`, `composer run lint`, `composer run analyze`, `composer test` |
 | `*.csproj` / `*.sln` | C#/.NET | `dotnet test`, `dotnet build`, `dotnet format --verify-no-changes` |
 
